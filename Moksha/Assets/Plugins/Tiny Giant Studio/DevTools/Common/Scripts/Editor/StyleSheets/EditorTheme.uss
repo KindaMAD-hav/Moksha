@@ -1,0 +1,3 @@
+.highestContrast-imageTint {
+    -unity-background-image-tint-color: var(--unity-colors-helpbox-text);
+}

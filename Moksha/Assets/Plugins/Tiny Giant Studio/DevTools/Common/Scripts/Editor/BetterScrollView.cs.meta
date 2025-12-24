@@ -1,0 +1,18 @@
+fileFormatVersion: 2
+guid: f264dbb87e082ae449f7695688f9d863
+MonoImporter:
+  externalObjects: {}
+  serializedVersion: 2
+  defaultReferences: []
+  executionOrder: 0
+  icon: {instanceID: 0}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 291626
+  packageName: DevTrails - Developer Statistics Made Easy
+  packageVersion: 1.7.0
+  assetPath: Assets/Plugins/Tiny Giant Studio/DevTools/Common/Scripts/Editor/BetterScrollView.cs
+  uploadId: 835774

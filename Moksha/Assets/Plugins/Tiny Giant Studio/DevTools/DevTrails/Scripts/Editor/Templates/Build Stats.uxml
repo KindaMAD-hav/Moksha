@@ -1,0 +1,78 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" editor-extension-mode="True">
+    <Style src="project://database/Assets/Plugins/Tiny%20Giant%20Studio/DevTools/DevTrails/Scripts/Editor/Style%20Sheet/DevTrailsIcons.uss?fileID=7433441132597879392&amp;guid=b982efd273f426b4ca61d206c6f7ac92&amp;type=3#DevTrailsIcons" />
+    <Style src="project://database/Assets/Plugins/Tiny%20Giant%20Studio/DevTools/Common/Scripts/Editor/StyleSheets/Container.uss?fileID=7433441132597879392&amp;guid=72c9b8794d1e61342be9bd2e10508d45&amp;type=3#Container" />
+    <ui:GroupBox tooltip="Build stats are an experimental feature. Please contact support if anything is wrong." style="justify-content: flex-start; align-items: flex-start; border-bottom-width: 1px; border-bottom-color: rgba(0, 0, 0, 0.1); margin-top: 0; margin-right: 0; margin-bottom: 0; margin-left: 0; flex-direction: row; flex-wrap: wrap; padding-top: 10px; padding-right: 0; padding-bottom: 10px; padding-left: 10px;">
+        <ui:GroupBox class="info-card">
+            <ui:GroupBox class="icon-holder">
+                <ui:VisualElement class="icon clock-icon" style="-unity-background-image-tint-color: rgb(205, 232, 229);" />
+            </ui:GroupBox>
+            <ui:GroupBox>
+                <ui:Label tabindex="-1" text="99" parse-escape-sequences="true" display-tooltip-when-elided="true" name="TotalBuildTime" class="info" />
+                <ui:Label tabindex="-1" text="Time Spent Building" parse-escape-sequences="true" display-tooltip-when-elided="true" class="info-label" />
+            </ui:GroupBox>
+        </ui:GroupBox>
+        <ui:GroupBox class="info-card">
+            <ui:GroupBox class="icon-holder">
+                <ui:VisualElement name="Icon" class="icon log-icon" />
+            </ui:GroupBox>
+            <ui:GroupBox>
+                <ui:Label tabindex="-1" text="99" parse-escape-sequences="true" display-tooltip-when-elided="true" name="TotalBuilds" class="info" />
+                <ui:Label tabindex="-1" text="Total Builds" class="info-label" />
+            </ui:GroupBox>
+        </ui:GroupBox>
+        <ui:GroupBox class="info-card">
+            <ui:GroupBox class="icon-holder">
+                <ui:VisualElement class="icon clock-icon" style="-unity-background-image-tint-color: rgb(205, 232, 229);" />
+            </ui:GroupBox>
+            <ui:GroupBox>
+                <ui:Label tabindex="-1" text="99" parse-escape-sequences="true" display-tooltip-when-elided="true" name="AverageBuildTime" class="info" />
+                <ui:Label tabindex="-1" text="Average Successfull Build Time" parse-escape-sequences="true" display-tooltip-when-elided="true" class="info-label" />
+            </ui:GroupBox>
+        </ui:GroupBox>
+        <ui:GroupBox class="info-card">
+            <ui:GroupBox class="icon-holder">
+                <ui:VisualElement class="save-icon icon" style="-unity-background-image-tint-color: rgb(126, 162, 114);" />
+            </ui:GroupBox>
+            <ui:GroupBox>
+                <ui:Label tabindex="-1" text="99" parse-escape-sequences="true" display-tooltip-when-elided="true" name="BuildSucceeded" class="info" />
+                <ui:Label tabindex="-1" text="Build Succeded" parse-escape-sequences="true" display-tooltip-when-elided="true" class="info-label" />
+            </ui:GroupBox>
+        </ui:GroupBox>
+        <ui:GroupBox class="info-card">
+            <ui:GroupBox class="icon-holder">
+                <ui:VisualElement name="Icon" class="icon warning-icon" />
+            </ui:GroupBox>
+            <ui:GroupBox style="flex-direction: column;">
+                <ui:Label tabindex="-1" text="99" parse-escape-sequences="true" display-tooltip-when-elided="true" name="BuildCanceled" class="info" />
+                <ui:Label tabindex="-1" text="Build Canceled" parse-escape-sequences="true" display-tooltip-when-elided="true" class="info-label" />
+            </ui:GroupBox>
+        </ui:GroupBox>
+        <ui:GroupBox class="info-card">
+            <ui:GroupBox class="icon-holder">
+                <ui:VisualElement name="Icon" class="icon error-icon" style="-unity-background-image-tint-color: rgb(200, 200, 200);" />
+            </ui:GroupBox>
+            <ui:GroupBox>
+                <ui:Label tabindex="-1" text="99" parse-escape-sequences="true" display-tooltip-when-elided="true" name="BuildFailed" class="info" />
+                <ui:Label tabindex="-1" text="Build Failed" parse-escape-sequences="true" display-tooltip-when-elided="true" class="info-label" />
+            </ui:GroupBox>
+        </ui:GroupBox>
+        <ui:GroupBox tooltip="Please note that some build warnings might not appear in console, but are included in build reports and gets counted here." class="info-card">
+            <ui:GroupBox class="icon-holder">
+                <ui:VisualElement name="Icon" class="icon warning-icon" />
+            </ui:GroupBox>
+            <ui:GroupBox style="flex-direction: column;">
+                <ui:Label tabindex="-1" text="99" parse-escape-sequences="true" display-tooltip-when-elided="true" name="BuildWarnings" class="info" />
+                <ui:Label text="Build Warnings" parse-escape-sequences="true" display-tooltip-when-elided="true" class="info-label" />
+            </ui:GroupBox>
+        </ui:GroupBox>
+        <ui:GroupBox tooltip="Please note that some build errors like internal build system errors might not appear in console, but are included in build reports and gets counted here." class="info-card">
+            <ui:GroupBox class="icon-holder">
+                <ui:VisualElement name="Icon" class="icon error-icon" style="-unity-background-image-tint-color: rgb(200, 200, 200);" />
+            </ui:GroupBox>
+            <ui:GroupBox>
+                <ui:Label tabindex="-1" text="99" parse-escape-sequences="true" display-tooltip-when-elided="true" name="BuildErrors" class="info" />
+                <ui:Label tabindex="-1" text="Build Errors" parse-escape-sequences="true" display-tooltip-when-elided="true" class="info-label" />
+            </ui:GroupBox>
+        </ui:GroupBox>
+    </ui:GroupBox>
+</ui:UXML>

@@ -1,0 +1,73 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" xsi="http://www.w3.org/2001/XMLSchema-instance" engine="UnityEngine.UIElements" editor="UnityEditor.UIElements" noNamespaceSchemaLocation="../../../../../../../../UIElementsSchema/UIElements.xsd" editor-extension-mode="True">
+    <Style src="project://database/Assets/Plugins/Tiny%20Giant%20Studio/DevTools/Common/Scripts/Editor/StyleSheets/Button.uss?fileID=7433441132597879392&amp;guid=f48629a4d3c2ad647ac9d5ba24bc7cc9&amp;type=3#Button" />
+    <Style src="project://database/Assets/Plugins/Tiny%20Giant%20Studio/DevTools/Common/Scripts/Editor/StyleSheets/Container.uss?fileID=7433441132597879392&amp;guid=72c9b8794d1e61342be9bd2e10508d45&amp;type=3#Container" />
+    <Style src="project://database/Assets/Plugins/Tiny%20Giant%20Studio/DevTools/Common/Scripts/Editor/StyleSheets/Icons.uss?fileID=7433441132597879392&amp;guid=cefdc37815b00e444bbbe128a5ae03c8&amp;type=3#Icons" />
+    <Style src="project://database/Assets/Plugins/Tiny%20Giant%20Studio/DevTools/Common/Scripts/Editor/StyleSheets/Footer.uss?fileID=7433441132597879392&amp;guid=e87d8e2e4ce8185428db721e6e9297ad&amp;type=3#Footer" />
+    <ui:GroupBox name="PageContainer">
+        <TinyGiantStudio.DevTools.BetterScrollView Interactable="true" IgnoreChildren="true">
+            <ui:GroupBox style="flex-direction: row; flex-wrap: wrap; justify-content: center; flex-grow: 1;">
+                <ui:GroupBox name="WeeklyGraph" class="container" style="margin-top: 10px; margin-right: 0; margin-bottom: 0; margin-left: 0; max-width: 650px; flex-grow: 1;">
+                    <ui:GroupBox name="Header" class="header" style="justify-content: center; padding-right: 5px; padding-left: 5px;">
+                        <ui:Button parse-escape-sequences="true" display-tooltip-when-elided="true" name="PreviousWeekButton" class="button-icon">
+                            <ui:VisualElement name="Icon" class="back-icon" style="flex-grow: 1;" />
+                        </ui:Button>
+                        <ui:Label tabindex="-1" text="This Week" parse-escape-sequences="true" display-tooltip-when-elided="true" name="WeekLabel" class="title" style="flex-grow: 1; -unity-text-align: middle-center;" />
+                        <ui:Button parse-escape-sequences="true" display-tooltip-when-elided="true" name="NextWeekButton" class="button-icon">
+                            <ui:VisualElement name="Icon" class="back-icon" style="flex-grow: 1; rotate: 180deg;" />
+                        </ui:Button>
+                    </ui:GroupBox>
+                    <ui:VisualElement name="Content" class="body" style="flex-grow: 1; flex-direction: row; min-height: 200px; align-items: flex-end;">
+                        <ui:ScrollView horizontal-scroller-visibility="Auto" mode="Horizontal" vertical-scroller-visibility="Auto" mouse-wheel-scroll-size="12" style="margin-top: 0; margin-right: 0; margin-bottom: 25px; margin-left: 0; padding-top: 0; padding-right: 0; padding-bottom: 0; padding-left: 0; flex-grow: 1;">
+                            <ui:GroupBox style="margin-top: 0; margin-right: 0; margin-bottom: 0; margin-left: 0; padding-top: 0; padding-right: 0; padding-bottom: 0; padding-left: 0; opacity: 0.5;">
+                                <ui:GroupBox style="height: 205px; margin-top: 0; margin-right: 0; margin-bottom: 0; margin-left: 0; padding-top: 0; padding-right: 0; padding-bottom: 0; padding-left: 0; justify-content: space-between;">
+                                    <ui:Label tabindex="-1" text="12" parse-escape-sequences="true" display-tooltip-when-elided="true" />
+                                    <ui:Label tabindex="-1" text="9" parse-escape-sequences="true" display-tooltip-when-elided="true" />
+                                    <ui:Label tabindex="-1" text="6" parse-escape-sequences="true" display-tooltip-when-elided="true" />
+                                    <ui:Label tabindex="-1" text="3" parse-escape-sequences="true" display-tooltip-when-elided="true" />
+                                    <ui:Label tabindex="-1" text="0" parse-escape-sequences="true" display-tooltip-when-elided="true" />
+                                </ui:GroupBox>
+                                <ui:Label tabindex="-1" parse-escape-sequences="true" display-tooltip-when-elided="true" style="height: 43px;" />
+                            </ui:GroupBox>
+                            <ui:GroupBox name="Graphs" style="flex-grow: 1; margin-top: 0; margin-right: 15px; margin-bottom: 0; margin-left: 0; padding-top: 0; padding-right: 0; padding-bottom: 0; padding-left: 0; flex-direction: row; justify-content: flex-start;" />
+                        </ui:ScrollView>
+                    </ui:VisualElement>
+                </ui:GroupBox>
+                <ui:GroupBox style="margin-top: 20px; margin-right: 10px; margin-bottom: 20px; margin-left: 10px; padding-top: 0; padding-right: 0; padding-bottom: 0; padding-left: 0; flex-grow: 1; -unity-font-style: italic; max-width: 400px; flex-shrink: 0; min-width: 50px;">
+                    <ui:Label tabindex="-1" parse-escape-sequences="true" display-tooltip-when-elided="true" name="WeeklyLabel" tooltip="This always excludes current session" style="white-space: normal; overflow: hidden; min-width: 70px;" />
+                </ui:GroupBox>
+            </ui:GroupBox>
+            <ui:GroupBox name="MonthlyGraph" class="container" style="margin-top: 10px; margin-right: 0; margin-bottom: 0; margin-left: 0;">
+                <ui:GroupBox name="Header" class="header" style="justify-content: center;">
+                    <ui:Button parse-escape-sequences="true" display-tooltip-when-elided="true" name="PreviousIndexButton" class="button-icon">
+                        <ui:VisualElement name="Icon" class="back-icon" style="flex-grow: 1;" />
+                    </ui:Button>
+                    <ui:Label tabindex="-1" text="This Week" parse-escape-sequences="true" display-tooltip-when-elided="true" name="Label" class="title" style="flex-grow: 1; max-width: 250px; -unity-text-align: middle-center;" />
+                    <ui:Button parse-escape-sequences="true" display-tooltip-when-elided="true" name="NextIndexButton" class="button-icon">
+                        <ui:VisualElement name="Icon" class="back-icon" style="flex-grow: 1; rotate: 180deg;" />
+                    </ui:Button>
+                </ui:GroupBox>
+                <ui:VisualElement name="Content" class="body" style="flex-grow: 1; flex-direction: row; min-height: 300px; align-items: flex-end;">
+                    <ui:ScrollView horizontal-scroller-visibility="Auto" mode="Horizontal" vertical-scroller-visibility="Auto" mouse-wheel-scroll-size="12" style="margin-top: 0; margin-right: 0; margin-bottom: 25px; margin-left: 0; padding-top: 0; padding-right: 0; padding-bottom: 0; padding-left: 0; flex-grow: 1;">
+                        <ui:GroupBox style="margin-top: 0; margin-right: 0; margin-bottom: 0; margin-left: 0; padding-top: 0; padding-right: 0; padding-bottom: 0; padding-left: 0; opacity: 0.5;">
+                            <ui:GroupBox style="height: 205px; margin-top: 0; margin-right: 0; margin-bottom: 0; margin-left: 0; padding-top: 0; padding-right: 0; padding-bottom: 0; padding-left: 0; justify-content: space-between;">
+                                <ui:Label tabindex="-1" text="12" parse-escape-sequences="true" display-tooltip-when-elided="true" />
+                                <ui:Label tabindex="-1" text="9" parse-escape-sequences="true" display-tooltip-when-elided="true" />
+                                <ui:Label tabindex="-1" text="6" parse-escape-sequences="true" display-tooltip-when-elided="true" />
+                                <ui:Label tabindex="-1" text="3" parse-escape-sequences="true" display-tooltip-when-elided="true" />
+                                <ui:Label tabindex="-1" text="0" parse-escape-sequences="true" display-tooltip-when-elided="true" />
+                            </ui:GroupBox>
+                            <ui:Label tabindex="-1" parse-escape-sequences="true" display-tooltip-when-elided="true" style="height: 43px;" />
+                        </ui:GroupBox>
+                        <ui:GroupBox name="Graphs" style="flex-grow: 1; margin-top: 0; margin-right: 15px; margin-bottom: 0; margin-left: 0; padding-top: 0; padding-right: 0; padding-bottom: 0; padding-left: 0; flex-direction: row; justify-content: flex-start;" />
+                    </ui:ScrollView>
+                </ui:VisualElement>
+            </ui:GroupBox>
+        </TinyGiantStudio.DevTools.BetterScrollView>
+    </ui:GroupBox>
+    <ui:GroupBox class="footer">
+        <ui:VisualElement style="max-height: 5px; background-color: rgba(0, 0, 0, 0.39); flex-grow: 1; min-height: 5px;" />
+        <ui:GroupBox class="container">
+            <ui:Label tabindex="-1" text="Data available for 0 days." parse-escape-sequences="true" display-tooltip-when-elided="true" name="DataLength" style="-unity-text-align: upper-center; -unity-font-style: italic; opacity: 0.7;" />
+        </ui:GroupBox>
+    </ui:GroupBox>
+</ui:UXML>

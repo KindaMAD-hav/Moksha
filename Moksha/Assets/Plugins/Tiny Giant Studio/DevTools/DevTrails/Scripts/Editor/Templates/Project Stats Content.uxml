@@ -1,0 +1,222 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" editor-extension-mode="True">
+    <ui:Template name="Build Stats" src="project://database/Assets/Plugins/Tiny%20Giant%20Studio/DevTools/DevTrails/Scripts/Editor/Templates/Build%20Stats.uxml?fileID=9197481963319205126&amp;guid=acee1852e3363cc42a7f3aa0c99b0372&amp;type=3#Build Stats" />
+    <Style src="project://database/Assets/Plugins/Tiny%20Giant%20Studio/DevTools/Common/Scripts/Editor/StyleSheets/Container.uss?fileID=7433441132597879392&amp;guid=72c9b8794d1e61342be9bd2e10508d45&amp;type=3#Container" />
+    <Style src="project://database/Assets/Plugins/Tiny%20Giant%20Studio/DevTools/Common/Scripts/Editor/StyleSheets/Icons.uss?fileID=7433441132597879392&amp;guid=cefdc37815b00e444bbbe128a5ae03c8&amp;type=3#Icons" />
+    <Style src="project://database/Assets/Plugins/Tiny%20Giant%20Studio/DevTools/DevTrails/Scripts/Editor/Style%20Sheet/DevTrailsIcons.uss?fileID=7433441132597879392&amp;guid=b982efd273f426b4ca61d206c6f7ac92&amp;type=3#DevTrailsIcons" />
+    <ui:GroupBox name="Content" class="body" style="margin-top: 0; margin-right: 0; margin-bottom: 0; margin-left: 0; padding-top: 0; padding-right: 0; padding-bottom: 0; padding-left: 0; justify-content: space-around;">
+        <ui:GroupBox name="TimeStats" tooltip="How time is track can be modified via settings." style="justify-content: flex-start; align-items: flex-start; border-bottom-color: rgba(0, 0, 0, 0.1); margin-top: 0; margin-right: 0; margin-bottom: 0; margin-left: 0; flex-direction: row; flex-wrap: wrap; padding-top: 10px; padding-right: 0; padding-bottom: 10px; padding-left: 10px; border-bottom-width: 1px;">
+            <ui:GroupBox tooltip="Total time spent on this project." class="info-card">
+                <ui:GroupBox class="icon-holder">
+                    <ui:VisualElement class="icon clock-icon" style="-unity-background-image-tint-color: rgb(237, 232, 220);" />
+                </ui:GroupBox>
+                <ui:GroupBox>
+                    <ui:Label tabindex="-1" text="99h" parse-escape-sequences="true" display-tooltip-when-elided="true" name="UsageTime" class="info" />
+                    <ui:Label text="&lt;b&gt;Total&lt;/b&gt;&#10;Time Spent " parse-escape-sequences="true" display-tooltip-when-elided="true" class="info-label" />
+                </ui:GroupBox>
+            </ui:GroupBox>
+            <ui:GroupBox tooltip="The total time the Editor has been in focus." class="info-card">
+                <ui:GroupBox class="icon-holder">
+                    <ui:VisualElement class="icon clock-icon" style="-unity-background-image-tint-color: rgb(255, 193, 7);" />
+                </ui:GroupBox>
+                <ui:GroupBox>
+                    <ui:Label tabindex="-1" text="99h" parse-escape-sequences="true" display-tooltip-when-elided="true" name="FocusedUsageTime" class="info" />
+                    <ui:Label tabindex="-1" text="&lt;b&gt;Focused&lt;/b&gt;&#10;Time Spent" parse-escape-sequences="true" display-tooltip-when-elided="true" class="info-label" />
+                </ui:GroupBox>
+            </ui:GroupBox>
+            <ui:GroupBox tooltip="The total time user interacted with the Editor.  Interaction includes mouse movement, mouse clicks, and keyboard input while the Unity Editor has focus." class="info-card">
+                <ui:GroupBox class="icon-holder">
+                    <ui:VisualElement class="icon clock-icon" style="-unity-background-image-tint-color: rgb(255, 110, 64);" />
+                </ui:GroupBox>
+                <ui:GroupBox>
+                    <ui:Label tabindex="-1" text="99h" parse-escape-sequences="true" display-tooltip-when-elided="true" name="ActiveUsageTime" class="info" />
+                    <ui:Label tabindex="-1" text="&lt;b&gt;Active&lt;/b&gt;&#10;Time Spent" parse-escape-sequences="true" display-tooltip-when-elided="true" class="info-label" />
+                </ui:GroupBox>
+            </ui:GroupBox>
+        </ui:GroupBox>
+        <ui:GroupBox style="flex-direction: row; margin-top: 0; margin-right: 0; margin-bottom: 0; margin-left: 0; padding-top: 10px; padding-right: 0; padding-bottom: 10px; padding-left: 10px; justify-content: flex-start; border-bottom-color: rgba(0, 0, 0, 0.2); flex-wrap: wrap; align-items: flex-start; border-bottom-width: 1px;">
+            <ui:GroupBox name="SceneSaved" tooltip="How many times scenes were saved." class="info-card">
+                <ui:GroupBox class="icon-holder">
+                    <ui:VisualElement class="save-icon icon" style="-unity-background-image-tint-color: rgb(126, 162, 114);" />
+                </ui:GroupBox>
+                <ui:GroupBox>
+                    <ui:Label tabindex="-1" text="99" parse-escape-sequences="true" display-tooltip-when-elided="true" name="SceneSavedCounter" class="info" />
+                    <ui:Label tabindex="-1" text="Scenes&#10;&lt;b&gt;Saved&lt;/b&gt;" parse-escape-sequences="true" display-tooltip-when-elided="true" class="info-label" />
+                </ui:GroupBox>
+            </ui:GroupBox>
+            <ui:GroupBox tooltip="How many times scenes were opened." name="SceneOpened" class="info-card">
+                <ui:GroupBox class="icon-holder">
+                    <ui:VisualElement class="open-icon icon" style="-unity-background-image-tint-color: rgb(188, 174, 90);" />
+                </ui:GroupBox>
+                <ui:GroupBox>
+                    <ui:Label tabindex="-1" text="99" parse-escape-sequences="true" display-tooltip-when-elided="true" name="SceneOpenedCounter" class="info" />
+                    <ui:Label tabindex="-1" text="Scenes&#10;&lt;b&gt;Opened&lt;/b&gt;" parse-escape-sequences="true" display-tooltip-when-elided="true" class="info-label" style="padding-top: 0; padding-right: 0; padding-bottom: 0; padding-left: 0; margin-top: 0; margin-right: 0; margin-bottom: 0; margin-left: 0; white-space: normal; text-overflow: ellipsis;" />
+                </ui:GroupBox>
+            </ui:GroupBox>
+            <ui:GroupBox name="UndoRedo" tooltip="How many times undo and redo functions are performed." class="info-card">
+                <ui:GroupBox class="icon-holder">
+                    <ui:VisualElement class="refresh-icon icon" style="-unity-background-image-tint-color: rgb(70, 146, 178);" />
+                </ui:GroupBox>
+                <ui:GroupBox>
+                    <ui:Label tabindex="-1" text="99" parse-escape-sequences="true" display-tooltip-when-elided="true" name="UndoRedoCounter" class="info" />
+                    <ui:Label tabindex="-1" text="Undo/Redo" parse-escape-sequences="true" display-tooltip-when-elided="true" class="info-label" />
+                </ui:GroupBox>
+            </ui:GroupBox>
+            <ui:GroupBox name="PlayMode" style="flex-direction: row; margin-top: 0; margin-right: 0; margin-bottom: 0; margin-left: 0; padding-top: 0; padding-right: 0; padding-bottom: 0; padding-left: 0; flex-wrap: wrap;">
+                <ui:GroupBox tooltip="How many times playmode is entered." class="info-card">
+                    <ui:GroupBox class="icon-holder">
+                        <ui:VisualElement class="play-icon icon" style="-unity-background-image-tint-color: rgb(232, 184, 109);" />
+                    </ui:GroupBox>
+                    <ui:GroupBox>
+                        <ui:Label tabindex="-1" text="99" parse-escape-sequences="true" display-tooltip-when-elided="true" name="PlayModeCounter" class="info" />
+                        <ui:Label tabindex="-1" text="Playmode&#10;Entered" parse-escape-sequences="true" display-tooltip-when-elided="true" class="info-label" />
+                    </ui:GroupBox>
+                </ui:GroupBox>
+                <ui:GroupBox tooltip="How long is spent in play mode." class="info-card">
+                    <ui:GroupBox class="icon-holder">
+                        <ui:VisualElement class="play-icon icon" style="-unity-background-image-tint-color: rgb(252, 222, 112);" />
+                    </ui:GroupBox>
+                    <ui:GroupBox>
+                        <ui:Label tabindex="-1" text="99h" parse-escape-sequences="true" display-tooltip-when-elided="true" name="PlayModeUsageTime" class="info" />
+                        <ui:Label tabindex="-1" text="Time Spent&#10;in Playmode" parse-escape-sequences="true" display-tooltip-when-elided="true" class="info-label" style="padding-top: 0; padding-right: 0; padding-bottom: 0; padding-left: 0; margin-top: 0; margin-right: 0; margin-bottom: 0; margin-left: 0; white-space: normal; text-overflow: ellipsis;" />
+                    </ui:GroupBox>
+                </ui:GroupBox>
+            </ui:GroupBox>
+            <ui:GroupBox tooltip="How many times this editor window has been opened." name="DevToolsEditorWindowOpened" class="info-card">
+                <ui:GroupBox class="icon-holder">
+                    <ui:VisualElement class="icon devTasks-icon" />
+                </ui:GroupBox>
+                <ui:GroupBox>
+                    <ui:Label tabindex="-1" text="2" parse-escape-sequences="true" display-tooltip-when-elided="true" name="DevToolsEditorWindowOpenedCounter" class="info" />
+                    <ui:Label tabindex="-1" text="DevTools Opened" parse-escape-sequences="true" display-tooltip-when-elided="true" class="info-label" style="padding-top: 0; padding-right: 0; padding-bottom: 0; padding-left: 0; margin-top: 0; margin-right: 0; margin-bottom: 0; margin-left: 0; white-space: normal; text-overflow: ellipsis;" />
+                </ui:GroupBox>
+            </ui:GroupBox>
+            <ui:GroupBox name="EditorCrashes" tooltip="Counts the number of times the Unity Editor started after an unexpected shutdown. Due to the unpredictable nature of crashes, this method isn’t perfect, especially when crashes happen before scripts are loaded." class="info-card">
+                <ui:GroupBox class="icon-holder">
+                    <ui:VisualElement class="icon error-icon" />
+                </ui:GroupBox>
+                <ui:GroupBox>
+                    <ui:Label tabindex="-1" text="0" parse-escape-sequences="true" display-tooltip-when-elided="true" name="EditorCrashCounter" class="info" />
+                    <ui:Label tabindex="-1" text="Editor Crash" parse-escape-sequences="true" display-tooltip-when-elided="true" class="info-label" style="padding-top: 0; padding-right: 0; padding-bottom: 0; padding-left: 0; margin-top: 0; margin-right: 0; margin-bottom: 0; margin-left: 0; white-space: normal; text-overflow: ellipsis;" />
+                    <ui:Label tabindex="-1" text="(Estimated)" parse-escape-sequences="true" display-tooltip-when-elided="true" class="info-label" style="padding-top: 0; padding-right: 0; padding-bottom: 0; padding-left: 0; margin-top: 0; margin-right: 0; margin-bottom: 0; margin-left: 0; white-space: normal; text-overflow: ellipsis; opacity: 0.5;" />
+                </ui:GroupBox>
+            </ui:GroupBox>
+        </ui:GroupBox>
+        <ui:GroupBox name="Compilation" style="flex-direction: row; margin-top: 0; margin-right: 0; margin-bottom: 0; margin-left: 0; padding-top: 10px; padding-right: 0; padding-bottom: 10px; padding-left: 10px; justify-content: flex-start; border-bottom-width: 1px; border-bottom-color: rgba(0, 0, 0, 0.1); flex-wrap: wrap;">
+            <ui:GroupBox class="info-card">
+                <ui:GroupBox class="icon-holder">
+                    <ui:VisualElement class="icon code-icon" style="-unity-background-image-tint-color: rgb(188, 96, 118);" />
+                </ui:GroupBox>
+                <ui:GroupBox>
+                    <ui:Label tabindex="-1" text="99" parse-escape-sequences="true" display-tooltip-when-elided="true" name="CompileCounter" class="info" />
+                    <ui:Label tabindex="-1" text="Compiled" parse-escape-sequences="true" display-tooltip-when-elided="true" class="info-label" />
+                </ui:GroupBox>
+            </ui:GroupBox>
+            <ui:GroupBox class="info-card">
+                <ui:GroupBox class="icon-holder">
+                    <ui:VisualElement class="icon code-icon" style="-unity-background-image-tint-color: rgb(107, 160, 156);" />
+                </ui:GroupBox>
+                <ui:GroupBox>
+                    <ui:Label tabindex="-1" text="99ms" parse-escape-sequences="true" display-tooltip-when-elided="true" name="AverageCompileTime" class="info" />
+                    <ui:Label tabindex="-1" text="&lt;b&gt;Average&lt;/b&gt;&#10;Compile Time" parse-escape-sequences="true" display-tooltip-when-elided="true" class="info-label" />
+                </ui:GroupBox>
+            </ui:GroupBox>
+            <ui:GroupBox class="info-card">
+                <ui:GroupBox class="icon-holder">
+                    <ui:VisualElement class="icon code-icon" style="-unity-background-image-tint-color: rgb(104, 150, 204);" />
+                </ui:GroupBox>
+                <ui:GroupBox>
+                    <ui:Label tabindex="-1" text="99h" parse-escape-sequences="true" display-tooltip-when-elided="true" name="CompileTime" class="info" />
+                    <ui:Label tabindex="-1" text="Time Spent &#10;Compiling" parse-escape-sequences="true" display-tooltip-when-elided="true" class="info-label" />
+                </ui:GroupBox>
+            </ui:GroupBox>
+            <ui:GroupBox class="info-card">
+                <ui:GroupBox class="icon-holder">
+                    <ui:VisualElement class="icon code-icon" style="-unity-background-image-tint-color: rgb(129, 136, 221);" />
+                </ui:GroupBox>
+                <ui:GroupBox>
+                    <ui:Label tabindex="-1" text="99h" parse-escape-sequences="true" display-tooltip-when-elided="true" name="DomainReloadTime" class="info" />
+                    <ui:Label tabindex="-1" text="Time Spent in &#10;Domain Reload" parse-escape-sequences="true" display-tooltip-when-elided="true" class="info-label" />
+                </ui:GroupBox>
+            </ui:GroupBox>
+        </ui:GroupBox>
+        <ui:GroupBox name="ConsoleLogs" style="margin-top: 0; margin-right: 0; margin-bottom: 0; margin-left: 0; padding-top: 10px; padding-right: 0; padding-bottom: 10px; padding-left: 10px; flex-direction: row; flex-wrap: wrap;">
+            <ui:GroupBox style="flex-direction: row; flex-wrap: wrap; margin-top: 0; margin-right: 0; margin-bottom: 0; margin-left: 0; padding-top: 0; padding-right: 0; padding-bottom: 0; padding-left: 0;">
+                <ui:GroupBox class="info-card">
+                    <ui:GroupBox class="icon-holder">
+                        <ui:VisualElement name="Icon" class="icon log-icon" />
+                    </ui:GroupBox>
+                    <ui:GroupBox>
+                        <ui:Label tabindex="-1" text="99" parse-escape-sequences="true" display-tooltip-when-elided="true" name="NormalLogCounter_PlayMode" class="info" />
+                        <ui:Label tabindex="-1" text="&lt;b&gt;Normal&lt;/b&gt; logs&#10;in &lt;b&gt;Playmode&lt;/b&gt;" parse-escape-sequences="true" display-tooltip-when-elided="true" class="info-label" />
+                    </ui:GroupBox>
+                </ui:GroupBox>
+                <ui:GroupBox class="info-card">
+                    <ui:GroupBox class="icon-holder">
+                        <ui:VisualElement name="Icon" class="icon warning-icon" />
+                    </ui:GroupBox>
+                    <ui:GroupBox style="flex-direction: column;">
+                        <ui:Label tabindex="-1" text="99" parse-escape-sequences="true" display-tooltip-when-elided="true" name="WarningLogCounter_PlayMode" class="info" />
+                        <ui:Label tabindex="-1" text="&lt;b&gt;Warning&lt;/b&gt; logs&#10;in &lt;b&gt;Playmode&lt;/b&gt;" parse-escape-sequences="true" display-tooltip-when-elided="true" class="info-label" />
+                    </ui:GroupBox>
+                </ui:GroupBox>
+                <ui:GroupBox class="info-card">
+                    <ui:GroupBox class="icon-holder">
+                        <ui:VisualElement name="Icon" class="icon error-icon" style="-unity-background-image-tint-color: rgb(200, 200, 200);" />
+                    </ui:GroupBox>
+                    <ui:GroupBox>
+                        <ui:Label tabindex="-1" text="99" parse-escape-sequences="true" display-tooltip-when-elided="true" name="ExceptionLogCounter_PlayMode" class="info" />
+                        <ui:Label tabindex="-1" text="&lt;b&gt;Exception&lt;/b&gt; logs&#10;in &lt;b&gt;Playmode&lt;/b&gt;" parse-escape-sequences="true" display-tooltip-when-elided="true" class="info-label" />
+                    </ui:GroupBox>
+                </ui:GroupBox>
+                <ui:GroupBox class="info-card">
+                    <ui:GroupBox class="icon-holder">
+                        <ui:VisualElement name="Icon" class="icon error-icon" />
+                    </ui:GroupBox>
+                    <ui:GroupBox style="margin-top: 0; margin-right: 0; margin-bottom: 0; margin-left: 5px; padding-top: 0; padding-right: 0; padding-bottom: 0; padding-left: 0; flex-direction: column;">
+                        <ui:Label tabindex="-1" text="99" parse-escape-sequences="true" display-tooltip-when-elided="true" name="ErrorLogCounter_PlayMode" class="info" />
+                        <ui:Label tabindex="-1" text="&lt;b&gt;Error&lt;/b&gt; logs&#10;in &lt;b&gt;Playmode&lt;/b&gt;" parse-escape-sequences="true" display-tooltip-when-elided="true" class="info-label" />
+                    </ui:GroupBox>
+                </ui:GroupBox>
+            </ui:GroupBox>
+            <ui:GroupBox style="flex-direction: row; flex-wrap: wrap; margin-top: 0; margin-right: 0; margin-bottom: 0; margin-left: 0; padding-top: 0; padding-right: 0; padding-bottom: 0; padding-left: 0;">
+                <ui:GroupBox class="info-card">
+                    <ui:GroupBox class="icon-holder">
+                        <ui:VisualElement name="Icon" class="icon log-icon" />
+                    </ui:GroupBox>
+                    <ui:GroupBox>
+                        <ui:Label tabindex="-1" text="99" parse-escape-sequences="true" display-tooltip-when-elided="true" name="NormalLogCounter_Editor" class="info" />
+                        <ui:Label tabindex="-1" text="&lt;b&gt;Normal&lt;/b&gt; logs&#10;in &lt;b&gt;Editor&lt;/b&gt;" parse-escape-sequences="true" display-tooltip-when-elided="true" tooltip="Excluding playmode" class="info-label" />
+                    </ui:GroupBox>
+                </ui:GroupBox>
+                <ui:GroupBox class="info-card">
+                    <ui:GroupBox class="icon-holder">
+                        <ui:VisualElement name="Icon" class="icon warning-icon" />
+                    </ui:GroupBox>
+                    <ui:GroupBox style="flex-direction: column;">
+                        <ui:Label tabindex="-1" text="99" parse-escape-sequences="true" display-tooltip-when-elided="true" name="WarningLogCounter_Editor" class="info" />
+                        <ui:Label tabindex="-1" text="&lt;b&gt;Warning&lt;/b&gt; logs&#10;in &lt;b&gt;Editor&lt;/b&gt;" parse-escape-sequences="true" display-tooltip-when-elided="true" tooltip="Excluding playmode" class="info-label" />
+                    </ui:GroupBox>
+                </ui:GroupBox>
+                <ui:GroupBox class="info-card">
+                    <ui:GroupBox class="icon-holder">
+                        <ui:VisualElement name="Icon" class="icon error-icon" style="-unity-background-image-tint-color: rgb(200, 200, 200);" />
+                    </ui:GroupBox>
+                    <ui:GroupBox>
+                        <ui:Label tabindex="-1" text="99" parse-escape-sequences="true" display-tooltip-when-elided="true" name="ExceptionLogCounter_Editor" class="info" />
+                        <ui:Label tabindex="-1" text="&lt;b&gt;Exception&lt;/b&gt; logs&#10;in &lt;b&gt;Editor&lt;/b&gt;" parse-escape-sequences="true" display-tooltip-when-elided="true" tooltip="Excluding playmode" class="info-label" />
+                    </ui:GroupBox>
+                </ui:GroupBox>
+                <ui:GroupBox class="info-card">
+                    <ui:GroupBox class="icon-holder">
+                        <ui:VisualElement name="Icon" class="icon error-icon" />
+                    </ui:GroupBox>
+                    <ui:GroupBox style="margin-top: 0; margin-right: 0; margin-bottom: 0; margin-left: 5px; padding-top: 0; padding-right: 0; padding-bottom: 0; padding-left: 0; flex-direction: column;">
+                        <ui:Label tabindex="-1" text="99" parse-escape-sequences="true" display-tooltip-when-elided="true" name="ErrorLogCounter_Editor" class="info" />
+                        <ui:Label tabindex="-1" text="&lt;b&gt;Error&lt;/b&gt; logs&#10;in &lt;b&gt;Editor&lt;/b&gt;" parse-escape-sequences="true" display-tooltip-when-elided="true" tooltip="Excluding playmode" class="info-label" />
+                    </ui:GroupBox>
+                </ui:GroupBox>
+            </ui:GroupBox>
+        </ui:GroupBox>
+        <ui:Instance template="Build Stats" name="Build Stats" />
+    </ui:GroupBox>
+</ui:UXML>

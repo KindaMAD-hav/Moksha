@@ -1,0 +1,114 @@
+.overlayContainer {
+    flex-grow: 1;
+    margin-top: 10px;
+    margin-right: 0;
+    margin-bottom: 10px;
+    margin-left: 0;
+    padding-top: 0;
+    padding-right: 0;
+    padding-bottom: 0;
+    padding-left: 0;
+}
+
+#Breadcrumb {
+    flex-direction: row;
+    margin-top: 0;
+    margin-right: 0;
+    margin-bottom: 5px;
+    margin-left: 0;
+    padding-top: 0;
+    padding-right: 0;
+    padding-bottom: 0;
+    padding-left: 0;
+    opacity: 0.7;
+}
+
+#Breadcrumb .unity-label {
+    -unity-text-align: middle-left;
+    padding-top: 0;
+    padding-right: 0;
+    padding-bottom: 0;
+    padding-left: 0;
+    margin-top: 0;
+    margin-right: 5px;
+    margin-bottom: 0;
+    margin-left: 3px;
+}
+
+#Breadcrumb .unity-button {
+    padding-top: 0;
+    padding-right: 0;
+    padding-bottom: 0;
+    padding-left: 0;
+    margin-top: 0;
+    margin-right: 0;
+    margin-bottom: 0;
+    margin-left: 0;
+}
+
+.lineGroup {
+    margin-top: 0;
+    margin-right: 0;
+    margin-bottom: 5px;
+    margin-left: -8px;
+    padding-top: 0;
+    padding-right: 0;
+    padding-bottom: 0;
+    padding-left: 0;
+}
+
+.lineGroup .primaryInformation {
+    -unity-font-style: bold;
+    font-size: var(--unity-metrics-default-font_big_size);
+    margin-top: 0;
+    margin-right: 0;
+    margin-bottom: 0;
+    margin-left: 4px;
+    padding-top: 4px;
+    padding-right: 0;
+    padding-bottom: 0;
+    padding-left: 4px;
+    -unity-text-align: upper-left;
+    white-space: normal;
+    min-height: 25px;
+}
+
+.lineGroup .primaryInputField {
+    font-size: var(--unity-metrics-default-font_big_size);
+    -unity-font-style: bold;
+    white-space: normal;
+}
+
+#SideBar {
+    margin-top: 0;
+    margin-right: 0;
+    margin-bottom: 0;
+    margin-left: 0;
+    padding-top: 10px;
+    padding-right: 10px;
+    padding-bottom: 10px;
+    padding-left: 10px;
+    border-left-width: 0;
+    border-left-color: rgba(255, 255, 255, 0.2);
+    width: 155px;
+    border-top-width: 0;
+    border-right-width: 0;
+    border-bottom-width: 0;
+    background-color: rgba(0, 0, 0, 0.2);
+}
+
+#DescriptionGroupBox {
+}
+
+#DescriptionGroupBox #unity-text-input {
+    padding-top: 5px;
+    padding-right: 5px;
+    padding-bottom: 5px;
+    padding-left: 5px;
+    border-top-left-radius: 5px;
+    border-top-right-radius: 5px;
+    border-bottom-right-radius: 5px;
+    border-bottom-left-radius: 5px;
+    min-height: 50px;
+    max-height: 200px;
+}

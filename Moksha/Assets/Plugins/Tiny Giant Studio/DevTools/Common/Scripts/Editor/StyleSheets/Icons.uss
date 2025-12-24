@@ -1,0 +1,65 @@
+.back-icon {
+    background-image: url("project://database/Assets/Plugins/Tiny%20Giant%20Studio/DevTools/Common/Artworks/TGS_DevTools_Icon_Back.png?fileID=2800000&guid=e129533950dd18c48939b4c947052331&type=3#TGS_DevTools_Icon_Back");
+}
+
+.cancel-icon {
+    background-image: url("project://database/Assets/Plugins/Tiny%20Giant%20Studio/DevTools/Common/Artworks/TGS_DevTools_Icon_Cancel.png?fileID=2800000&guid=41fdd43d2115440408271bd3943e7654&type=3#TGS_DevTools_Icon_Cancel");
+}
+
+.button-normal:hover .error-icon {
+    -unity-background-image-tint-color: rgb(255, 212, 222);
+    scale: 1.5 1.5;
+    rotate: 720deg;
+}
+
+.minus-icon {
+    background-image: var(--unity-icons-minus);
+}
+
+.minus-icon:hover {
+    background-image: var(--unity-icons-minus-hover);
+}
+
+.button-normal:hover .minus-icon {
+    background-image: var(--unity-icons-minus-hover);
+}
+
+.plus-icon {
+    background-image: var(--unity-icons-plus);
+}
+
+.plus-icon:hover {
+    background-image: var(--unity-icons-plus-hover);
+}
+
+.button-normal:hover .plus-icon {
+    background-image: var(--unity-icons-plus-hover);
+}
+
+.refresh-icon {
+    background-image: url("project://database/Assets/Plugins/Tiny%20Giant%20Studio/DevTools/Common/Artworks/TGS_DevTools_Icon_Refresh.png?fileID=2800000&guid=5dad26a61e3994d4fad66cfe0c8503c3&type=3#TGS_DevTools_Icon_Refresh");
+}
+
+.code-icon {
+    background-image: url("project://database/Assets/Plugins/Tiny%20Giant%20Studio/DevTools/Common/Artworks/TGS_DevTools_Icon_CurlyBrackets.png?fileID=2800000&guid=ca45c3b3ca966ff4fa72f29450999737&type=3#TGS_DevTools_Icon_CurlyBrackets");
+}
+
+.settings-icon {
+    background-image: url("project://database/Assets/Plugins/Tiny%20Giant%20Studio/DevTools/Common/Artworks/TGS_DevTools_Icon_Setting.png?fileID=2800000&guid=017ecb1b69655914984dfee0e2abe327&type=3#TGS_DevTools_Icon_Setting");
+}
+
+.play-icon {
+    background-image: url("project://database/Assets/Plugins/Tiny%20Giant%20Studio/DevTools/Common/Artworks/TGS_DevTools_Icon_Play.png?fileID=2800000&guid=0ab905784fe5ac3408e79467b5a582cd&type=3#TGS_DevTools_Icon_Play");
+}
+
+.graphs-icon {
+    background-image: url("project://database/Assets/Plugins/Tiny%20Giant%20Studio/DevTools/Common/Artworks/TGS_DevTools_Icon_Stats.png?fileID=2800000&guid=6548ba7ce6839f44488ababc89b782ef&type=3#TGS_DevTools_Icon_Stats");
+}
+
+.devTasks-icon {
+    background-image: url("project://database/Assets/Plugins/Tiny%20Giant%20Studio/DevTools/Common/Artworks/TGS_DevTools_Icon_DevTasks.png?fileID=2800000&guid=6d70c33cb1927d445a4da0a11ef1f957&type=3#TGS_DevTools_Icon_DevTasks");
+}
+
+.devTrails-icon {
+    background-image: url("project://database/Assets/Plugins/Tiny%20Giant%20Studio/DevTools/Common/Artworks/TGS_DevTools_Icon_DevTrails.png?fileID=2800000&guid=e6e9b6d3b4921f744b0b7fcd5e8e31a1&type=3#TGS_DevTools_Icon_DevTrails");
+}

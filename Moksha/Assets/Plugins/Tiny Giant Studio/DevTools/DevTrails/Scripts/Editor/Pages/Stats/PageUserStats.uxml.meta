@@ -1,0 +1,17 @@
+fileFormatVersion: 2
+guid: 2e3b3e2f2a5acc14083ebe40b07ada83
+ScriptedImporter:
+  internalIDToNameTable: []
+  externalObjects: {}
+  serializedVersion: 2
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+  script: {fileID: 13804, guid: 0000000000000000e000000000000000, type: 0}
+AssetOrigin:
+  serializedVersion: 1
+  productId: 291626
+  packageName: DevTrails - Developer Statistics Made Easy
+  packageVersion: 1.7.0
+  assetPath: Assets/Plugins/Tiny Giant Studio/DevTools/DevTrails/Scripts/Editor/Pages/Stats/PageUserStats.uxml
+  uploadId: 835774

@@ -1,0 +1,63 @@
+.focusedText {
+    -unity-font-style: bold;
+    opacity: 0.8;
+    -unity-text-align: middle-left;
+    font-size: 13px;
+    background-color: rgba(40, 152, 95, 0.78);
+    color: rgb(255, 255, 255);
+    border-top-width: 0;
+    border-right-width: 0;
+    border-bottom-width: 0;
+    border-left-width: 0;
+    border-top-left-radius: 3px;
+    border-top-right-radius: 3px;
+    border-bottom-right-radius: 3px;
+    border-bottom-left-radius: 3px;
+    transition-duration: 0.2s;
+    transition-property: background-color;
+}
+
+.focusedText:hover {
+    opacity: 1;
+    background-color: rgb(65, 152, 108);
+}
+
+.warningText {
+    color: var(--unity-colors-warning-text);
+    opacity: 0.8;
+    -unity-text-align: middle-left;
+    -unity-font-style: italic;
+}
+
+.fiyText {
+    text-overflow: ellipsis;
+    white-space: normal;
+    color: var(--unity-colors-helpbox-text);
+    -unity-font-style: italic;
+    opacity: 0.75;
+    padding-top: 5px;
+    padding-right: 5px;
+    padding-bottom: 5px;
+    padding-left: 5px;
+    max-height: 40px;
+    overflow: hidden;
+}
+
+#Index {
+    background-color: rgba(0, 0, 0, 0.14);
+    border-top-left-radius: 25px;
+    border-top-right-radius: 25px;
+    border-bottom-right-radius: 25px;
+    border-bottom-left-radius: 25px;
+    padding-top: 0;
+    padding-right: 0;
+    padding-bottom: 0;
+    padding-left: 0;
+    margin-top: 0;
+    margin-right: 0;
+    margin-bottom: 0;
+    margin-left: 5px;
+    -unity-text-align: middle-center;
+    min-height: 27px;
+    min-width: 27px;
+}

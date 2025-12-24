@@ -1,0 +1,18 @@
+fileFormatVersion: 2
+guid: 247b5f22580629348a754d6ba2f53ace
+MonoImporter:
+  externalObjects: {}
+  serializedVersion: 2
+  defaultReferences: []
+  executionOrder: 0
+  icon: {instanceID: 0}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 291626
+  packageName: DevTrails - Developer Statistics Made Easy
+  packageVersion: 1.7.0
+  assetPath: Assets/Plugins/Tiny Giant Studio/DevTools/Common/Scripts/Editor/Settings/Page_Settings.cs
+  uploadId: 835774

@@ -1,0 +1,55 @@
+fileFormatVersion: 2
+guid: 1a5cddc9939846546adc39eb7d62e13b
+MonoImporter:
+  externalObjects: {}
+  serializedVersion: 2
+  defaultReferences:
+  - m_ViewDataDictionary: {instanceID: 0}
+  - visualTreeAsset: {fileID: 9197481963319205126, guid: 87f779c4bf00b4840ab1747295288aab,
+      type: 3}
+  - topicUITemplate: {fileID: 9197481963319205126, guid: ab3dd738df92b364ebc401b9bd72729f,
+      type: 3}
+  - listUITemplate: {fileID: 9197481963319205126, guid: f1789a2c3aa13f447a0c15ba787e4fe5,
+      type: 3}
+  - taskUITemplate: {fileID: 9197481963319205126, guid: 95226453772cf79408bdccd9e1020ce3,
+      type: 3}
+  - selectedTopic_referenceItemTemplate: {fileID: 9197481963319205126, guid: 4563ce2093fe4744b8fda84c8549a97e,
+      type: 3}
+  - createNewListTemplate: {fileID: 9197481963319205126, guid: 782987e76be0c33488554ca8c6af53ae,
+      type: 3}
+  - isolatedTaskEditorTemplate: {fileID: 9197481963319205126, guid: 29d3fb9b959af8a4bb7f9fab626a4be9,
+      type: 3}
+  - referenceItemTemplate: {fileID: 9197481963319205126, guid: f0e5fe8d0abdd6e43add0e805775a426,
+      type: 3}
+  - logItemTemplate: {fileID: 9197481963319205126, guid: 146285286c5b69a44b26cb7f7f5cec98,
+      type: 3}
+  - tagItemTemplate: {fileID: 9197481963319205126, guid: 3920fce74fc59f443bfaaf6beb50ea31,
+      type: 3}
+  - isolatedListEditorTemplate: {fileID: 9197481963319205126, guid: 610916cf5da647a408be49202bc28cbc,
+      type: 3}
+  - isolatedTagEditorTemplate: {fileID: 9197481963319205126, guid: da3905ea03352b54eb48602a25afec45,
+      type: 3}
+  - isolatedTagEditor_listItem_Template: {fileID: 9197481963319205126, guid: cc647fe67e9255248975b5bee816c1ad,
+      type: 3}
+  - fileAnalysis_codeFile_Template: {fileID: 9197481963319205126, guid: 29d27064e99b48d4f95aeebbf8a227a3,
+      type: 3}
+  - fileAnalysis_emptyFolder_Template: {fileID: 9197481963319205126, guid: 973c28383e3240a4997bc4ba45d849d9,
+      type: 3}
+  - fileAnalysis_keywordEditor_template: {fileID: 9197481963319205126, guid: a5e592ca8a9354d439fe5fa3c35e934b,
+      type: 3}
+  - fileAnalysis_keywordSearchResult_template: {fileID: 9197481963319205126, guid: bef530fc776b134439118b97f0957a95,
+      type: 3}
+  - fileAnalysis_unoptimizedTextureDimension_template: {fileID: 9197481963319205126,
+      guid: 7206478f937d3564182c3b060d59ae81, type: 3}
+  executionOrder: 0
+  icon: {instanceID: 0}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 291626
+  packageName: DevTrails - Developer Statistics Made Easy
+  packageVersion: 1.7.0
+  assetPath: Assets/Plugins/Tiny Giant Studio/DevTools/Common/Scripts/Editor/DevToolsWindow.cs
+  uploadId: 835774

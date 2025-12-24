@@ -1,0 +1,51 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" xsi="http://www.w3.org/2001/XMLSchema-instance" engine="UnityEngine.UIElements" editor="UnityEditor.UIElements" noNamespaceSchemaLocation="../../../../../../../../UIElementsSchema/UIElements.xsd" editor-extension-mode="True">
+    <ui:Template name="Todays Stats Content" src="project://database/Assets/Plugins/Tiny%20Giant%20Studio/DevTools/DevTrails/Scripts/Editor/Templates/Todays%20Stats%20Content.uxml?fileID=9197481963319205126&amp;guid=211aca66c89ada041b70cf359ea5ee0a&amp;type=3#Todays Stats Content" />
+    <ui:Template name="Project Stats Content" src="project://database/Assets/Plugins/Tiny%20Giant%20Studio/DevTools/DevTrails/Scripts/Editor/Templates/Project%20Stats%20Content.uxml?fileID=9197481963319205126&amp;guid=64bc0ad57b85f744894467515023980d&amp;type=3#Project Stats Content" />
+    <ui:Template name="Global Stats Content" src="project://database/Assets/Plugins/Tiny%20Giant%20Studio/DevTools/DevTrails/Scripts/Editor/Templates/Global%20Stats%20Content.uxml?fileID=9197481963319205126&amp;guid=68cfd6dc3e724bb4bb94b9a1f93273aa&amp;type=3#Global Stats Content" />
+    <Style src="project://database/Assets/Plugins/Tiny%20Giant%20Studio/DevTools/Common/Scripts/Editor/StyleSheets/Button.uss?fileID=7433441132597879392&amp;guid=f48629a4d3c2ad647ac9d5ba24bc7cc9&amp;type=3#Button" />
+    <Style src="project://database/Assets/Plugins/Tiny%20Giant%20Studio/DevTools/Common/Scripts/Editor/StyleSheets/Container.uss?fileID=7433441132597879392&amp;guid=72c9b8794d1e61342be9bd2e10508d45&amp;type=3#Container" />
+    <Style src="project://database/Assets/Plugins/Tiny%20Giant%20Studio/DevTools/DevTrails/Scripts/Editor/Style%20Sheet/DevTrailsIcons.uss?fileID=7433441132597879392&amp;guid=b982efd273f426b4ca61d206c6f7ac92&amp;type=3#DevTrailsIcons" />
+    <Style src="project://database/Assets/Plugins/Tiny%20Giant%20Studio/DevTools/Common/Scripts/Editor/StyleSheets/Icons.uss?fileID=7433441132597879392&amp;guid=cefdc37815b00e444bbbe128a5ae03c8&amp;type=3#Icons" />
+    <Style src="project://database/Assets/Plugins/Tiny%20Giant%20Studio/DevTools/Common/Scripts/Editor/StyleSheets/Footer.uss?fileID=7433441132597879392&amp;guid=e87d8e2e4ce8185428db721e6e9297ad&amp;type=3#Footer" />
+    <ui:GroupBox name="PageContainer">
+        <TinyGiantStudio.DevTools.BetterScrollView Interactable="true" IgnoreChildren="true" style="flex-grow: 1; margin-right: 12px; margin-left: 12px;">
+            <ui:GroupBox name="TodaysUnityStatsSummary" class="container" style="margin-top: 10px; margin-right: 0; margin-bottom: 0; margin-left: 0;">
+                <ui:GroupBox name="Header" class="header">
+                    <ui:Label tabindex="-1" text="Today&apos;s Counter" parse-escape-sequences="true" display-tooltip-when-elided="true" tooltip="Resets when new day starts." class="title" style="flex-grow: 0;" />
+                </ui:GroupBox>
+                <ui:Instance template="Todays Stats Content" name="TodaysStatsContent" />
+            </ui:GroupBox>
+            <ui:GroupBox name="ProjectStatsSummary" class="container">
+                <ui:GroupBox name="Header" class="header">
+                    <ui:Label tabindex="-1" text="This Project Counter" parse-escape-sequences="true" display-tooltip-when-elided="true" tooltip="These are saved in user settings folder to avoid being pushed into git repo. By default, that folder is skipped by git ignore file." class="title" style="flex-grow: 0;" />
+                </ui:GroupBox>
+                <ui:Instance template="Project Stats Content" name="Project Stats Content" />
+            </ui:GroupBox>
+            <ui:GroupBox name="GlobalStats" class="container" style="margin-top: 10px; margin-right: 0; margin-bottom: 0; margin-left: 0;">
+                <ui:GroupBox name="Header" class="header">
+                    <ui:Label tabindex="-1" text="Lifetime Unity Counter" parse-escape-sequences="true" display-tooltip-when-elided="true" tooltip="Every project that includes this asset contributes to these counters." class="title" style="flex-grow: 0;" />
+                </ui:GroupBox>
+                <ui:Instance template="Global Stats Content" name="Global Stats Content" />
+            </ui:GroupBox>
+        </TinyGiantStudio.DevTools.BetterScrollView>
+    </ui:GroupBox>
+    <ui:GroupBox class="footer">
+        <ui:VisualElement style="max-height: 5px; background-color: rgba(0, 0, 0, 0.39); flex-grow: 1; min-height: 5px;" />
+        <ui:GroupBox class="container">
+            <ui:Button parse-escape-sequences="true" display-tooltip-when-elided="true" name="StartAlarmButton" tooltip="Track usage Goal. The time can be set via settings. Requires editor window to stay open to get the popup." class="button-icon" style="flex-direction: row; align-items: center; margin-top: 0; margin-right: 5px; margin-bottom: 0; margin-left: 5px; border-top-width: 1px; border-right-width: 1px; border-bottom-width: 1px; border-left-width: 1px; border-left-color: rgba(255, 255, 255, 0); border-right-color: rgba(255, 255, 255, 0); border-top-color: rgba(255, 255, 255, 0); border-bottom-color: rgba(255, 255, 255, 0);">
+                <ui:VisualElement name="Icon" class="alarm-icon" style="margin-right: 0; width: 15px; height: 15px; margin-top: 0; margin-bottom: 0; margin-left: 0; padding-top: 0; padding-right: 0; padding-bottom: 0; padding-left: 0;" />
+            </ui:Button>
+            <ui:Button parse-escape-sequences="true" display-tooltip-when-elided="true" name="StopAlarmButton" class="button-icon" style="flex-direction: row; align-items: center; margin-top: 0; margin-right: 5px; margin-bottom: 0; margin-left: 5px; padding-right: 10px; padding-left: 5px; border-top-width: 1px; border-right-width: 1px; border-bottom-width: 1px; border-left-width: 1px; border-left-color: rgba(255, 255, 255, 0.48); border-right-color: rgba(255, 255, 255, 0.48); border-top-color: rgba(255, 255, 255, 0.48); border-bottom-color: rgba(255, 255, 255, 0.48);">
+                <ui:VisualElement name="Icon" class="alarm-icon" style="margin-right: 5px; width: 15px; height: 15px; margin-top: 0; margin-bottom: 0; margin-left: 0; padding-top: 0; padding-right: 0; padding-bottom: 0; padding-left: 0;" />
+                <ui:Label tabindex="-1" text="3h 4minutes until Usage Goal is reached" parse-escape-sequences="true" display-tooltip-when-elided="true" name="UsageGoalLabel" tooltip="Unity usage goal" style="padding-top: 0; padding-right: 0; padding-bottom: 0; padding-left: 0; margin-top: 0; margin-right: 0; margin-bottom: 0; margin-left: 0;" />
+            </ui:Button>
+            <ui:Button parse-escape-sequences="true" display-tooltip-when-elided="true" name="PauseTrackingTime" tooltip="Pause Tracking Unity Usage Time. Automatically resumes after Editor restart. Stop tracking from settings if you wish to avoid that." class="button-icon" style="flex-direction: row; align-items: center; margin-top: 0; margin-right: 5px; margin-bottom: 0; margin-left: 5px; border-top-width: 1px; border-right-width: 1px; border-bottom-width: 1px; border-left-width: 1px; border-left-color: rgba(255, 255, 255, 0); border-right-color: rgba(255, 255, 255, 0); border-top-color: rgba(255, 255, 255, 0); border-bottom-color: rgba(255, 255, 255, 0);">
+                <ui:VisualElement name="Icon" class="pause-icon" style="margin-right: 0; width: 15px; height: 15px; margin-top: 0; margin-bottom: 0; margin-left: 0; padding-top: 0; padding-right: 0; padding-bottom: 0; padding-left: 0;" />
+            </ui:Button>
+            <ui:Button parse-escape-sequences="true" display-tooltip-when-elided="true" name="ResumeTrackingTime" class="button-icon" style="flex-direction: row; align-items: center; border-left-color: rgb(231, 82, 96); border-right-color: rgb(231, 82, 96); border-top-color: rgb(231, 82, 96); border-bottom-color: rgb(231, 82, 96); margin-top: 0; margin-right: 5px; margin-bottom: 0; margin-left: 5px; border-top-width: 1px; border-right-width: 1px; border-bottom-width: 1px; border-left-width: 1px; padding-right: 10px; padding-left: 5px;">
+                <ui:VisualElement name="Icon" class="play-icon" style="margin-right: 0; width: 15px; height: 15px; margin-top: 0; margin-bottom: 0; margin-left: 0; padding-top: 0; padding-right: 0; padding-bottom: 0; padding-left: 0;" />
+                <ui:Label tabindex="-1" text="Resume Tracking Unity Usage Time" parse-escape-sequences="true" display-tooltip-when-elided="true" style="padding-top: 0; padding-right: 0; padding-bottom: 0; padding-left: 0; margin-top: 0; margin-right: 0; margin-bottom: 0; margin-left: 0; -unity-font-style: bold;" />
+            </ui:Button>
+        </ui:GroupBox>
+    </ui:GroupBox>
+</ui:UXML>

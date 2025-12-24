@@ -1,0 +1,48 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" xsi="http://www.w3.org/2001/XMLSchema-instance" engine="UnityEngine.UIElements" editor="UnityEditor.UIElements" noNamespaceSchemaLocation="../../../../../../UIElementsSchema/UIElements.xsd" editor-extension-mode="True">
+    <Style src="project://database/Assets/Plugins/Tiny%20Giant%20Studio/DevTools/DevTrails/Scripts/Editor/Style%20Sheet/DevTrailsIcons.uss?fileID=7433441132597879392&amp;guid=b982efd273f426b4ca61d206c6f7ac92&amp;type=3#DevTrailsIcons" />
+    <Style src="project://database/Assets/Plugins/Tiny%20Giant%20Studio/DevTools/Common/Scripts/Editor/StyleSheets/Container.uss?fileID=7433441132597879392&amp;guid=72c9b8794d1e61342be9bd2e10508d45&amp;type=3#Container" />
+    <Style src="project://database/Assets/Plugins/Tiny%20Giant%20Studio/DevTools/Common/Scripts/Editor/StyleSheets/Button.uss?fileID=7433441132597879392&amp;guid=f48629a4d3c2ad647ac9d5ba24bc7cc9&amp;type=3#Button" />
+    <Style src="project://database/Assets/Plugins/Tiny%20Giant%20Studio/DevTools/Common/Scripts/Editor/StyleSheets/Icons.uss?fileID=7433441132597879392&amp;guid=cefdc37815b00e444bbbe128a5ae03c8&amp;type=3#Icons" />
+    <ui:GroupBox name="UseStatisticsSettings" class="container" style="flex-grow: 1; margin-top: 20px; margin-right: 0; margin-bottom: 5px; margin-left: 0; flex-shrink: 1;">
+        <ui:GroupBox name="Header" class="header" style="align-items: stretch;">
+            <ui:Label tabindex="-1" text="DevTrails" parse-escape-sequences="true" display-tooltip-when-elided="true" class="title" />
+            <ui:Button text="Version 1.7.0" name="VersionButton" tooltip="Click to check updates." class="button-text" />
+            <ui:Button tooltip="Click to open documentation." name="DocumentationButton" text="Documentation" class="button-text" />
+        </ui:GroupBox>
+        <ui:GroupBox name="Content" class="body" style="flex-shrink: 1; flex-grow: 1; padding-top: 10px; padding-right: 10px; padding-bottom: 10px; padding-left: 10px; flex-direction: column; flex-wrap: wrap;">
+            <ui:GroupBox style="margin-top: 0; margin-right: 0; margin-bottom: 0; margin-left: 0; padding-top: 0; padding-right: 0; padding-bottom: 0; padding-left: 0; flex-direction: row; justify-content: space-between;">
+                <ui:GroupBox tooltip="If toggled off, these items will no longer be tracked in this project." class="container" style="flex-shrink: 1; margin-right: 5px;">
+                    <ui:GroupBox name="Header" class="header" style="flex-grow: 0; flex-shrink: 1; justify-content: flex-start;">
+                        <ui:Label tabindex="-1" text="Track" parse-escape-sequences="true" display-tooltip-when-elided="true" class="title" />
+                    </ui:GroupBox>
+                    <ui:GroupBox name="Content" class="body" style="flex-shrink: 1; flex-grow: 1; padding-top: 10px; padding-right: 10px; padding-bottom: 10px; padding-left: 10px; flex-direction: column; flex-wrap: nowrap;">
+                        <ui:Toggle name="TimeTrackToggle" label="Time" />
+                        <ui:Toggle label="Scene Save" name="SceneSaveTrackToggle" />
+                        <ui:Toggle label="Scene Open" name="SceneOpenTrackToggle" />
+                        <ui:Toggle label="Undo/Redo" name="UndoRedoTrackToggle" />
+                        <ui:Toggle label="Play Mode" name="PlayModeEnterTrack" />
+                        <ui:Toggle label="Compilation" name="CompileTrackToggle" />
+                        <ui:Toggle label="Console Log" name="ConsoleTrackToggle" />
+                        <ui:Toggle label="Editor Crash" name="EditorCrashes" />
+                        <ui:Toggle label="DevTools Window" name="DevToolsWindowTrack" />
+                    </ui:GroupBox>
+                </ui:GroupBox>
+                <ui:GroupBox style="margin-top: 5px; margin-right: 0; margin-bottom: 0; margin-left: 0; padding-top: 0; padding-right: 0; padding-bottom: 0; padding-left: 0; flex-direction: column; justify-content: flex-start; flex-wrap: wrap;">
+                    <ui:Button text="Reset This Project&apos;s Stats" parse-escape-sequences="true" display-tooltip-when-elided="true" name="ResetThisProjectStats" class="button-normal" style="margin-top: 1px; min-height: 30px; margin-right: 1px; margin-bottom: 1px; margin-left: 1px; padding-top: 5px; padding-right: 20px; padding-bottom: 5px; padding-left: 20px; -unity-text-align: middle-right;" />
+                    <ui:Button text="Reset Today&apos;s Stats" parse-escape-sequences="true" display-tooltip-when-elided="true" name="ResetTodaysStats" class="button-normal" style="margin-top: 1px; min-height: 30px; margin-right: 1px; margin-bottom: 1px; margin-left: 1px; padding-top: 5px; padding-right: 20px; padding-bottom: 5px; padding-left: 20px; -unity-text-align: middle-right;" />
+                    <ui:Button text="Reset Lifetime Stats" parse-escape-sequences="true" display-tooltip-when-elided="true" name="ResetLifeTimeStats" class="button-normal" style="margin-top: 1px; min-height: 30px; margin-right: 1px; margin-bottom: 1px; margin-left: 1px; padding-top: 5px; padding-right: 20px; padding-bottom: 5px; padding-left: 20px; -unity-text-align: middle-right;" />
+                </ui:GroupBox>
+            </ui:GroupBox>
+            <ui:GroupBox style="margin-top: 20px;">
+                <ui:GroupBox style="margin-top: 0; margin-right: 0; margin-bottom: 0; margin-left: 0; padding-top: 0; padding-right: 0; padding-bottom: 0; padding-left: 0; flex-direction: row;">
+                    <ui:IntegerField label="Unity Usage Goal is" value="42" tooltip="You can turn on/off usage goal via the small notification icon below the stats in the stats tab." name="UsageGoalField" style="flex-grow: 1; max-width: 200px;" />
+                    <ui:Label tabindex="-1" text="Hours" parse-escape-sequences="true" display-tooltip-when-elided="true" style="-unity-text-align: middle-left;" />
+                </ui:GroupBox>
+                <ui:GroupBox style="flex-direction: row; margin-top: 0; margin-right: 0; margin-bottom: 0; margin-left: 0; padding-top: 0; padding-right: 0; padding-bottom: 0; padding-left: 0;">
+                    <ui:Toggle label="Show Pop Up upon reaching Usage Goal" tooltip="The pop up only shows when this editor window is open and you are not in play mode." name="UsageGoalPopUp" style="-unity-text-align: middle-left;" />
+                    <ui:Button text="Show pop up Again" parse-escape-sequences="true" display-tooltip-when-elided="true" name="PopUpRepeat" />
+                </ui:GroupBox>
+            </ui:GroupBox>
+        </ui:GroupBox>
+    </ui:GroupBox>
+</ui:UXML>

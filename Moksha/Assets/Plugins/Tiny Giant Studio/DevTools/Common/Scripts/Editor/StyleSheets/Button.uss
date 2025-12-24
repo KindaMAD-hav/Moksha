@@ -1,0 +1,106 @@
+.button-normal {
+    transition-duration: 0.2s, 0.5s;
+    transition-property: background-color, opacity;
+    border-top-width: 1px;
+    border-right-width: 1px;
+    border-bottom-width: 1px;
+    border-left-width: 1px;
+    border-left-color: rgba(255, 255, 255, 0.06);
+    border-right-color: rgba(0, 0, 0, 0.06);
+    border-top-color: rgba(255, 255, 255, 0.06);
+    border-bottom-color: rgba(0, 0, 0, 0.06);
+}
+
+.button-normal:hover {
+}
+
+.button-normal:active {
+    background-color: var(--unity-colors-app_toolbar_button-background-pressed);
+    opacity: 1;
+}
+
+.button-icon {
+    background-color: rgba(0, 0, 0, 0);
+    border-left-width: 0;
+    border-right-width: 0;
+    border-top-width: 0;
+    border-bottom-width: 0;
+    margin-left: 0;
+    margin-right: 0;
+    margin-top: 0;
+    margin-bottom: 0;
+    padding-left: 1px;
+    padding-right: 1px;
+    padding-top: 1px;
+    padding-bottom: 1px;
+    opacity: 0.7;
+    transition-duration: 0.1s;
+    transition-property: background-color;
+    border-top-left-radius: 10px;
+    border-top-right-radius: 10px;
+    border-bottom-right-radius: 10px;
+    border-bottom-left-radius: 10px;
+    align-items: center;
+    justify-content: center;
+    transition-timing-function: ease-in;
+}
+
+.button-icon:hover {
+    opacity: 1;
+    background-color: rgba(255, 255, 255, 0.11);
+}
+
+.button-icon:active {
+    background-color: rgba(0, 126, 167, 0.51);
+    transition-property: background-color;
+}
+
+.button-icon-disabled {
+    opacity: 0.5;
+    background-color: rgba(0, 0, 0, 0);
+}
+
+.button-icon-disabled:hover {
+    opacity: 0.5;
+    background-color: rgba(0, 0, 0, 0);
+}
+
+.button-icon #Icon {
+    width: 15px;
+    height: 15px;
+}
+
+.button-text {
+    border-left-width: 0;
+    border-right-width: 0;
+    border-top-width: 0;
+    border-bottom-width: 0;
+    border-top-left-radius: 0;
+    border-bottom-left-radius: 0;
+    border-top-right-radius: 0;
+    border-bottom-right-radius: 0;
+    transition-duration: 0.15s;
+    transition-property: background-color;
+    background-color: rgba(0, 0, 0, 0);
+    transition-timing-function: ease;
+    padding-top: 1px;
+    padding-right: 5px;
+    padding-bottom: 1px;
+    padding-left: 5px;
+    color: var(--unity-colors-label-text);
+}
+
+.button-text:hover {
+    background-color: rgba(255, 255, 255, 0.1);
+}
+
+.button-text:active {
+}
+
+.rotating-item:hover {
+    opacity: 1;
+    rotate: 180deg;
+    transition-property: rotate;
+    transition-duration: 1s;
+    transition-timing-function: ease-out-sine;
+}

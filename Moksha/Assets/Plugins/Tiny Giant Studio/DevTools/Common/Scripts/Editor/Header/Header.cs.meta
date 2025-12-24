@@ -1,0 +1,21 @@
+fileFormatVersion: 2
+guid: ced20f0f134521946919897b14544987
+MonoImporter:
+  externalObjects: {}
+  serializedVersion: 2
+  defaultReferences:
+  - m_ViewDataDictionary: {instanceID: 0}
+  - tabTemplate: {fileID: 9197481963319205126, guid: 7b5a79052ae0c464a8476368352aa18f,
+      type: 3}
+  executionOrder: 0
+  icon: {instanceID: 0}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 291626
+  packageName: DevTrails - Developer Statistics Made Easy
+  packageVersion: 1.7.0
+  assetPath: Assets/Plugins/Tiny Giant Studio/DevTools/Common/Scripts/Editor/Header/Header.cs
+  uploadId: 835774

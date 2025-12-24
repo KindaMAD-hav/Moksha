@@ -1,0 +1,18 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" xsi="http://www.w3.org/2001/XMLSchema-instance" engine="UnityEngine.UIElements" editor="UnityEditor.UIElements" noNamespaceSchemaLocation="../../../../../../UIElementsSchema/UIElements.xsd" editor-extension-mode="True">
+    <Style src="project://database/Assets/Plugins/Tiny%20Giant%20Studio/DevTools/Common/Scripts/Editor/StyleSheets/Button.uss?fileID=7433441132597879392&amp;guid=f48629a4d3c2ad647ac9d5ba24bc7cc9&amp;type=3#Button" />
+    <Style src="project://database/Assets/Plugins/Tiny%20Giant%20Studio/DevTools/Common/Scripts/Editor/StyleSheets/Container.uss?fileID=7433441132597879392&amp;guid=72c9b8794d1e61342be9bd2e10508d45&amp;type=3#Container" />
+    <Style src="project://database/Assets/Plugins/Tiny%20Giant%20Studio/DevTools/Common/Scripts/Editor/StyleSheets/Labels.uss?fileID=7433441132597879392&amp;guid=5823284b9fdbd8c46987e7785421e5a8&amp;type=3#Labels" />
+    <Style src="project://database/Assets/Plugins/Tiny%20Giant%20Studio/DevTools/Common/Scripts/Editor/StyleSheets/Icons.uss?fileID=7433441132597879392&amp;guid=cefdc37815b00e444bbbe128a5ae03c8&amp;type=3#Icons" />
+    <Style src="project://database/Assets/Plugins/Tiny%20Giant%20Studio/DevTools/Common/Scripts/Editor/StyleSheets/EditorTheme.uss?fileID=7433441132597879392&amp;guid=ff196e6835ed38d43899e0e6aab34ffd&amp;type=3#EditorTheme" />
+    <ui:GroupBox name="PageContainer">
+        <ui:ScrollView>
+            <ui:DropdownField label="Clock Format" choices="12 Hours with AM-PM,24 Hours" name="ClockFormat" />
+            <ui:Toggle label="Icon Animations" name="IconAnimation" tooltip="Updated after a restart." />
+            <ui:GroupBox name="Contents" style="margin-top: 5px; margin-right: 0; margin-bottom: 0; margin-left: 0; padding-top: 0; padding-right: 0; padding-bottom: 0; padding-left: 0;" />
+            <ui:GroupBox name="GroupBox" style="margin-top: 5px; margin-right: 0; margin-bottom: 5px; margin-left: 0; padding-top: 0; padding-right: 0; padding-bottom: 0; padding-left: 0; align-items: center;">
+                <ui:Button text="Reset All Settings" parse-escape-sequences="true" display-tooltip-when-elided="true" name="ResetSettingsButton" class="button-normal" style="margin-top: 0; min-height: 30px; margin-right: 0; margin-bottom: 0; margin-left: 0; padding-top: 0; padding-right: 20px; padding-bottom: 0; padding-left: 20px;" />
+            </ui:GroupBox>
+            <ui:Label tabindex="-1" text="(Some changes are applied after editor restart or domain reloads.)" parse-escape-sequences="true" display-tooltip-when-elided="true" class="warningText" style="margin-top: 5px; -unity-text-align: middle-center; margin-bottom: 10px;" />
+        </ui:ScrollView>
+    </ui:GroupBox>
+</ui:UXML>

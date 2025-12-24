@@ -1,0 +1,19 @@
+fileFormatVersion: 2
+guid: b982efd273f426b4ca61d206c6f7ac92
+ScriptedImporter:
+  internalIDToNameTable: []
+  externalObjects: {}
+  serializedVersion: 2
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+  script: {fileID: 12385, guid: 0000000000000000e000000000000000, type: 0}
+  disableValidation: 0
+AssetOrigin:
+  serializedVersion: 1
+  productId: 291626
+  packageName: DevTrails - Developer Statistics Made Easy
+  packageVersion: 1.7.0
+  assetPath: Assets/Plugins/Tiny Giant Studio/DevTools/DevTrails/Scripts/Editor/Style
+    Sheet/DevTrailsIcons.uss
+  uploadId: 835774
