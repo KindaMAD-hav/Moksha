@@ -2,8 +2,8 @@ using System;
 using UnityEngine;
 
 /// <summary>
-/// Base class for all enemies. Handles common functionality like
-/// health, damage, death, and XP drops.
+/// Base class for all enemies. Optimized for high enemy counts.
+/// Uses cached values and avoids allocations.
 /// </summary>
 public abstract class EnemyBase : MonoBehaviour
 {
@@ -18,133 +18,165 @@ public abstract class EnemyBase : MonoBehaviour
     
     // Events
     public event Action<EnemyBase> OnDeath;
-    public event Action<float, float> OnHealthChanged; // current, max
+    public event Action<float, float> OnHealthChanged;
+    
+    // Cached values for performance
+    protected Transform cachedTransform;
+    protected float cachedMaxHealth;
+    protected float cachedMoveSpeed;
+    protected float cachedRotationSpeed;
+    protected float cachedStoppingDistanceSqr; // Squared for fast distance checks
+    protected float cachedAttackRangeSqr;      // Squared for fast distance checks
+    protected float cachedDamage;
+    protected float cachedAttackCooldown;
+    protected int cachedXPReward;
+    
+    // Cached target position (updated by manager)
+    protected Vector3 cachedTargetPosition;
     
     // Properties
     public EnemyStats Stats => stats;
     public float CurrentHealth => currentHealth;
-    public float MaxHealth => stats != null ? stats.maxHealth : 100f;
-    public bool IsDead => currentHealth <= 0;
+    public float MaxHealth => cachedMaxHealth;
+    public bool IsDead { get; protected set; }
     public Transform Target => targetTransform;
-    
+    public int Index { get; set; } // For manager tracking
+
     protected virtual void Awake()
     {
+        cachedTransform = transform;
+        CacheStats();
         InitializeHealth();
     }
 
-    protected virtual void Start()
+    /// <summary>
+    /// Cache stats from ScriptableObject to avoid repeated property access
+    /// </summary>
+    protected virtual void CacheStats()
     {
-        // Auto-find player if not assigned
-        if (targetTransform == null)
-        {
-            GameObject player = GameObject.FindGameObjectWithTag("Player");
-            if (player != null)
-                targetTransform = player.transform;
-        }
-    }
-
-    protected virtual void Update()
-    {
-        if (IsDead || targetTransform == null) return;
+        if (stats == null) return;
         
-        UpdateBehavior();
+        cachedMaxHealth = stats.maxHealth;
+        cachedMoveSpeed = stats.moveSpeed;
+        cachedRotationSpeed = stats.rotationSpeed;
+        cachedStoppingDistanceSqr = stats.stoppingDistance * stats.stoppingDistance;
+        cachedAttackRangeSqr = stats.attackRange * stats.attackRange;
+        cachedDamage = stats.damage;
+        cachedAttackCooldown = stats.attackCooldown;
+        cachedXPReward = stats.xpReward;
     }
 
     /// <summary>
-    /// Override this to implement enemy-specific behavior (movement, attacks, etc.)
+    /// Called by EnemyManager instead of Update() for batched processing
     /// </summary>
-    protected abstract void UpdateBehavior();
+    public virtual void Tick(float deltaTime, Vector3 targetPos)
+    {
+        if (IsDead) return;
+        
+        cachedTargetPosition = targetPos;
+        UpdateBehavior(deltaTime);
+    }
 
     /// <summary>
-    /// Initialize or reset health to max
+    /// Override this to implement enemy-specific behavior
     /// </summary>
+    protected abstract void UpdateBehavior(float deltaTime);
+
     public virtual void InitializeHealth()
     {
-        currentHealth = MaxHealth;
-        OnHealthChanged?.Invoke(currentHealth, MaxHealth);
+        currentHealth = cachedMaxHealth;
+        IsDead = false;
+        OnHealthChanged?.Invoke(currentHealth, cachedMaxHealth);
     }
 
-    /// <summary>
-    /// Apply damage to this enemy
-    /// </summary>
     public virtual void TakeDamage(float damage)
     {
         if (IsDead) return;
 
         currentHealth -= damage;
-        currentHealth = Mathf.Max(0, currentHealth);
         
-        OnHealthChanged?.Invoke(currentHealth, MaxHealth);
-
-        if (stats != null && stats.hitEffect != null)
-            PlayHitEffect();
-
-        if (currentHealth <= 0)
+        if (currentHealth <= 0f)
+        {
+            currentHealth = 0f;
             Die();
+        }
+        else
+        {
+            OnHealthChanged?.Invoke(currentHealth, cachedMaxHealth);
+            OnHit();
+        }
     }
 
-    /// <summary>
-    /// Called when health reaches 0
-    /// </summary>
+    protected virtual void OnHit()
+    {
+        // Override for hit effects - spawn from pool instead of Instantiate
+    }
+
     protected virtual void Die()
     {
-        // Grant XP to player
-        if (ExperienceManager.Instance != null && stats != null)
-            ExperienceManager.Instance.AddXP(stats.xpReward);
-
-        // Play death effect
-        if (stats != null && stats.deathEffect != null)
-            Instantiate(stats.deathEffect, transform.position, Quaternion.identity);
+        IsDead = true;
+        
+        // Grant XP
+        if (ExperienceManager.Instance != null)
+            ExperienceManager.Instance.AddXP(cachedXPReward);
 
         OnDeath?.Invoke(this);
-        
-        // Destroy or return to pool
         gameObject.SetActive(false);
     }
 
-    protected virtual void PlayHitEffect()
-    {
-        if (stats.hitEffect != null)
-            Instantiate(stats.hitEffect, transform.position, Quaternion.identity);
-    }
-
-    /// <summary>
-    /// Set a new target for this enemy
-    /// </summary>
     public void SetTarget(Transform target)
     {
         targetTransform = target;
     }
 
-    /// <summary>
-    /// Initialize enemy with stats (used by spawner/pool)
-    /// </summary>
     public virtual void Initialize(EnemyStats enemyStats, Transform target)
     {
         stats = enemyStats;
         targetTransform = target;
+        CacheStats();
+        InitializeHealth();
+    }
+
+    public virtual void ResetEnemy()
+    {
+        IsDead = false;
         InitializeHealth();
     }
 
     /// <summary>
-    /// Reset enemy state (for object pooling)
+    /// Get squared distance to target (faster than Distance)
     /// </summary>
-    public virtual void ResetEnemy()
+    [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
+    protected float GetSqrDistanceToTarget()
     {
-        InitializeHealth();
+        Vector3 diff = cachedTargetPosition - cachedTransform.position;
+        diff.y = 0f;
+        return diff.x * diff.x + diff.z * diff.z;
     }
 
-    protected float GetDistanceToTarget()
+    /// <summary>
+    /// Get direction to target (no normalization for speed)
+    /// </summary>
+    [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
+    protected void GetDirectionToTarget(out Vector3 direction)
     {
-        if (targetTransform == null) return float.MaxValue;
-        return Vector3.Distance(transform.position, targetTransform.position);
+        direction = cachedTargetPosition - cachedTransform.position;
+        direction.y = 0f;
     }
 
-    protected Vector3 GetDirectionToTarget()
+    /// <summary>
+    /// Get normalized direction to target
+    /// </summary>
+    [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
+    protected void GetNormalizedDirectionToTarget(out Vector3 direction)
     {
-        if (targetTransform == null) return Vector3.zero;
-        Vector3 dir = targetTransform.position - transform.position;
-        dir.y = 0; // Keep on ground plane
-        return dir.normalized;
+        GetDirectionToTarget(out direction);
+        float sqrMag = direction.x * direction.x + direction.z * direction.z;
+        if (sqrMag > 0.0001f)
+        {
+            float invMag = 1f / Mathf.Sqrt(sqrMag);
+            direction.x *= invMag;
+            direction.z *= invMag;
+        }
     }
 }

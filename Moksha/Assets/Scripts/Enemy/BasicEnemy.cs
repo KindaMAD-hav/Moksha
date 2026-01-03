@@ -1,185 +1,212 @@
 using UnityEngine;
 
 /// <summary>
-/// Basic melee enemy that chases and attacks the player.
+/// Basic melee enemy - optimized for high enemy counts.
 /// No NavMesh required - uses simple direct movement.
 /// </summary>
 public class BasicEnemy : EnemyBase
 {
     [Header("Basic Enemy Settings")]
-    [SerializeField] private float attackTimer;
-    [SerializeField] private bool isAttacking;
-
-    [Header("Movement Variation")]
-    [Tooltip("Random offset to prevent enemies stacking perfectly")]
     [SerializeField] private float movementNoise = 0.5f;
     
     [Header("Optional Components")]
     [SerializeField] private Animator animator;
     [SerializeField] private AudioSource audioSource;
 
-    // Animator parameter hashes (for performance)
+    // Animator parameter hashes (static for all instances)
     private static readonly int SpeedHash = Animator.StringToHash("Speed");
     private static readonly int AttackHash = Animator.StringToHash("Attack");
     private static readonly int DieHash = Animator.StringToHash("Die");
 
-    private Vector3 noiseOffset;
+    // Cached components
     private CharacterController characterController;
     private Rigidbody rb;
+    private bool hasAnimator;
+    private bool hasCharacterController;
+    private bool hasRigidbody;
+    private bool hasAudioSource;
+
+    // State
+    private float attackTimer;
+    private Vector3 noiseOffset;
+    private float lastAnimSpeed;
+
+    // Cached vectors (avoid allocations)
+    private Vector3 moveDirection;
+    private Vector3 movement;
+    private Quaternion targetRotation;
+
+    // Cached IDamageable on target (avoid GetComponent every attack)
+    private IDamageable targetDamageable;
+    private bool checkedDamageable;
 
     protected override void Awake()
     {
         base.Awake();
         
-        // Get optional components
+        // Cache all component references once
         animator = GetComponentInChildren<Animator>();
         audioSource = GetComponent<AudioSource>();
         characterController = GetComponent<CharacterController>();
         rb = GetComponent<Rigidbody>();
 
-        // Random noise offset for movement variation
-        noiseOffset = new Vector3(
-            Random.Range(-1f, 1f),
-            0,
-            Random.Range(-1f, 1f)
-        ).normalized * movementNoise;
+        // Cache booleans for fast null checks
+        hasAnimator = animator != null;
+        hasCharacterController = characterController != null;
+        hasRigidbody = rb != null;
+        hasAudioSource = audioSource != null;
+
+        GenerateNoiseOffset();
     }
 
-    protected override void UpdateBehavior()
+    private void GenerateNoiseOffset()
     {
-        float distanceToTarget = GetDistanceToTarget();
+        // Use faster random generation
+        float x = Random.value * 2f - 1f;
+        float z = Random.value * 2f - 1f;
+        float invMag = movementNoise / Mathf.Sqrt(x * x + z * z + 0.0001f);
+        noiseOffset.x = x * invMag;
+        noiseOffset.y = 0f;
+        noiseOffset.z = z * invMag;
+    }
+
+    protected override void UpdateBehavior(float deltaTime)
+    {
+        float sqrDistance = GetSqrDistanceToTarget();
         
         // Update attack cooldown
-        if (attackTimer > 0)
-            attackTimer -= Time.deltaTime;
+        if (attackTimer > 0f)
+            attackTimer -= deltaTime;
 
-        // Behavior based on distance
-        if (distanceToTarget <= stats.attackRange)
+        // Behavior based on squared distance (faster than sqrt)
+        if (sqrDistance <= cachedAttackRangeSqr)
         {
-            // In attack range - stop and attack
             TryAttack();
-            UpdateAnimation(0f);
+            SetAnimSpeed(0f);
         }
-        else if (distanceToTarget > stats.stoppingDistance)
+        else if (sqrDistance > cachedStoppingDistanceSqr)
         {
-            // Chase player
-            ChaseTarget();
-            UpdateAnimation(stats.moveSpeed);
+            ChaseTarget(deltaTime);
+            SetAnimSpeed(cachedMoveSpeed);
         }
         else
         {
-            UpdateAnimation(0f);
+            SetAnimSpeed(0f);
         }
     }
 
-    private void ChaseTarget()
+    private void ChaseTarget(float deltaTime)
     {
-        Vector3 direction = GetDirectionToTarget();
-        if (direction == Vector3.zero) return;
+        GetNormalizedDirectionToTarget(out moveDirection);
+        if (moveDirection.x == 0f && moveDirection.z == 0f) return;
 
-        // Add slight noise to prevent perfect stacking
-        Vector3 moveDir = (direction + noiseOffset * 0.1f).normalized;
+        // Add noise (small contribution)
+        float noiseScale = 0.1f;
+        moveDirection.x += noiseOffset.x * noiseScale;
+        moveDirection.z += noiseOffset.z * noiseScale;
+        
+        // Re-normalize (fast approximation)
+        float sqrMag = moveDirection.x * moveDirection.x + moveDirection.z * moveDirection.z;
+        if (sqrMag > 0.0001f)
+        {
+            float invMag = 1f / Mathf.Sqrt(sqrMag);
+            moveDirection.x *= invMag;
+            moveDirection.z *= invMag;
+        }
 
         // Rotate towards target
-        RotateTowards(direction);
+        RotateTowards(deltaTime);
 
-        // Move towards target
-        Vector3 movement = moveDir * stats.moveSpeed * Time.deltaTime;
+        // Calculate movement
+        float moveAmount = cachedMoveSpeed * deltaTime;
+        movement.x = moveDirection.x * moveAmount;
+        movement.z = moveDirection.z * moveAmount;
 
-        if (characterController != null)
+        if (hasCharacterController)
         {
-            // Add gravity if using CharacterController
-            movement.y = -2f * Time.deltaTime;
+            movement.y = -2f * deltaTime; // Gravity
             characterController.Move(movement);
         }
-        else if (rb != null)
+        else if (hasRigidbody)
         {
-            // Use Rigidbody velocity
-            Vector3 vel = moveDir * stats.moveSpeed;
-            vel.y = rb.linearVelocity.y;
+            Vector3 vel = rb.linearVelocity;
+            vel.x = moveDirection.x * cachedMoveSpeed;
+            vel.z = moveDirection.z * cachedMoveSpeed;
             rb.linearVelocity = vel;
         }
         else
         {
-            // Simple transform movement
-            transform.position += movement;
+            movement.y = 0f;
+            cachedTransform.position += movement;
         }
     }
 
-    private void RotateTowards(Vector3 direction)
+    [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
+    private void RotateTowards(float deltaTime)
     {
-        if (direction == Vector3.zero) return;
-
-        Quaternion targetRotation = Quaternion.LookRotation(direction, Vector3.up);
-        transform.rotation = Quaternion.RotateTowards(
-            transform.rotation,
+        targetRotation = Quaternion.LookRotation(moveDirection, Vector3.up);
+        cachedTransform.rotation = Quaternion.RotateTowards(
+            cachedTransform.rotation,
             targetRotation,
-            stats.rotationSpeed * Time.deltaTime
+            cachedRotationSpeed * deltaTime
         );
     }
 
     private void TryAttack()
     {
-        if (attackTimer > 0 || isAttacking) return;
+        if (attackTimer > 0f) return;
 
-        isAttacking = true;
-        attackTimer = stats.attackCooldown;
+        attackTimer = cachedAttackCooldown;
 
-        // Trigger attack animation
-        if (animator != null)
+        if (hasAnimator)
             animator.SetTrigger(AttackHash);
 
-        // Play attack sound
-        if (audioSource != null && stats.attackSound != null)
+        if (hasAudioSource && stats.attackSound != null)
             audioSource.PlayOneShot(stats.attackSound);
 
-        // Deal damage (can be called from animation event instead)
         DealDamage();
-
-        isAttacking = false;
     }
 
     private void DealDamage()
     {
         if (targetTransform == null) return;
+        if (GetSqrDistanceToTarget() > cachedAttackRangeSqr) return;
 
-        // Check if still in range
-        if (GetDistanceToTarget() > stats.attackRange) return;
-
-        // Try to damage player
-        // You'll need to implement IDamageable or similar on your player
-        var damageable = targetTransform.GetComponent<IDamageable>();
-        if (damageable != null)
+        // Cache the damageable interface lookup
+        if (!checkedDamageable)
         {
-            damageable.TakeDamage(stats.damage);
+            targetDamageable = targetTransform.GetComponent<IDamageable>();
+            checkedDamageable = true;
         }
-        else
+
+        if (targetDamageable != null)
         {
-            // Fallback: Send message (less performant but works without interface)
-            targetTransform.SendMessage("TakeDamage", stats.damage, SendMessageOptions.DontRequireReceiver);
+            targetDamageable.TakeDamage(cachedDamage);
         }
     }
 
-    private void UpdateAnimation(float speed)
+    [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
+    private void SetAnimSpeed(float speed)
     {
-        if (animator != null)
+        // Only update animator if value changed (reduces animator overhead)
+        if (hasAnimator && speed != lastAnimSpeed)
+        {
             animator.SetFloat(SpeedHash, speed);
+            lastAnimSpeed = speed;
+        }
     }
 
     protected override void Die()
     {
-        // Trigger death animation
-        if (animator != null)
+        if (hasAnimator)
             animator.SetTrigger(DieHash);
 
-        // Play death sound
-        if (audioSource != null && stats.deathSound != null)
+        if (hasAudioSource && stats.deathSound != null)
             audioSource.PlayOneShot(stats.deathSound);
 
-        // Disable movement
-        if (characterController != null)
+        if (hasCharacterController)
             characterController.enabled = false;
-        if (rb != null)
+        if (hasRigidbody)
             rb.isKinematic = true;
 
         base.Die();
@@ -190,19 +217,23 @@ public class BasicEnemy : EnemyBase
         base.ResetEnemy();
         
         attackTimer = 0f;
-        isAttacking = false;
+        lastAnimSpeed = -1f; // Force animator update on next tick
+        checkedDamageable = false;
+        targetDamageable = null;
         
-        if (characterController != null)
+        if (hasCharacterController)
             characterController.enabled = true;
-        if (rb != null)
+        if (hasRigidbody)
             rb.isKinematic = false;
 
-        // Generate new noise offset
-        noiseOffset = new Vector3(
-            Random.Range(-1f, 1f),
-            0,
-            Random.Range(-1f, 1f)
-        ).normalized * movementNoise;
+        GenerateNoiseOffset();
+    }
+
+    public override void Initialize(EnemyStats enemyStats, Transform target)
+    {
+        base.Initialize(enemyStats, target);
+        checkedDamageable = false;
+        targetDamageable = null;
     }
 
     // Called from animation event (optional)
@@ -215,12 +246,8 @@ public class BasicEnemy : EnemyBase
     private void OnDrawGizmosSelected()
     {
         if (stats == null) return;
-
-        // Attack range
         Gizmos.color = Color.red;
         Gizmos.DrawWireSphere(transform.position, stats.attackRange);
-
-        // Stopping distance
         Gizmos.color = Color.yellow;
         Gizmos.DrawWireSphere(transform.position, stats.stoppingDistance);
     }
@@ -229,7 +256,6 @@ public class BasicEnemy : EnemyBase
 
 /// <summary>
 /// Interface for anything that can take damage.
-/// Implement this on your player, destructibles, etc.
 /// </summary>
 public interface IDamageable
 {
