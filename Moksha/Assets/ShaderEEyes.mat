@@ -57,7 +57,7 @@ Material:
     - BOOLEAN_WROLDSPACE_OFFEST: 1
     - _DierctionEdgeWidthScale: 6.7
     - _DirectionMaskScale: 4.21
-    - _EdgeColorIntensity: 133.72
+    - _EdgeColorIntensity: 10.36
     - _EdgeWidth: 0.253
     - _Metallic: 0
     - _NoiseScale: 116.3
@@ -70,7 +70,7 @@ Material:
     - _BaseColor: {r: 1, g: 0.121568635, b: 0, a: 1}
     - _DirectionFactor: {r: 0, g: 0.1, b: 0, a: 0}
     - _DissolveDirection: {r: 0, g: 0, b: 0, a: 0}
-    - _DissolveOffest: {r: 0, g: -3.61, b: 0, a: 0}
+    - _DissolveOffest: {r: 0, g: -0.73, b: 0, a: 0}
     - _EdgeColor: {r: 1, g: 0, b: 0, a: 1}
     - _NoiseUVSpeed: {r: 1, g: 1, b: 0, a: 0}
     - _Offest: {r: 0, g: 0, b: 0, a: 0}
