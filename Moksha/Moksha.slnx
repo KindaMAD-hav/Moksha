@@ -2,7 +2,7 @@
   <Project Path="MerryYellow.CodeAssist.Editor.csproj" />
   <Project Path="TinyGiantStudio.DevTools.csproj" />
   <Project Path="TinyGiantStudio.DevTools.DevTrails.csproj" />
-  <Project Path="Assembly-CSharp-Editor.csproj" />
   <Project Path="Assembly-CSharp.csproj" />
+  <Project Path="Assembly-CSharp-Editor.csproj" />
   <Project Path="Wingman.csproj" />
 </Solution>
