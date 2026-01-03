@@ -11,6 +11,7 @@ GameObject:
   - component: {fileID: 7140185593459939815}
   - component: {fileID: 7405454662733845511}
   - component: {fileID: 8577424145419127671}
+  - component: {fileID: 7530444286503973398}
   m_Layer: 0
   m_Name: Cube.005
   m_TagString: Untagged
@@ -91,3 +92,17 @@ MeshRenderer:
   m_SortingOrder: 0
   m_MaskInteraction: 0
   m_AdditionalVertexStreams: {fileID: 0}
+--- !u!114 &7530444286503973398
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6595157634557997224}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0533ab168dd24bc48b0fbf8844261178, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::WallSockets
+  start: {fileID: 0}
+  end: {fileID: 0}

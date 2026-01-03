@@ -18,26 +18,27 @@ public class ModularLevelGenerator : MonoBehaviour
     public bool generateFloor = true;
     public bool generatePerimeterWalls = true;
 
-#if UNITY_EDITOR
-    [Header("Debug / Tools")]
-    public bool generateWallStripDebug = false;
-#endif
-
     [Header("Wall Orientation")]
-    public Vector3 wallBaseEuler = Vector3.zero; // degrees
+    public Vector3 wallBaseEuler = Vector3.zero;
     public bool applyWallRotation = true;
 
-    // ---------- Wall Strip (DEBUG ONLY) ----------
-    [Header("Wall Strip Debug Settings")]
-    public int wallSegments = 20;
-    public Vector3 wallStartLocalPos = Vector3.zero;
-    public Vector3 wallDirectionLocal = Vector3.forward;
+    [Header("Wall Placement")]
+    public bool preferRendererForLength = true;
+    [Tooltip("Small overlap to remove tiny gaps (0.01–0.05 recommended)")]
+    public float wallJoinEpsilon = 0.02f;
 
-    // ---------- Floor Area ----------
+    // ---------- Floor ----------
     [Header("Floor Area Settings")]
-    public int floorWidth = 12;   // tiles in X
-    public int floorHeight = 12;  // tiles in Z
+    public int floorWidth = 12;
+    public int floorHeight = 12;
     public Vector3 floorStartLocalPos = Vector3.zero;
+
+#if UNITY_EDITOR
+    [Header("Debug")]
+    public bool generateWallStripDebug = false;
+    public Vector3 debugWallStart = Vector3.zero;
+    public Vector3 debugWallEnd = new Vector3(10, 0, 0);
+#endif
 
     private System.Random rng;
     private int lastWallIndex = -1;
@@ -75,7 +76,7 @@ public class ModularLevelGenerator : MonoBehaviour
 
 #if UNITY_EDITOR
         if (generateWallStripDebug)
-            GenerateWallStripDebug();
+            BuildWallLineBetween(debugWallStart, debugWallEnd, Vector3.forward);
 #endif
     }
 
@@ -144,234 +145,131 @@ public class ModularLevelGenerator : MonoBehaviour
 
         float tile = modules.floorTileSize;
 
-        // ASSUMPTION: floorStartLocalPos is the CENTER of the first tile (0,0)
-        // Tile centers go: 0, tile, 2*tile ... (floorWidth-1)*tile
-        // So the OUTER BOUNDS are offset by tile/2
         float minX = floorStartLocalPos.x - tile * 0.5f;
         float maxX = floorStartLocalPos.x + (floorWidth - 1) * tile + tile * 0.5f;
-
         float minZ = floorStartLocalPos.z - tile * 0.5f;
         float maxZ = floorStartLocalPos.z + (floorHeight - 1) * tile + tile * 0.5f;
 
-        float inset = 0f; // optional: push walls slightly outward if needed
-
-        // Bottom (Z = minZ)
         BuildWallLineBetween(
-            start: new Vector3(minX, floorStartLocalPos.y, minZ - inset),
-            end: new Vector3(maxX, floorStartLocalPos.y, minZ - inset),
-            faceDirection: Vector3.forward
+            new Vector3(minX, floorStartLocalPos.y, minZ),
+            new Vector3(maxX, floorStartLocalPos.y, minZ),
+            Vector3.forward
         );
 
-        // Top (Z = maxZ)
         BuildWallLineBetween(
-            start: new Vector3(minX, floorStartLocalPos.y, maxZ + inset),
-            end: new Vector3(maxX, floorStartLocalPos.y, maxZ + inset),
-            faceDirection: Vector3.back
+            new Vector3(minX, floorStartLocalPos.y, maxZ),
+            new Vector3(maxX, floorStartLocalPos.y, maxZ),
+            Vector3.back
         );
 
-        // Left (X = minX)
         BuildWallLineBetween(
-            start: new Vector3(minX - inset, floorStartLocalPos.y, minZ),
-            end: new Vector3(minX - inset, floorStartLocalPos.y, maxZ),
-            faceDirection: Vector3.right
+            new Vector3(minX, floorStartLocalPos.y, minZ),
+            new Vector3(minX, floorStartLocalPos.y, maxZ),
+            Vector3.right
         );
 
-        // Right (X = maxX)
         BuildWallLineBetween(
-            start: new Vector3(maxX + inset, floorStartLocalPos.y, minZ),
-            end: new Vector3(maxX + inset, floorStartLocalPos.y, maxZ),
-            faceDirection: Vector3.left
+            new Vector3(maxX, floorStartLocalPos.y, minZ),
+            new Vector3(maxX, floorStartLocalPos.y, maxZ),
+            Vector3.left
         );
     }
 
+    // ------------------------------------------------------
+    // WALL LINE (CORE LOGIC)
+    // ------------------------------------------------------
 
-    private void BuildWallLine(Vector3 start, Vector3 direction, float totalLength, Vector3 faceDirection)
+    private void BuildWallLineBetween(Vector3 startLocal, Vector3 endLocal, Vector3 faceDirection)
     {
-        Vector3 dirLocal = direction.normalized;
+        Vector3 startWorld = generatedParent.TransformPoint(startLocal);
+        Vector3 endWorld = generatedParent.TransformPoint(endLocal);
 
-        // local -> world direction (because bounds are world space)
-        Vector3 dirWorld = transform.TransformDirection(dirLocal).normalized;
+        Vector3 dirWorld = (endWorld - startWorld).normalized;
+        float remaining = Vector3.Distance(startWorld, endWorld);
 
-        int count = Mathf.Max(1, Mathf.RoundToInt(totalLength / modules.wallSegmentLength));
-
-        Quaternion baseRot = Quaternion.LookRotation(
+        Quaternion rot = Quaternion.LookRotation(
             Vector3.Cross(Vector3.up, faceDirection),
             Vector3.up
         );
 
-        // We'll track the "end" in LOCAL space, but compute half-length from WORLD bounds.
-        Vector3 endPosLocal = start;
-
-        for (int i = 0; i < count; i++)
-        {
-            var prefab = PickVariant(modules.wallStraightVariants, ref lastWallIndex);
-            var seg = Instantiate(prefab, generatedParent);
-
-            // Apply rotation FIRST so bounds reflect correct orientation
-            seg.transform.localRotation = applyWallRotation
-                ? baseRot * Quaternion.Euler(wallBaseEuler)
-                : Quaternion.Euler(wallBaseEuler);
-
-            // Temporarily place it (so bounds are valid in world space)
-            seg.transform.localPosition = endPosLocal;
-
-            float halfLen = GetWallHalfLength(seg, dirWorld);
-
-            // Place center based on previous end + this half length
-            seg.transform.localPosition = endPosLocal + dirLocal * halfLen;
-
-            // Update end = this center + half length
-            endPosLocal = seg.transform.localPosition + dirLocal * halfLen;
-        }
-    }
-
-    private void BuildWallLineBetween(Vector3 start, Vector3 end, Vector3 faceDirection)
-    {
-        Vector3 dirLocal = (end - start).normalized;
-        float remaining = Vector3.Distance(start, end);
-
-        // bounds are world space, but our objects are under generatedParent (local space)
-        Vector3 dirWorld = transform.TransformDirection(dirLocal).normalized;
-
-        Quaternion baseRot = Quaternion.LookRotation(
-            Vector3.Cross(Vector3.up, faceDirection),
-            Vector3.up
-        );
-
-        Vector3 endPosLocal = start;
-
-        // safety so we don't infinite loop if something returns 0 length
+        Vector3 posWorld = startWorld;
         int safety = 0;
 
-        while (remaining > 0.001f && safety++ < 5000)
+        while (remaining > 0.001f && safety++ < 1000)
         {
             var prefab = PickVariant(modules.wallStraightVariants, ref lastWallIndex);
             var seg = Instantiate(prefab, generatedParent);
 
-            seg.transform.localRotation = applyWallRotation
-                ? baseRot * Quaternion.Euler(wallBaseEuler)
+            seg.transform.rotation = applyWallRotation
+                ? rot * Quaternion.Euler(wallBaseEuler)
                 : Quaternion.Euler(wallBaseEuler);
 
-            // temp place to read bounds
-            seg.transform.localPosition = endPosLocal;
+            seg.transform.position = posWorld;
 
-            float halfLen = GetWallHalfLength(seg, dirWorld);
-            float segLen = Mathf.Max(0.01f, halfLen * 2f);
+            float length = GetWallLength(seg, dirWorld);
 
-            // If we’re near the end, stop before overshooting too much
-            if (segLen > remaining + 0.05f)
+            if (length > remaining + 0.01f)
             {
-                DestroyImmediate(seg);
+                SafeDestroy(seg);
                 break;
             }
 
-            // center = previous end + halfLen
-            seg.transform.localPosition = endPosLocal + dirLocal * halfLen;
-
-            // new end = center + halfLen
-            endPosLocal = seg.transform.localPosition + dirLocal * halfLen;
-
-            remaining -= segLen;
+            posWorld += dirWorld * length;
+            remaining -= length;
         }
     }
 
-    private float GetWallLength(GameObject wallInstance, Vector3 direction)
-    {
-        // Prefer collider bounds if available
-        if (wallInstance.TryGetComponent<Collider>(out var col))
-        {
-            Bounds b = col.bounds;
-            return ProjectBoundsLength(b, direction);
-        }
+    // ------------------------------------------------------
+    // UTILS
+    // ------------------------------------------------------
 
-        // Fallback to renderer bounds
-        if (wallInstance.TryGetComponent<Renderer>(out var rend))
-        {
-            Bounds b = rend.bounds;
-            return ProjectBoundsLength(b, direction);
-        }
-
-        // Absolute fallback (should never happen)
-        return modules.wallSegmentLength;
-    }
-
-    private float ProjectBoundsLength(Bounds bounds, Vector3 direction)
-    {
-        direction = direction.normalized;
-
-        // Project the size of the bounds onto the direction vector
-        Vector3 size = bounds.size;
-
-        return Mathf.Abs(Vector3.Dot(size, direction));
-    }
-    private float GetWallHalfLength(GameObject wallInstance, Vector3 worldDir)
+    private float GetWallLength(GameObject wall, Vector3 worldDir)
     {
         worldDir = worldDir.normalized;
+        Bounds b;
 
-        // Prefer collider bounds (more reliable for modular pieces)
-        if (wallInstance.TryGetComponent<Collider>(out var col))
-            return ProjectHalfLength(col.bounds, worldDir);
-
-        // Fallback to renderer bounds
-        if (wallInstance.TryGetComponent<Renderer>(out var rend))
-            return ProjectHalfLength(rend.bounds, worldDir);
-
-        // fallback
-        return modules.wallSegmentLength * 0.5f;
-    }
-
-    private float ProjectHalfLength(Bounds b, Vector3 worldDir)
-    {
-        // bounds.extents is half-size in world axes
-        Vector3 e = b.extents;
-
-        // Project extents onto direction (absolute because direction could be negative)
-        return Mathf.Abs(worldDir.x) * e.x + Mathf.Abs(worldDir.y) * e.y + Mathf.Abs(worldDir.z) * e.z;
-    }
-
-
-#if UNITY_EDITOR
-    // ------------------------------------------------------
-    // DEBUG WALL STRIP
-    // ------------------------------------------------------
-
-    private void GenerateWallStripDebug()
-    {
-        if (modules.wallStraightVariants == null || modules.wallStraightVariants.Length == 0)
-            return;
-
-        Vector3 dir = wallDirectionLocal.normalized;
-        if (dir.sqrMagnitude < 0.001f)
-            dir = Vector3.forward;
-
-        Quaternion baseRot = Quaternion.LookRotation(
-            Vector3.Cross(Vector3.up, dir),
-            Vector3.up
-        );
-
-        Vector3 pos = wallStartLocalPos;
-
-        for (int i = 0; i < wallSegments; i++)
+        if (preferRendererForLength)
         {
-            var prefab = PickVariant(modules.wallStraightVariants, ref lastWallIndex);
-            var seg = Instantiate(prefab, generatedParent);
-
-            seg.transform.localPosition = pos;
-
-            if (applyWallRotation)
-                seg.transform.localRotation = baseRot * Quaternion.Euler(wallBaseEuler);
+            var rend = wall.GetComponentInChildren<Renderer>();
+            if (rend != null) b = rend.bounds;
             else
-                seg.transform.localRotation = Quaternion.Euler(wallBaseEuler);
-
-            float segmentLength = GetWallLength(seg, dir);
-            pos += dir * segmentLength;
+            {
+                var col = wall.GetComponentInChildren<Collider>();
+                if (col != null) b = col.bounds;
+                else return modules.wallSegmentLength;
+            }
         }
-    }
-#endif
+        else
+        {
+            var col = wall.GetComponentInChildren<Collider>();
+            if (col != null) b = col.bounds;
+            else
+            {
+                var rend = wall.GetComponentInChildren<Renderer>();
+                if (rend != null) b = rend.bounds;
+                else return modules.wallSegmentLength;
+            }
+        }
 
-    // ------------------------------------------------------
-    // VARIANT PICKER
-    // ------------------------------------------------------
+        float length =
+            2f * (
+                Mathf.Abs(worldDir.x) * b.extents.x +
+                Mathf.Abs(worldDir.y) * b.extents.y +
+                Mathf.Abs(worldDir.z) * b.extents.z
+            );
+
+        return Mathf.Max(0.01f, length - wallJoinEpsilon);
+    }
+
+    private void SafeDestroy(GameObject go)
+    {
+#if UNITY_EDITOR
+        if (!Application.isPlaying) DestroyImmediate(go);
+        else Destroy(go);
+#else
+        Destroy(go);
+#endif
+    }
 
     private GameObject PickVariant(GameObject[] arr, ref int lastIndex)
     {
