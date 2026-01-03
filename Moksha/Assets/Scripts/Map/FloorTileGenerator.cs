@@ -1,4 +1,4 @@
-using UnityEngine;
+﻿using UnityEngine;
 using System.Collections.Generic;
 
 public class FloorTileGenerator : MonoBehaviour
@@ -13,11 +13,19 @@ public class FloorTileGenerator : MonoBehaviour
     [Header("Placement")]
     public Vector3 startLocalPosition = Vector3.zero;
 
+    [Header("Orientation (LOCAL SPACE)")]
+    public Vector3 gridRight = Vector3.right;
+    public Vector3 gridForward = Vector3.forward;
+    public Vector3 tileUp = Vector3.up;
+    public Vector3 baseEulerOffset = Vector3.zero;
+
+    [Header("Random Rotation")]
+    public bool randomizeRotation = true;
+    public int rotationStep = 90;
+
     [Header("Blue Noise Settings")]
-    [Tooltip("How many previous tiles are penalized")]
     public int historySize = 6;
 
-    [Tooltip("Higher = stronger avoidance of repeats")]
     [Range(0f, 1f)]
     public float repeatPenalty = 0.7f;
 
@@ -32,10 +40,16 @@ public class FloorTileGenerator : MonoBehaviour
 
         Clear();
 
-        Vector3 tileSize = GetTileSize(floorTiles[0]);
-        List<int> history = new List<int>();
+        Vector3 right = gridRight.normalized;
+        Vector3 forward = gridForward.normalized;
+        Vector3 up = tileUp.normalized;
 
-        int index = 0;
+        Quaternion baseRotation = Quaternion.LookRotation(forward, up);
+        baseRotation *= Quaternion.Euler(baseEulerOffset);
+
+        Vector3 tileSize = GetTileSize(floorTiles[0], right, forward);
+
+        List<int> history = new List<int>();
 
         for (int z = 0; z < tilesZ; z++)
         {
@@ -43,30 +57,37 @@ public class FloorTileGenerator : MonoBehaviour
             {
                 int prefabIndex = PickBlueNoiseIndex(history);
 
-                GameObject tile = Instantiate(
-                    floorTiles[prefabIndex],
-                    transform
-                );
+                GameObject tile = Instantiate(floorTiles[prefabIndex], transform);
 
                 Vector3 pos = startLocalPosition;
-                pos += Vector3.right * tileSize.x * x;
-                pos += Vector3.forward * tileSize.z * z;
+                pos += right * tileSize.x * x;
+                pos += forward * tileSize.z * z;
+
+                Quaternion finalRot = baseRotation;
+
+                if (randomizeRotation && rotationStep > 0)
+                {
+                    int steps = Mathf.Max(1, 360 / rotationStep);
+                    int stepIndex = Random.Range(0, steps);
+                    float angle = stepIndex * rotationStep;
+
+                    // WORLD Y rotation (correct)
+                    Quaternion yaw = Quaternion.AngleAxis(angle, Vector3.up);
+                    finalRot = yaw * baseRotation;
+                }
 
                 tile.transform.localPosition = pos;
-                tile.transform.localRotation = Quaternion.identity;
+                tile.transform.localRotation = finalRot;
 
-                // Update history
                 history.Add(prefabIndex);
                 if (history.Count > historySize)
                     history.RemoveAt(0);
-
-                index++;
             }
         }
     }
 
     // --------------------------------------------------
-    // Blue-noise-ish weighted picker
+    // Blue-noise-ish picker
     // --------------------------------------------------
 
     private int PickBlueNoiseIndex(List<int> history)
@@ -99,7 +120,7 @@ public class FloorTileGenerator : MonoBehaviour
     // Utils
     // --------------------------------------------------
 
-    private Vector3 GetTileSize(GameObject prefab)
+    private Vector3 GetTileSize(GameObject prefab, Vector3 right, Vector3 forward)
     {
         Renderer r = prefab.GetComponentInChildren<Renderer>();
         if (!r)
@@ -109,7 +130,19 @@ public class FloorTileGenerator : MonoBehaviour
         }
 
         Bounds b = r.bounds;
-        return new Vector3(b.size.x, b.size.y, b.size.z);
+        Vector3 e = b.extents;
+
+        float sizeX =
+            2f * (Mathf.Abs(right.x) * e.x +
+                  Mathf.Abs(right.y) * e.y +
+                  Mathf.Abs(right.z) * e.z);
+
+        float sizeZ =
+            2f * (Mathf.Abs(forward.x) * e.x +
+                  Mathf.Abs(forward.y) * e.y +
+                  Mathf.Abs(forward.z) * e.z);
+
+        return new Vector3(sizeX, b.size.y, sizeZ);
     }
 
     [ContextMenu("Clear")]
