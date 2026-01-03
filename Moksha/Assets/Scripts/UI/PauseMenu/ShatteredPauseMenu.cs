@@ -1,7 +1,6 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
-using UnityEngine.InputSystem;
 
 /// <summary>
 /// Shattered glass pause menu effect.
@@ -18,14 +17,13 @@ public class ShatteredPauseMenu : MonoBehaviour
     [SerializeField] private Transform shardContainer;
 
     [Header("Input")]
-    [SerializeField] private InputActionReference pauseAction;
+    [SerializeField] private KeyCode pauseKey = KeyCode.Escape;
 
     [Header("Shard Settings")]
     [SerializeField] private int shardColumns = 5;
     [SerializeField] private int shardRows = 4;
-    [SerializeField] private Material shardMaterial; // Uses the screenshot texture
+    [SerializeField] private Material shardMaterial; // Assign an Unlit/Texture material
     [SerializeField] private bool randomizeShards = true;
-    [SerializeField] private float shardDepth = 0.01f;
 
     [Header("Animation Settings")]
     [SerializeField] private float openDuration = 0.6f;
@@ -37,7 +35,7 @@ public class ShatteredPauseMenu : MonoBehaviour
     [SerializeField] private AnimationCurve closeCurve = AnimationCurve.EaseInOut(0, 0, 1, 1);
 
     [Header("Center Gap")]
-    [SerializeField] private float centerGapWidth = 400f; // How much space opens in center
+    [SerializeField] private float centerGapWidth = 400f;
     [SerializeField] private float centerGapHeight = 300f;
 
     // Runtime
@@ -47,6 +45,7 @@ public class ShatteredPauseMenu : MonoBehaviour
     private bool isPaused;
     private bool isAnimating;
     private Coroutine animationCoroutine;
+    private Material shardMaterialInstance;
 
     public bool IsPaused => isPaused;
 
@@ -67,33 +66,21 @@ public class ShatteredPauseMenu : MonoBehaviour
 
         if (menuContent != null)
             menuContent.SetActive(false);
+
+        // Create material instance
+        if (shardMaterial != null)
+            shardMaterialInstance = new Material(shardMaterial);
     }
 
-    private void OnEnable()
+    private void Update()
     {
-        if (pauseAction != null)
+        if (Input.GetKeyDown(pauseKey) && !isAnimating)
         {
-            pauseAction.action.Enable();
-            pauseAction.action.performed += OnPausePressed;
+            if (isPaused)
+                Resume();
+            else
+                Pause();
         }
-    }
-
-    private void OnDisable()
-    {
-        if (pauseAction != null)
-        {
-            pauseAction.action.performed -= OnPausePressed;
-        }
-    }
-
-    private void OnPausePressed(InputAction.CallbackContext context)
-    {
-        if (isAnimating) return;
-
-        if (isPaused)
-            Resume();
-        else
-            Pause();
     }
 
     /// <summary>
@@ -126,7 +113,7 @@ public class ShatteredPauseMenu : MonoBehaviour
     {
         isAnimating = true;
 
-        // Capture screenshot
+        // Capture screenshot at end of frame
         yield return new WaitForEndOfFrame();
         CaptureScreenshot();
 
@@ -209,6 +196,10 @@ public class ShatteredPauseMenu : MonoBehaviour
         screenshotTexture.ReadPixels(new Rect(0, 0, width, height), 0, 0);
         screenshotTexture.Apply();
         RenderTexture.active = null;
+
+        // Update material with screenshot
+        if (shardMaterialInstance != null)
+            shardMaterialInstance.mainTexture = screenshotTexture;
     }
 
     private void CreateShards()
@@ -230,19 +221,19 @@ public class ShatteredPauseMenu : MonoBehaviour
                 float x = col * shardWidth;
                 float y = row * shardHeight;
 
-                // Add randomization to create irregular shapes
+                // Create corner positions
                 Vector2[] corners = new Vector2[4];
-                corners[0] = new Vector2(x, y); // Bottom-left
-                corners[1] = new Vector2(x + shardWidth, y); // Bottom-right
-                corners[2] = new Vector2(x + shardWidth, y + shardHeight); // Top-right
-                corners[3] = new Vector2(x, y + shardHeight); // Top-left
+                corners[0] = new Vector2(x, y);
+                corners[1] = new Vector2(x + shardWidth, y);
+                corners[2] = new Vector2(x + shardWidth, y + shardHeight);
+                corners[3] = new Vector2(x, y + shardHeight);
 
+                // Add randomization for irregular shapes
                 if (randomizeShards)
                 {
-                    float randomAmount = Mathf.Min(shardWidth, shardHeight) * 0.2f;
+                    float randomAmount = Mathf.Min(shardWidth, shardHeight) * 0.15f;
                     for (int i = 0; i < 4; i++)
                     {
-                        // Don't randomize edge corners
                         bool isEdgeX = (col == 0 && (i == 0 || i == 3)) || (col == shardColumns - 1 && (i == 1 || i == 2));
                         bool isEdgeY = (row == 0 && (i == 0 || i == 1)) || (row == shardRows - 1 && (i == 2 || i == 3));
 
@@ -253,30 +244,42 @@ public class ShatteredPauseMenu : MonoBehaviour
                     }
                 }
 
-                // Calculate center of this shard
+                // Calculate center of shard
                 Vector2 shardCenter = (corners[0] + corners[1] + corners[2] + corners[3]) / 4f;
 
-                // Calculate scatter direction (away from center)
-                Vector2 dirFromCenter = (shardCenter - screenCenter).normalized;
+                // Calculate scatter direction (away from screen center)
+                Vector2 dirFromCenter = shardCenter - screenCenter;
+                if (dirFromCenter.sqrMagnitude < 0.01f)
+                    dirFromCenter = Random.insideUnitCircle.normalized;
+                else
+                    dirFromCenter.Normalize();
 
-                // Calculate scatter distance based on distance from center
+                // Distance-based scatter amount
                 float distFromCenter = Vector2.Distance(shardCenter, screenCenter);
                 float maxDist = Vector2.Distance(Vector2.zero, screenCenter);
                 float normalizedDist = distFromCenter / maxDist;
 
-                // Shards near center move more to create the gap
-                Vector2 scatterOffset = dirFromCenter * maxScatterDistance * (0.5f + normalizedDist * 0.5f);
+                Vector2 scatterOffset = dirFromCenter * maxScatterDistance * (0.3f + normalizedDist * 0.7f);
 
-                // Add extra offset to create center gap
-                if (Mathf.Abs(shardCenter.x - screenCenter.x) < screenWidth * 0.3f)
-                    scatterOffset.x += Mathf.Sign(dirFromCenter.x) * centerGapWidth * 0.5f;
-                if (Mathf.Abs(shardCenter.y - screenCenter.y) < screenHeight * 0.3f)
-                    scatterOffset.y += Mathf.Sign(dirFromCenter.y) * centerGapHeight * 0.5f;
+                // Extra offset to create center gap
+                float centerThresholdX = screenWidth * 0.35f;
+                float centerThresholdY = screenHeight * 0.35f;
+
+                if (Mathf.Abs(shardCenter.x - screenCenter.x) < centerThresholdX)
+                {
+                    float gapMultiplier = 1f - Mathf.Abs(shardCenter.x - screenCenter.x) / centerThresholdX;
+                    scatterOffset.x += Mathf.Sign(dirFromCenter.x) * centerGapWidth * gapMultiplier;
+                }
+                if (Mathf.Abs(shardCenter.y - screenCenter.y) < centerThresholdY)
+                {
+                    float gapMultiplier = 1f - Mathf.Abs(shardCenter.y - screenCenter.y) / centerThresholdY;
+                    scatterOffset.y += Mathf.Sign(dirFromCenter.y) * centerGapHeight * gapMultiplier;
+                }
 
                 // Random rotation
                 float randomRot = Random.Range(-maxRotation, maxRotation);
 
-                // Create the shard
+                // Create shard
                 GlassShard shard = CreateShard(corners, shardCenter, scatterOffset, randomRot, screenWidth, screenHeight);
                 shards.Add(shard);
             }
@@ -289,25 +292,23 @@ public class ShatteredPauseMenu : MonoBehaviour
         GameObject shardObj = new GameObject("Shard");
         shardObj.transform.SetParent(shardContainer, false);
 
-        // Add RectTransform for UI
+        // Add RectTransform
         RectTransform rt = shardObj.AddComponent<RectTransform>();
         rt.anchorMin = Vector2.zero;
         rt.anchorMax = Vector2.zero;
         rt.pivot = new Vector2(0.5f, 0.5f);
         rt.anchoredPosition = center;
-        rt.sizeDelta = new Vector2(100, 100); // Will be overridden by mesh
 
-        // Create mesh for the shard shape
+        // Create mesh
         MeshFilter meshFilter = shardObj.AddComponent<MeshFilter>();
         MeshRenderer meshRenderer = shardObj.AddComponent<MeshRenderer>();
 
         Mesh mesh = CreateShardMesh(corners, center, screenWidth, screenHeight);
         meshFilter.mesh = mesh;
 
-        // Setup material with screenshot
-        Material mat = new Material(shardMaterial);
-        mat.mainTexture = screenshotTexture;
-        meshRenderer.material = mat;
+        // Assign material
+        meshRenderer.material = shardMaterialInstance;
+        meshRenderer.sortingOrder = 100; // Render on top
 
         // Add shard component
         GlassShard shard = shardObj.AddComponent<GlassShard>();
@@ -320,20 +321,16 @@ public class ShatteredPauseMenu : MonoBehaviour
     {
         Mesh mesh = new Mesh();
 
-        // Convert corners to local space (relative to center)
         Vector3[] vertices = new Vector3[4];
         Vector2[] uvs = new Vector2[4];
 
         for (int i = 0; i < 4; i++)
         {
-            // Vertex position relative to center
             vertices[i] = new Vector3(corners[i].x - center.x, corners[i].y - center.y, 0);
-
-            // UV based on screen position
             uvs[i] = new Vector2(corners[i].x / screenWidth, corners[i].y / screenHeight);
         }
 
-        int[] triangles = new int[] { 0, 2, 1, 0, 3, 2 };
+        int[] triangles = { 0, 2, 1, 0, 3, 2 };
 
         mesh.vertices = vertices;
         mesh.uv = uvs;
@@ -346,22 +343,13 @@ public class ShatteredPauseMenu : MonoBehaviour
 
     private IEnumerator AnimateShardsOpen()
     {
-        float elapsed = 0f;
-
-        // Calculate stagger delays based on distance from center
-        float[] delays = new float[shards.Count];
+        float[] delays = CalculateStaggerDelays();
         float maxDelay = 0f;
-
-        Vector2 screenCenter = new Vector2(Screen.width / 2f, Screen.height / 2f);
-        for (int i = 0; i < shards.Count; i++)
-        {
-            float dist = Vector2.Distance(shards[i].OriginalPosition, screenCenter);
-            float maxDist = Vector2.Distance(Vector2.zero, screenCenter);
-            delays[i] = (1f - dist / maxDist) * staggerAmount * shards.Count;
-            maxDelay = Mathf.Max(maxDelay, delays[i]);
-        }
+        foreach (float d in delays)
+            maxDelay = Mathf.Max(maxDelay, d);
 
         float totalDuration = openDuration + maxDelay;
+        float elapsed = 0f;
 
         while (elapsed < totalDuration)
         {
@@ -381,7 +369,6 @@ public class ShatteredPauseMenu : MonoBehaviour
             yield return null;
         }
 
-        // Ensure all shards are fully open
         foreach (var shard in shards)
             shard.SetOpenAmount(1f);
     }
@@ -401,9 +388,24 @@ public class ShatteredPauseMenu : MonoBehaviour
             yield return null;
         }
 
-        // Ensure all shards are fully closed
         foreach (var shard in shards)
             shard.SetOpenAmount(0f);
+    }
+
+    private float[] CalculateStaggerDelays()
+    {
+        float[] delays = new float[shards.Count];
+        Vector2 screenCenter = new Vector2(Screen.width / 2f, Screen.height / 2f);
+        float maxDist = Vector2.Distance(Vector2.zero, screenCenter);
+
+        for (int i = 0; i < shards.Count; i++)
+        {
+            float dist = Vector2.Distance(shards[i].OriginalPosition, screenCenter);
+            // Center shards animate first
+            delays[i] = (1f - dist / maxDist) * staggerAmount * shards.Count;
+        }
+
+        return delays;
     }
 
     private void ClearShards()
@@ -426,6 +428,9 @@ public class ShatteredPauseMenu : MonoBehaviour
 
         if (screenshotTexture != null)
             Destroy(screenshotTexture);
+
+        if (shardMaterialInstance != null)
+            Destroy(shardMaterialInstance);
 
         ClearShards();
     }
