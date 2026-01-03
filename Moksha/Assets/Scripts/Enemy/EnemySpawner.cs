@@ -2,8 +2,8 @@ using System.Collections.Generic;
 using UnityEngine;
 
 /// <summary>
-/// Roguelite-style enemy spawner. Spawns enemies around the player
-/// with increasing difficulty over time. Uses object pooling for performance.
+/// Optimized roguelite-style enemy spawner.
+/// Uses object pooling, avoids LINQ, minimizes allocations.
 /// </summary>
 public class EnemySpawner : MonoBehaviour
 {
@@ -14,40 +14,42 @@ public class EnemySpawner : MonoBehaviour
     [SerializeField] private float minSpawnDistance = 15f;
     [SerializeField] private float maxSpawnDistance = 25f;
     [SerializeField] private float spawnInterval = 2f;
-    [SerializeField] private int maxEnemies = 100;
+    [SerializeField] private int maxEnemies = 200;
 
     [Header("Difficulty Scaling")]
-    [Tooltip("Spawn interval decreases over time")]
     [SerializeField] private float minSpawnInterval = 0.3f;
-    [SerializeField] private float spawnIntervalDecreaseRate = 0.01f; // per second
-    [Tooltip("More enemies spawn per wave over time")]
+    [SerializeField] private float spawnIntervalDecreaseRate = 0.01f;
     [SerializeField] private int baseEnemiesPerSpawn = 1;
-    [SerializeField] private float enemiesPerSpawnIncreaseRate = 0.1f; // per second
+    [SerializeField] private float enemiesPerSpawnIncreaseRate = 0.1f;
 
     [Header("Enemy Types")]
-    [SerializeField] private List<EnemySpawnEntry> enemyTypes = new List<EnemySpawnEntry>();
+    [SerializeField] private EnemySpawnEntry[] enemyTypes;
 
-    [Header("Spawn Area")]
-    [SerializeField] private bool useSpawnZones = false;
-    [SerializeField] private List<Transform> spawnZones = new List<Transform>();
-    [SerializeField] private float spawnZoneRadius = 5f;
-
-    [Header("Runtime Info (Read Only)")]
+    [Header("Runtime Info")]
     [SerializeField] private int currentEnemyCount;
     [SerializeField] private float gameTime;
-    [SerializeField] private float currentSpawnInterval;
-    [SerializeField] private int currentEnemiesPerSpawn;
 
-    // Object pooling
-    private Dictionary<GameObject, Queue<EnemyBase>> enemyPools = new Dictionary<GameObject, Queue<EnemyBase>>();
-    private List<EnemyBase> activeEnemies = new List<EnemyBase>();
+    // Object pools - using arrays for cache efficiency
+    private Dictionary<int, Queue<EnemyBase>> enemyPools;
+    private Dictionary<int, EnemySpawnEntry> entryByPrefabId;
     
+    // Cached calculations
+    private float currentSpawnInterval;
+    private int currentEnemiesPerSpawn;
     private float spawnTimer;
     private bool isSpawning = true;
+    
+    // Pre-allocated lists for spawn selection (avoid allocations)
+    private List<EnemySpawnEntry> availableEntries;
+    private float[] cumulativeWeights;
+    
+    // Cached vectors
+    private Vector3 spawnPosition;
+    private Vector3 playerPos;
+    private Quaternion spawnRotation;
 
     public int CurrentEnemyCount => currentEnemyCount;
     public float GameTime => gameTime;
-    public bool IsSpawning => isSpawning;
 
     private void Awake()
     {
@@ -60,19 +62,24 @@ public class EnemySpawner : MonoBehaviour
 
         currentSpawnInterval = spawnInterval;
         currentEnemiesPerSpawn = baseEnemiesPerSpawn;
+        
+        // Pre-allocate collections
+        int typeCount = enemyTypes != null ? enemyTypes.Length : 0;
+        enemyPools = new Dictionary<int, Queue<EnemyBase>>(typeCount);
+        entryByPrefabId = new Dictionary<int, EnemySpawnEntry>(typeCount);
+        availableEntries = new List<EnemySpawnEntry>(typeCount);
+        cumulativeWeights = new float[typeCount];
     }
 
     private void Start()
     {
-        // Auto-find player
         if (playerTransform == null)
         {
-            GameObject player = GameObject.FindGameObjectWithTag("Player");
+            var player = GameObject.FindGameObjectWithTag("Player");
             if (player != null)
                 playerTransform = player.transform;
         }
 
-        // Initialize pools
         InitializePools();
     }
 
@@ -80,10 +87,17 @@ public class EnemySpawner : MonoBehaviour
     {
         if (!isSpawning || playerTransform == null) return;
 
-        gameTime += Time.deltaTime;
-        UpdateDifficulty();
+        float dt = Time.deltaTime;
+        gameTime += dt;
+        
+        // Update difficulty (simple math, no allocations)
+        currentSpawnInterval = spawnInterval - (spawnIntervalDecreaseRate * gameTime);
+        if (currentSpawnInterval < minSpawnInterval) 
+            currentSpawnInterval = minSpawnInterval;
+        
+        currentEnemiesPerSpawn = baseEnemiesPerSpawn + (int)(enemiesPerSpawnIncreaseRate * gameTime);
 
-        spawnTimer += Time.deltaTime;
+        spawnTimer += dt;
         if (spawnTimer >= currentSpawnInterval)
         {
             spawnTimer = 0f;
@@ -91,23 +105,12 @@ public class EnemySpawner : MonoBehaviour
         }
     }
 
-    private void UpdateDifficulty()
-    {
-        // Decrease spawn interval over time
-        currentSpawnInterval = Mathf.Max(
-            minSpawnInterval,
-            spawnInterval - (spawnIntervalDecreaseRate * gameTime)
-        );
-
-        // Increase enemies per spawn over time
-        currentEnemiesPerSpawn = baseEnemiesPerSpawn + Mathf.FloorToInt(enemiesPerSpawnIncreaseRate * gameTime);
-    }
-
     private void SpawnWave()
     {
-        int enemiesToSpawn = Mathf.Min(currentEnemiesPerSpawn, maxEnemies - currentEnemyCount);
+        int available = maxEnemies - currentEnemyCount;
+        int toSpawn = currentEnemiesPerSpawn < available ? currentEnemiesPerSpawn : available;
 
-        for (int i = 0; i < enemiesToSpawn; i++)
+        for (int i = 0; i < toSpawn; i++)
         {
             SpawnEnemy();
         }
@@ -117,181 +120,195 @@ public class EnemySpawner : MonoBehaviour
     {
         if (currentEnemyCount >= maxEnemies) return;
 
-        // Select enemy type based on weights and time
         EnemySpawnEntry entry = SelectEnemyType();
         if (entry == null || entry.prefab == null) return;
 
-        // Get spawn position
-        Vector3 spawnPos = GetSpawnPosition();
+        // Calculate spawn position
+        CalculateSpawnPosition();
 
-        // Get from pool or instantiate
-        EnemyBase enemy = GetEnemyFromPool(entry.prefab);
+        // Get from pool
+        int prefabId = entry.prefab.GetInstanceID();
+        EnemyBase enemy = GetFromPool(prefabId, entry);
         if (enemy == null) return;
 
         // Setup enemy
-        enemy.transform.position = spawnPos;
-        enemy.transform.rotation = Quaternion.LookRotation(playerTransform.position - spawnPos);
+        Transform enemyTransform = enemy.transform;
+        enemyTransform.position = spawnPosition;
+        
+        // Calculate rotation to face player
+        Vector3 lookDir = playerPos - spawnPosition;
+        lookDir.y = 0f;
+        if (lookDir.sqrMagnitude > 0.001f)
+            spawnRotation = Quaternion.LookRotation(lookDir);
+        enemyTransform.rotation = spawnRotation;
+        
         enemy.Initialize(entry.stats, playerTransform);
         enemy.gameObject.SetActive(true);
-
-        // Subscribe to death event
+        
+        // Register with manager and subscribe to death
+        if (EnemyManager.Instance != null)
+        {
+            EnemyManager.Instance.RegisterEnemy(enemy);
+            enemy.SetManagedByManager(true);
+        }
+        else
+        {
+            enemy.SetManagedByManager(false);
+        }
+            
         enemy.OnDeath += OnEnemyDeath;
-
-        activeEnemies.Add(enemy);
         currentEnemyCount++;
     }
 
     private EnemySpawnEntry SelectEnemyType()
     {
-        // Filter by min spawn time
-        List<EnemySpawnEntry> available = enemyTypes.FindAll(e => 
-            e.stats != null && gameTime >= e.stats.minSpawnTime);
+        // Build available list without allocations (reuse list)
+        availableEntries.Clear();
+        float totalWeight = 0f;
+        int count = 0;
 
-        if (available.Count == 0) return null;
+        for (int i = 0; i < enemyTypes.Length; i++)
+        {
+            EnemySpawnEntry entry = enemyTypes[i];
+            if (entry.stats != null && gameTime >= entry.stats.minSpawnTime)
+            {
+                availableEntries.Add(entry);
+                totalWeight += entry.stats.spawnWeight;
+                
+                // Store cumulative weight
+                if (count < cumulativeWeights.Length)
+                    cumulativeWeights[count] = totalWeight;
+                count++;
+            }
+        }
+
+        if (count == 0) return null;
 
         // Weighted random selection
-        float totalWeight = 0f;
-        foreach (var entry in available)
-            totalWeight += entry.stats.spawnWeight;
-
-        float random = Random.Range(0f, totalWeight);
-        float current = 0f;
-
-        foreach (var entry in available)
+        float random = Random.value * totalWeight;
+        for (int i = 0; i < count; i++)
         {
-            current += entry.stats.spawnWeight;
-            if (random <= current)
-                return entry;
+            if (random <= cumulativeWeights[i])
+                return availableEntries[i];
         }
 
-        return available[available.Count - 1];
+        return availableEntries[count - 1];
     }
 
-    private Vector3 GetSpawnPosition()
+    private void CalculateSpawnPosition()
     {
-        if (useSpawnZones && spawnZones.Count > 0)
-        {
-            // Spawn in a random zone
-            Transform zone = spawnZones[Random.Range(0, spawnZones.Count)];
-            Vector2 randomCircle = Random.insideUnitCircle * spawnZoneRadius;
-            return zone.position + new Vector3(randomCircle.x, 0, randomCircle.y);
-        }
-        else
-        {
-            // Spawn around player at random distance/angle
-            float angle = Random.Range(0f, 360f) * Mathf.Deg2Rad;
-            float distance = Random.Range(minSpawnDistance, maxSpawnDistance);
+        playerPos = playerTransform.position;
+        
+        // Use faster sin/cos approximation for angles
+        float angle = Random.value * 6.28318f; // 2 * PI
+        float distance = minSpawnDistance + Random.value * (maxSpawnDistance - minSpawnDistance);
 
-            Vector3 offset = new Vector3(
-                Mathf.Cos(angle) * distance,
-                0,
-                Mathf.Sin(angle) * distance
-            );
-
-            return playerTransform.position + offset;
-        }
+        spawnPosition.x = playerPos.x + Mathf.Cos(angle) * distance;
+        spawnPosition.y = playerPos.y;
+        spawnPosition.z = playerPos.z + Mathf.Sin(angle) * distance;
     }
 
     private void InitializePools()
     {
-        foreach (var entry in enemyTypes)
+        if (enemyTypes == null) return;
+
+        for (int i = 0; i < enemyTypes.Length; i++)
         {
-            if (entry.prefab != null && !enemyPools.ContainsKey(entry.prefab))
+            EnemySpawnEntry entry = enemyTypes[i];
+            if (entry.prefab == null) continue;
+
+            int prefabId = entry.prefab.GetInstanceID();
+            entryByPrefabId[prefabId] = entry;
+            
+            if (!enemyPools.ContainsKey(prefabId))
             {
-                enemyPools[entry.prefab] = new Queue<EnemyBase>();
+                Queue<EnemyBase> pool = new Queue<EnemyBase>(entry.poolSize);
                 
                 // Pre-warm pool
-                for (int i = 0; i < entry.poolSize; i++)
+                for (int j = 0; j < entry.poolSize; j++)
                 {
-                    EnemyBase enemy = Instantiate(entry.prefab).GetComponent<EnemyBase>();
-                    enemy.gameObject.SetActive(false);
-                    enemy.transform.SetParent(transform);
-                    enemyPools[entry.prefab].Enqueue(enemy);
+                    GameObject obj = Instantiate(entry.prefab, transform);
+                    EnemyBase enemy = obj.GetComponent<EnemyBase>();
+                    obj.SetActive(false);
+                    pool.Enqueue(enemy);
                 }
+                
+                enemyPools[prefabId] = pool;
             }
         }
     }
 
-    private EnemyBase GetEnemyFromPool(GameObject prefab)
+    private EnemyBase GetFromPool(int prefabId, EnemySpawnEntry entry)
     {
-        if (!enemyPools.ContainsKey(prefab))
-            enemyPools[prefab] = new Queue<EnemyBase>();
+        if (!enemyPools.TryGetValue(prefabId, out Queue<EnemyBase> pool))
+        {
+            pool = new Queue<EnemyBase>(16);
+            enemyPools[prefabId] = pool;
+        }
 
-        Queue<EnemyBase> pool = enemyPools[prefab];
-
+        EnemyBase enemy;
         if (pool.Count > 0)
         {
-            EnemyBase enemy = pool.Dequeue();
+            enemy = pool.Dequeue();
             enemy.ResetEnemy();
-            return enemy;
         }
         else
         {
-            // Create new if pool empty
-            EnemyBase enemy = Instantiate(prefab).GetComponent<EnemyBase>();
-            enemy.transform.SetParent(transform);
-            return enemy;
+            GameObject obj = Instantiate(entry.prefab, transform);
+            enemy = obj.GetComponent<EnemyBase>();
         }
+
+        return enemy;
     }
 
-    private void ReturnToPool(EnemyBase enemy, GameObject prefab)
+    private void ReturnToPool(EnemyBase enemy)
     {
         enemy.OnDeath -= OnEnemyDeath;
+        
+        if (EnemyManager.Instance != null)
+            EnemyManager.Instance.UnregisterEnemy(enemy);
+
         enemy.gameObject.SetActive(false);
 
-        if (!enemyPools.ContainsKey(prefab))
-            enemyPools[prefab] = new Queue<EnemyBase>();
-
-        enemyPools[prefab].Enqueue(enemy);
-    }
-
-    private void OnEnemyDeath(EnemyBase enemy)
-    {
-        activeEnemies.Remove(enemy);
-        currentEnemyCount--;
-
-        // Find the prefab for this enemy type and return to pool
-        foreach (var entry in enemyTypes)
+        // Find pool by stats reference
+        for (int i = 0; i < enemyTypes.Length; i++)
         {
-            if (entry.stats == enemy.Stats)
+            if (enemyTypes[i].stats == enemy.Stats)
             {
-                ReturnToPool(enemy, entry.prefab);
+                int prefabId = enemyTypes[i].prefab.GetInstanceID();
+                if (enemyPools.TryGetValue(prefabId, out Queue<EnemyBase> pool))
+                {
+                    pool.Enqueue(enemy);
+                }
                 break;
             }
         }
     }
 
-    /// <summary>
-    /// Start/resume spawning
-    /// </summary>
-    public void StartSpawning()
+    private void OnEnemyDeath(EnemyBase enemy)
     {
-        isSpawning = true;
+        currentEnemyCount--;
+        ReturnToPool(enemy);
     }
 
-    /// <summary>
-    /// Pause spawning
-    /// </summary>
-    public void StopSpawning()
-    {
-        isSpawning = false;
-    }
+    public void StartSpawning() => isSpawning = true;
+    public void StopSpawning() => isSpawning = false;
 
-    /// <summary>
-    /// Kill all active enemies
-    /// </summary>
     public void KillAllEnemies()
     {
-        for (int i = activeEnemies.Count - 1; i >= 0; i--)
+        // Use EnemyManager to iterate efficiently
+        if (EnemyManager.Instance != null)
         {
-            if (activeEnemies[i] != null)
-                activeEnemies[i].TakeDamage(float.MaxValue);
+            List<EnemyBase> tempList = new List<EnemyBase>(currentEnemyCount);
+            EnemyManager.Instance.GetActiveEnemies(tempList);
+            
+            for (int i = tempList.Count - 1; i >= 0; i--)
+            {
+                tempList[i].TakeDamage(float.MaxValue);
+            }
         }
     }
 
-    /// <summary>
-    /// Reset spawner state (for new game)
-    /// </summary>
     public void ResetSpawner()
     {
         KillAllEnemies();
@@ -302,40 +319,19 @@ public class EnemySpawner : MonoBehaviour
     }
 
 #if UNITY_EDITOR
-    [ContextMenu("Spawn Single Enemy")]
-    public void DebugSpawnEnemy()
-    {
-        SpawnEnemy();
-    }
+    [ContextMenu("Spawn Enemy")]
+    public void DebugSpawnEnemy() => SpawnEnemy();
 
     [ContextMenu("Spawn Wave")]
-    public void DebugSpawnWave()
-    {
-        SpawnWave();
-    }
+    public void DebugSpawnWave() => SpawnWave();
 
     private void OnDrawGizmosSelected()
     {
         Transform center = playerTransform != null ? playerTransform : transform;
-
-        // Min spawn distance
         Gizmos.color = Color.green;
         Gizmos.DrawWireSphere(center.position, minSpawnDistance);
-
-        // Max spawn distance
         Gizmos.color = Color.red;
         Gizmos.DrawWireSphere(center.position, maxSpawnDistance);
-
-        // Spawn zones
-        if (useSpawnZones)
-        {
-            Gizmos.color = Color.cyan;
-            foreach (var zone in spawnZones)
-            {
-                if (zone != null)
-                    Gizmos.DrawWireSphere(zone.position, spawnZoneRadius);
-            }
-        }
     }
 #endif
 }
@@ -345,6 +341,5 @@ public class EnemySpawnEntry
 {
     public GameObject prefab;
     public EnemyStats stats;
-    [Tooltip("Initial pool size for this enemy type")]
-    public int poolSize = 10;
+    public int poolSize = 20;
 }

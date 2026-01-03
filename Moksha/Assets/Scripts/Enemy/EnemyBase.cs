@@ -34,6 +34,9 @@ public abstract class EnemyBase : MonoBehaviour
     // Cached target position (updated by manager)
     protected Vector3 cachedTargetPosition;
     
+    // Track if managed by EnemyManager
+    protected bool isManagedByManager;
+    
     // Properties
     public EnemyStats Stats => stats;
     public float CurrentHealth => currentHealth;
@@ -47,6 +50,32 @@ public abstract class EnemyBase : MonoBehaviour
         cachedTransform = transform;
         CacheStats();
         InitializeHealth();
+    }
+
+    protected virtual void Start()
+    {
+        // Auto-find player if not assigned
+        if (targetTransform == null)
+        {
+            var player = GameObject.FindGameObjectWithTag("Player");
+            if (player != null)
+                targetTransform = player.transform;
+        }
+        
+        // Check if EnemyManager exists
+        isManagedByManager = EnemyManager.Instance != null;
+    }
+
+    /// <summary>
+    /// Fallback Update for when EnemyManager is not present
+    /// </summary>
+    protected virtual void Update()
+    {
+        // Skip if managed by EnemyManager (it calls Tick instead)
+        if (isManagedByManager || IsDead || targetTransform == null) return;
+        
+        cachedTargetPosition = targetTransform.position;
+        UpdateBehavior(Time.deltaTime);
     }
 
     /// <summary>
@@ -75,6 +104,14 @@ public abstract class EnemyBase : MonoBehaviour
         
         cachedTargetPosition = targetPos;
         UpdateBehavior(deltaTime);
+    }
+
+    /// <summary>
+    /// Mark this enemy as managed by EnemyManager (disables Update)
+    /// </summary>
+    public void SetManagedByManager(bool managed)
+    {
+        isManagedByManager = managed;
     }
 
     /// <summary>

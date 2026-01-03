@@ -4,8 +4,7 @@ using UnityEngine.UI;
 using TMPro;
 
 /// <summary>
-/// Individual power-up card UI component.
-/// Displays power-up info and handles selection.
+/// Optimized power-up card. Caches all component references.
 /// </summary>
 public class PowerUpCard : MonoBehaviour
 {
@@ -18,32 +17,44 @@ public class PowerUpCard : MonoBehaviour
     [SerializeField] private Image backgroundImage;
     [SerializeField] private Button selectButton;
 
-    [Header("Hover Effects")]
+    [Header("Hover")]
     [SerializeField] private float hoverScale = 1.05f;
-    [SerializeField] private float hoverDuration = 0.1f;
 
+    // Cached
     private PowerUp powerUp;
     private Action<PowerUp> onSelected;
-    private Vector3 originalScale;
     private RectTransform rectTransform;
+    private Vector3 normalScale;
+    private Vector3 hoverScaleVec;
+    private bool hasIcon;
+    private bool hasName;
+    private bool hasDescription;
+    private bool hasRarity;
+    private bool hasBorder;
+    private bool hasBackground;
 
     private void Awake()
     {
         rectTransform = GetComponent<RectTransform>();
-        originalScale = rectTransform != null ? rectTransform.localScale : Vector3.one;
+        normalScale = rectTransform != null ? rectTransform.localScale : Vector3.one;
+        hoverScaleVec = normalScale * hoverScale;
+
+        // Cache null checks
+        hasIcon = iconImage != null;
+        hasName = nameText != null;
+        hasDescription = descriptionText != null;
+        hasRarity = rarityText != null;
+        hasBorder = borderImage != null;
+        hasBackground = backgroundImage != null;
 
         if (selectButton != null)
-            selectButton.onClick.AddListener(OnButtonClicked);
+            selectButton.onClick.AddListener(OnClick);
     }
 
-    /// <summary>
-    /// Setup the card with a power-up and selection callback
-    /// </summary>
     public void Setup(PowerUp powerUp, Action<PowerUp> onSelected)
     {
         this.powerUp = powerUp;
         this.onSelected = onSelected;
-
         UpdateDisplay();
     }
 
@@ -51,21 +62,21 @@ public class PowerUpCard : MonoBehaviour
     {
         if (powerUp == null) return;
 
-        // Set texts
-        if (nameText != null)
-            nameText.text = powerUp.powerUpName;
+        if (hasName)
+            nameText.SetText(powerUp.powerUpName);
 
-        if (descriptionText != null)
-            descriptionText.text = powerUp.description;
+        if (hasDescription)
+            descriptionText.SetText(powerUp.description);
 
-        if (rarityText != null)
+        Color rarityColor = powerUp.GetRarityColor();
+
+        if (hasRarity)
         {
-            rarityText.text = powerUp.rarity.ToString();
-            rarityText.color = powerUp.GetRarityColor();
+            rarityText.SetText(powerUp.rarity.ToString());
+            rarityText.color = rarityColor;
         }
 
-        // Set icon
-        if (iconImage != null)
+        if (hasIcon)
         {
             if (powerUp.icon != null)
             {
@@ -78,34 +89,31 @@ public class PowerUpCard : MonoBehaviour
             }
         }
 
-        // Set rarity color on border
-        if (borderImage != null)
-            borderImage.color = powerUp.GetRarityColor();
+        if (hasBorder)
+            borderImage.color = rarityColor;
 
-        // Optional: tint background based on rarity
-        if (backgroundImage != null)
+        if (hasBackground)
         {
-            Color bgColor = powerUp.GetRarityColor();
-            bgColor.a = 0.2f; // Subtle tint
-            backgroundImage.color = bgColor;
+            Color bg = rarityColor;
+            bg.a = 0.2f;
+            backgroundImage.color = bg;
         }
     }
 
-    private void OnButtonClicked()
+    private void OnClick()
     {
         onSelected?.Invoke(powerUp);
     }
 
-    // Hover effects (called by Event Trigger or pointer events)
     public void OnPointerEnter()
     {
         if (rectTransform != null)
-            rectTransform.localScale = originalScale * hoverScale;
+            rectTransform.localScale = hoverScaleVec;
     }
 
     public void OnPointerExit()
     {
         if (rectTransform != null)
-            rectTransform.localScale = originalScale;
+            rectTransform.localScale = normalScale;
     }
 }
