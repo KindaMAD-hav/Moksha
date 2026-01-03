@@ -1322,7 +1322,6 @@ GameObject:
   - component: {fileID: 70325863}
   - component: {fileID: 70325862}
   - component: {fileID: 70325861}
-  - component: {fileID: 70325865}
   m_Layer: 5
   m_Name: PauseCanvas
   m_TagString: Untagged
@@ -1414,82 +1413,6 @@ RectTransform:
   m_AnchoredPosition: {x: 0, y: 0}
   m_SizeDelta: {x: 0, y: 0}
   m_Pivot: {x: 0, y: 0}
---- !u!114 &70325865
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 70325860}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 84c4d903db94e354ea96da21ef6157d9, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::ShatteredPauseMenu
-  mainCamera: {fileID: 330585545}
-  menuCanvas: {fileID: 70325863}
-  menuContent: {fileID: 622644809}
-  shardContainer: {fileID: 18845538}
-  pauseKey: 27
-  shardColumns: 5
-  shardRows: 4
-  shardMaterial: {fileID: 2100000, guid: 5e60804ea74aa094480c3d65fdfbdbc4, type: 2}
-  randomizeShards: 1
-  openDuration: 0.6
-  closeDuration: 0.4
-  maxScatterDistance: 300
-  maxRotation: 45
-  staggerAmount: 0.05
-  openCurve:
-    serializedVersion: 2
-    m_Curve:
-    - serializedVersion: 3
-      time: 0
-      value: 0
-      inSlope: 0
-      outSlope: 0
-      tangentMode: 0
-      weightedMode: 0
-      inWeight: 0
-      outWeight: 0
-    - serializedVersion: 3
-      time: 1
-      value: 1
-      inSlope: 0
-      outSlope: 0
-      tangentMode: 0
-      weightedMode: 0
-      inWeight: 0
-      outWeight: 0
-    m_PreInfinity: 2
-    m_PostInfinity: 2
-    m_RotationOrder: 4
-  closeCurve:
-    serializedVersion: 2
-    m_Curve:
-    - serializedVersion: 3
-      time: 0
-      value: 0
-      inSlope: 0
-      outSlope: 0
-      tangentMode: 0
-      weightedMode: 0
-      inWeight: 0
-      outWeight: 0
-    - serializedVersion: 3
-      time: 1
-      value: 1
-      inSlope: 0
-      outSlope: 0
-      tangentMode: 0
-      weightedMode: 0
-      inWeight: 0
-      outWeight: 0
-    m_PreInfinity: 2
-    m_PostInfinity: 2
-    m_RotationOrder: 4
-  centerGapWidth: 400
-  centerGapHeight: 300
 --- !u!1 &74052854
 GameObject:
   m_ObjectHideFlags: 0
@@ -10654,6 +10577,115 @@ MeshCollider:
   m_Convex: 0
   m_CookingOptions: 30
   m_Mesh: {fileID: 6607839196387346367, guid: b2510ce44697bdc41a94e716b30febc0, type: 3}
+--- !u!1 &889116565
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 889116566}
+  - component: {fileID: 889116567}
+  m_Layer: 0
+  m_Name: ShatteredPauseMenu
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &889116566
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 889116565}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: -20.47094, y: 24.54909, z: -44.69069}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &889116567
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 889116565}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 84c4d903db94e354ea96da21ef6157d9, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ShatteredPauseMenu
+  mainCamera: {fileID: 330585545}
+  menuCanvas: {fileID: 70325863}
+  menuContent: {fileID: 622644809}
+  shardContainer: {fileID: 18845538}
+  pauseKey: 27
+  shardColumns: 5
+  shardRows: 4
+  shardMaterial: {fileID: 2100000, guid: 5e60804ea74aa094480c3d65fdfbdbc4, type: 2}
+  randomizeShards: 1
+  openDuration: 0.6
+  closeDuration: 0.4
+  maxScatterDistance: 300
+  maxRotation: 45
+  staggerAmount: 0.05
+  openCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 0
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    - serializedVersion: 3
+      time: 1
+      value: 1
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  closeCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 0
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    - serializedVersion: 3
+      time: 1
+      value: 1
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  centerGapWidth: 400
+  centerGapHeight: 300
+  enableDebugLogs: 1
 --- !u!1 &889951309
 GameObject:
   m_ObjectHideFlags: 0
@@ -34792,3 +34824,4 @@ SceneRoots:
   - {fileID: 1724531382}
   - {fileID: 1542832101}
   - {fileID: 70325864}
+  - {fileID: 889116566}

@@ -1,9 +1,10 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.UI;
 
 /// <summary>
-/// Shattered glass pause menu effect.
+/// Shattered glass pause menu effect using UI system.
 /// Takes a screenshot, shatters it into pieces, and animates them apart to reveal menu.
 /// </summary>
 public class ShatteredPauseMenu : MonoBehaviour
@@ -13,8 +14,8 @@ public class ShatteredPauseMenu : MonoBehaviour
     [Header("References")]
     [SerializeField] private Camera mainCamera;
     [SerializeField] private Canvas menuCanvas;
-    [SerializeField] private GameObject menuContent; // Your actual menu buttons go here
-    [SerializeField] private Transform shardContainer;
+    [SerializeField] private GameObject menuContent;
+    [SerializeField] private RectTransform shardContainer;
 
     [Header("Input")]
     [SerializeField] private KeyCode pauseKey = KeyCode.Escape;
@@ -22,8 +23,6 @@ public class ShatteredPauseMenu : MonoBehaviour
     [Header("Shard Settings")]
     [SerializeField] private int shardColumns = 5;
     [SerializeField] private int shardRows = 4;
-    [SerializeField] private Material shardMaterial; // Assign an Unlit/Texture material
-    [SerializeField] private bool randomizeShards = true;
 
     [Header("Animation Settings")]
     [SerializeField] private float openDuration = 0.6f;
@@ -38,19 +37,22 @@ public class ShatteredPauseMenu : MonoBehaviour
     [SerializeField] private float centerGapWidth = 400f;
     [SerializeField] private float centerGapHeight = 300f;
 
+    [Header("Debug")]
+    [SerializeField] private bool enableDebugLogs = true;
+
     // Runtime
-    private List<GlassShard> shards = new List<GlassShard>();
-    private RenderTexture screenshotRT;
+    private List<UIGlassShard> shards = new List<UIGlassShard>();
     private Texture2D screenshotTexture;
     private bool isPaused;
     private bool isAnimating;
     private Coroutine animationCoroutine;
-    private Material shardMaterialInstance;
 
     public bool IsPaused => isPaused;
 
     private void Awake()
     {
+        Log("ShatteredPauseMenu Awake called");
+        
         if (Instance != null && Instance != this)
         {
             Destroy(gameObject);
@@ -59,33 +61,53 @@ public class ShatteredPauseMenu : MonoBehaviour
         Instance = this;
 
         if (mainCamera == null)
+        {
             mainCamera = Camera.main;
+            Log($"Main camera auto-assigned: {(mainCamera != null ? mainCamera.name : "NULL")}");
+        }
 
         if (menuCanvas != null)
+        {
             menuCanvas.gameObject.SetActive(false);
+            Log("Menu canvas hidden");
+        }
+        else
+        {
+            Log("WARNING: menuCanvas is not assigned!");
+        }
 
         if (menuContent != null)
+        {
             menuContent.SetActive(false);
+        }
 
-        // Create material instance
-        if (shardMaterial != null)
-            shardMaterialInstance = new Material(shardMaterial);
+        if (shardContainer == null)
+        {
+            Log("WARNING: shardContainer is not assigned!");
+        }
+    }
+
+    private void Start()
+    {
+        Log($"ShatteredPauseMenu Start - Pause key is: {pauseKey}");
     }
 
     private void Update()
     {
-        if (Input.GetKeyDown(pauseKey) && !isAnimating)
+        if (Input.GetKeyDown(pauseKey))
         {
-            if (isPaused)
-                Resume();
-            else
-                Pause();
+            Log($"Pause key ({pauseKey}) pressed! isPaused={isPaused}, isAnimating={isAnimating}");
+            
+            if (!isAnimating)
+            {
+                if (isPaused)
+                    Resume();
+                else
+                    Pause();
+            }
         }
     }
 
-    /// <summary>
-    /// Pause the game with shattered glass effect
-    /// </summary>
     public void Pause()
     {
         if (isPaused || isAnimating) return;
@@ -96,9 +118,6 @@ public class ShatteredPauseMenu : MonoBehaviour
         animationCoroutine = StartCoroutine(PauseRoutine());
     }
 
-    /// <summary>
-    /// Resume the game, closing the shattered effect
-    /// </summary>
     public void Resume()
     {
         if (!isPaused || isAnimating) return;
@@ -111,18 +130,20 @@ public class ShatteredPauseMenu : MonoBehaviour
 
     private IEnumerator PauseRoutine()
     {
+        Log("PauseRoutine started");
         isAnimating = true;
 
         // Capture screenshot at end of frame
         yield return new WaitForEndOfFrame();
         CaptureScreenshot();
 
-        // Create shards
-        CreateShards();
-
-        // Show canvas
+        // Show canvas first (so shards are visible)
         if (menuCanvas != null)
             menuCanvas.gameObject.SetActive(true);
+
+        // Create shards
+        CreateShards();
+        Log($"Created {shards.Count} shards");
 
         // Pause time
         Time.timeScale = 0f;
@@ -136,54 +157,36 @@ public class ShatteredPauseMenu : MonoBehaviour
             menuContent.SetActive(true);
 
         isAnimating = false;
+        Log("PauseRoutine complete");
     }
 
     private IEnumerator ResumeRoutine()
     {
+        Log("ResumeRoutine started");
         isAnimating = true;
 
-        // Hide menu content first
         if (menuContent != null)
             menuContent.SetActive(false);
 
-        // Animate shards closing
         yield return StartCoroutine(AnimateShardsClose());
 
-        // Cleanup
         ClearShards();
 
-        // Hide canvas
         if (menuCanvas != null)
             menuCanvas.gameObject.SetActive(false);
 
-        // Resume time
         Time.timeScale = 1f;
         isPaused = false;
-
         isAnimating = false;
+        Log("ResumeRoutine complete");
     }
 
     private void CaptureScreenshot()
     {
         int width = Screen.width;
         int height = Screen.height;
+        Log($"Capturing screenshot: {width}x{height}");
 
-        // Create or resize render texture
-        if (screenshotRT == null || screenshotRT.width != width || screenshotRT.height != height)
-        {
-            if (screenshotRT != null)
-                screenshotRT.Release();
-
-            screenshotRT = new RenderTexture(width, height, 24);
-        }
-
-        // Render camera to texture
-        RenderTexture currentRT = mainCamera.targetTexture;
-        mainCamera.targetTexture = screenshotRT;
-        mainCamera.Render();
-        mainCamera.targetTexture = currentRT;
-
-        // Convert to Texture2D
         if (screenshotTexture == null || screenshotTexture.width != width || screenshotTexture.height != height)
         {
             if (screenshotTexture != null)
@@ -192,157 +195,123 @@ public class ShatteredPauseMenu : MonoBehaviour
             screenshotTexture = new Texture2D(width, height, TextureFormat.RGB24, false);
         }
 
-        RenderTexture.active = screenshotRT;
+        // Read pixels directly from screen
         screenshotTexture.ReadPixels(new Rect(0, 0, width, height), 0, 0);
         screenshotTexture.Apply();
-        RenderTexture.active = null;
-
-        // Update material with screenshot
-        if (shardMaterialInstance != null)
-            shardMaterialInstance.mainTexture = screenshotTexture;
+        Log("Screenshot captured");
     }
 
     private void CreateShards()
     {
         ClearShards();
 
-        float screenWidth = Screen.width;
-        float screenHeight = Screen.height;
-        float shardWidth = screenWidth / shardColumns;
-        float shardHeight = screenHeight / shardRows;
+        if (shardContainer == null)
+        {
+            Log("ERROR: shardContainer is null!");
+            return;
+        }
 
-        Vector2 screenCenter = new Vector2(screenWidth / 2f, screenHeight / 2f);
+        // Get the canvas rect size
+        RectTransform canvasRect = menuCanvas.GetComponent<RectTransform>();
+        float canvasWidth = canvasRect.rect.width;
+        float canvasHeight = canvasRect.rect.height;
+        
+        float shardWidth = canvasWidth / shardColumns;
+        float shardHeight = canvasHeight / shardRows;
+
+        Vector2 canvasCenter = new Vector2(canvasWidth / 2f, canvasHeight / 2f);
+
+        Log($"Canvas size: {canvasWidth}x{canvasHeight}, Shard size: {shardWidth}x{shardHeight}");
 
         for (int row = 0; row < shardRows; row++)
         {
             for (int col = 0; col < shardColumns; col++)
             {
-                // Calculate shard bounds
-                float x = col * shardWidth;
-                float y = row * shardHeight;
+                // Calculate shard position (bottom-left origin)
+                float x = col * shardWidth + shardWidth / 2f;
+                float y = row * shardHeight + shardHeight / 2f;
+                Vector2 shardCenter = new Vector2(x, y);
 
-                // Create corner positions
-                Vector2[] corners = new Vector2[4];
-                corners[0] = new Vector2(x, y);
-                corners[1] = new Vector2(x + shardWidth, y);
-                corners[2] = new Vector2(x + shardWidth, y + shardHeight);
-                corners[3] = new Vector2(x, y + shardHeight);
+                // Calculate UV rect for this shard
+                float uvX = (float)col / shardColumns;
+                float uvY = (float)row / shardRows;
+                float uvW = 1f / shardColumns;
+                float uvH = 1f / shardRows;
+                Rect uvRect = new Rect(uvX, uvY, uvW, uvH);
 
-                // Add randomization for irregular shapes
-                if (randomizeShards)
-                {
-                    float randomAmount = Mathf.Min(shardWidth, shardHeight) * 0.15f;
-                    for (int i = 0; i < 4; i++)
-                    {
-                        bool isEdgeX = (col == 0 && (i == 0 || i == 3)) || (col == shardColumns - 1 && (i == 1 || i == 2));
-                        bool isEdgeY = (row == 0 && (i == 0 || i == 1)) || (row == shardRows - 1 && (i == 2 || i == 3));
-
-                        if (!isEdgeX)
-                            corners[i].x += Random.Range(-randomAmount, randomAmount);
-                        if (!isEdgeY)
-                            corners[i].y += Random.Range(-randomAmount, randomAmount);
-                    }
-                }
-
-                // Calculate center of shard
-                Vector2 shardCenter = (corners[0] + corners[1] + corners[2] + corners[3]) / 4f;
-
-                // Calculate scatter direction (away from screen center)
-                Vector2 dirFromCenter = shardCenter - screenCenter;
+                // Calculate scatter direction (away from center)
+                Vector2 dirFromCenter = shardCenter - canvasCenter;
                 if (dirFromCenter.sqrMagnitude < 0.01f)
                     dirFromCenter = Random.insideUnitCircle.normalized;
                 else
                     dirFromCenter.Normalize();
 
-                // Distance-based scatter amount
-                float distFromCenter = Vector2.Distance(shardCenter, screenCenter);
-                float maxDist = Vector2.Distance(Vector2.zero, screenCenter);
+                // Distance-based scatter
+                float distFromCenter = Vector2.Distance(shardCenter, canvasCenter);
+                float maxDist = Vector2.Distance(Vector2.zero, canvasCenter);
                 float normalizedDist = distFromCenter / maxDist;
 
                 Vector2 scatterOffset = dirFromCenter * maxScatterDistance * (0.3f + normalizedDist * 0.7f);
 
                 // Extra offset to create center gap
-                float centerThresholdX = screenWidth * 0.35f;
-                float centerThresholdY = screenHeight * 0.35f;
+                float centerThresholdX = canvasWidth * 0.35f;
+                float centerThresholdY = canvasHeight * 0.35f;
 
-                if (Mathf.Abs(shardCenter.x - screenCenter.x) < centerThresholdX)
+                if (Mathf.Abs(shardCenter.x - canvasCenter.x) < centerThresholdX)
                 {
-                    float gapMultiplier = 1f - Mathf.Abs(shardCenter.x - screenCenter.x) / centerThresholdX;
-                    scatterOffset.x += Mathf.Sign(dirFromCenter.x) * centerGapWidth * gapMultiplier;
+                    float gapMult = 1f - Mathf.Abs(shardCenter.x - canvasCenter.x) / centerThresholdX;
+                    scatterOffset.x += Mathf.Sign(dirFromCenter.x) * centerGapWidth * gapMult;
                 }
-                if (Mathf.Abs(shardCenter.y - screenCenter.y) < centerThresholdY)
+                if (Mathf.Abs(shardCenter.y - canvasCenter.y) < centerThresholdY)
                 {
-                    float gapMultiplier = 1f - Mathf.Abs(shardCenter.y - screenCenter.y) / centerThresholdY;
-                    scatterOffset.y += Mathf.Sign(dirFromCenter.y) * centerGapHeight * gapMultiplier;
+                    float gapMult = 1f - Mathf.Abs(shardCenter.y - canvasCenter.y) / centerThresholdY;
+                    scatterOffset.y += Mathf.Sign(dirFromCenter.y) * centerGapHeight * gapMult;
                 }
 
-                // Random rotation
                 float randomRot = Random.Range(-maxRotation, maxRotation);
 
-                // Create shard
-                GlassShard shard = CreateShard(corners, shardCenter, scatterOffset, randomRot, screenWidth, screenHeight);
+                // Create UI shard
+                UIGlassShard shard = CreateUIShard(shardCenter, shardWidth, shardHeight, uvRect, scatterOffset, randomRot);
                 shards.Add(shard);
             }
         }
     }
 
-    private GlassShard CreateShard(Vector2[] corners, Vector2 center, Vector2 scatterOffset, float rotation,
-        float screenWidth, float screenHeight)
+    private UIGlassShard CreateUIShard(Vector2 position, float width, float height, Rect uvRect, 
+        Vector2 scatterOffset, float rotation)
     {
-        GameObject shardObj = new GameObject("Shard");
+        GameObject shardObj = new GameObject($"Shard_{shards.Count}");
         shardObj.transform.SetParent(shardContainer, false);
 
-        // Add RectTransform
+        // Setup RectTransform
         RectTransform rt = shardObj.AddComponent<RectTransform>();
         rt.anchorMin = Vector2.zero;
         rt.anchorMax = Vector2.zero;
         rt.pivot = new Vector2(0.5f, 0.5f);
-        rt.anchoredPosition = center;
+        rt.anchoredPosition = position;
+        rt.sizeDelta = new Vector2(width, height);
 
-        // Create mesh
-        MeshFilter meshFilter = shardObj.AddComponent<MeshFilter>();
-        MeshRenderer meshRenderer = shardObj.AddComponent<MeshRenderer>();
-
-        Mesh mesh = CreateShardMesh(corners, center, screenWidth, screenHeight);
-        meshFilter.mesh = mesh;
-
-        // Assign material
-        meshRenderer.material = shardMaterialInstance;
-        meshRenderer.sortingOrder = 100; // Render on top
+        // Add RawImage to display the screenshot portion
+        RawImage rawImage = shardObj.AddComponent<RawImage>();
+        rawImage.texture = screenshotTexture;
+        rawImage.uvRect = uvRect;
+        rawImage.raycastTarget = false;
 
         // Add shard component
-        GlassShard shard = shardObj.AddComponent<GlassShard>();
-        shard.Initialize(center, scatterOffset, rotation);
+        UIGlassShard shard = shardObj.AddComponent<UIGlassShard>();
+        shard.Initialize(position, scatterOffset, rotation);
 
         return shard;
     }
 
-    private Mesh CreateShardMesh(Vector2[] corners, Vector2 center, float screenWidth, float screenHeight)
-    {
-        Mesh mesh = new Mesh();
-
-        Vector3[] vertices = new Vector3[4];
-        Vector2[] uvs = new Vector2[4];
-
-        for (int i = 0; i < 4; i++)
-        {
-            vertices[i] = new Vector3(corners[i].x - center.x, corners[i].y - center.y, 0);
-            uvs[i] = new Vector2(corners[i].x / screenWidth, corners[i].y / screenHeight);
-        }
-
-        int[] triangles = { 0, 2, 1, 0, 3, 2 };
-
-        mesh.vertices = vertices;
-        mesh.uv = uvs;
-        mesh.triangles = triangles;
-        mesh.RecalculateNormals();
-        mesh.RecalculateBounds();
-
-        return mesh;
-    }
-
     private IEnumerator AnimateShardsOpen()
     {
+        if (shards.Count == 0)
+        {
+            Log("WARNING: No shards to animate!");
+            yield break;
+        }
+
         float[] delays = CalculateStaggerDelays();
         float maxDelay = 0f;
         foreach (float d in delays)
@@ -350,6 +319,8 @@ public class ShatteredPauseMenu : MonoBehaviour
 
         float totalDuration = openDuration + maxDelay;
         float elapsed = 0f;
+
+        Log($"Animating {shards.Count} shards over {totalDuration:F2}s");
 
         while (elapsed < totalDuration)
         {
@@ -394,14 +365,14 @@ public class ShatteredPauseMenu : MonoBehaviour
 
     private float[] CalculateStaggerDelays()
     {
-        float[] delays = new float[shards.Count];
-        Vector2 screenCenter = new Vector2(Screen.width / 2f, Screen.height / 2f);
-        float maxDist = Vector2.Distance(Vector2.zero, screenCenter);
+        RectTransform canvasRect = menuCanvas.GetComponent<RectTransform>();
+        Vector2 canvasCenter = new Vector2(canvasRect.rect.width / 2f, canvasRect.rect.height / 2f);
+        float maxDist = canvasCenter.magnitude;
 
+        float[] delays = new float[shards.Count];
         for (int i = 0; i < shards.Count; i++)
         {
-            float dist = Vector2.Distance(shards[i].OriginalPosition, screenCenter);
-            // Center shards animate first
+            float dist = Vector2.Distance(shards[i].OriginalPosition, canvasCenter);
             delays[i] = (1f - dist / maxDist) * staggerAmount * shards.Count;
         }
 
@@ -418,19 +389,16 @@ public class ShatteredPauseMenu : MonoBehaviour
         shards.Clear();
     }
 
+    private void Log(string message)
+    {
+        if (enableDebugLogs)
+            Debug.Log($"[ShatteredPauseMenu] {message}");
+    }
+
     private void OnDestroy()
     {
-        if (screenshotRT != null)
-        {
-            screenshotRT.Release();
-            Destroy(screenshotRT);
-        }
-
         if (screenshotTexture != null)
             Destroy(screenshotTexture);
-
-        if (shardMaterialInstance != null)
-            Destroy(shardMaterialInstance);
 
         ClearShards();
     }
@@ -439,10 +407,8 @@ public class ShatteredPauseMenu : MonoBehaviour
     [ContextMenu("Test Pause")]
     public void TestPause()
     {
-        if (isPaused)
-            Resume();
-        else
-            Pause();
+        if (isPaused) Resume();
+        else Pause();
     }
 #endif
 }

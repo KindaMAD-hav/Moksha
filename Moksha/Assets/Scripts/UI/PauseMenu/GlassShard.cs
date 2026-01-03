@@ -10,6 +10,7 @@ public class GlassShard : MonoBehaviour
     private float targetRotation;
     private RectTransform rectTransform;
     private Transform cachedTransform;
+    private bool isInitialized;
 
     public Vector2 OriginalPosition => originalPosition;
 
@@ -27,7 +28,13 @@ public class GlassShard : MonoBehaviour
         
         // Start at original position
         if (rectTransform != null)
+        {
             rectTransform.anchoredPosition = originalPosition;
+        }
+        
+        isInitialized = true;
+        
+        Debug.Log($"[GlassShard] Initialized at {originalPos}, scatter: {scatter}, rotation: {rotation}");
     }
 
     /// <summary>
@@ -35,6 +42,12 @@ public class GlassShard : MonoBehaviour
     /// </summary>
     public void SetOpenAmount(float t)
     {
+        if (!isInitialized)
+        {
+            Debug.LogWarning("[GlassShard] SetOpenAmount called before Initialize!");
+            return;
+        }
+
         if (rectTransform != null)
         {
             // Interpolate position
@@ -53,10 +66,13 @@ public class GlassShard : MonoBehaviour
 
         // Interpolate rotation
         float rotation = targetRotation * t;
-        cachedTransform.localRotation = Quaternion.Euler(0f, 0f, rotation);
+        if (cachedTransform != null)
+        {
+            cachedTransform.localRotation = Quaternion.Euler(0f, 0f, rotation);
 
-        // Optional: slight scale variation for depth effect
-        float scale = 1f + t * 0.05f;
-        cachedTransform.localScale = new Vector3(scale, scale, 1f);
+            // Optional: slight scale variation for depth effect
+            float scale = 1f + t * 0.05f;
+            cachedTransform.localScale = new Vector3(scale, scale, 1f);
+        }
     }
 }
