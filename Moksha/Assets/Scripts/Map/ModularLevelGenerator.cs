@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using UnityEngine;
 
 public class ModularLevelGenerator : MonoBehaviour
@@ -24,7 +24,7 @@ public class ModularLevelGenerator : MonoBehaviour
 
     [Header("Wall Placement")]
     public bool preferRendererForLength = true;
-    [Tooltip("Small overlap to remove tiny gaps (0.01�0.05 recommended)")]
+    [Tooltip("Small overlap to remove tiny gaps (0.01–0.05 recommended)")]
     public float wallJoinEpsilon = 0.02f;
 
     // ---------- Floor ----------
