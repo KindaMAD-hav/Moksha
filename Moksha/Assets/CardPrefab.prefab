@@ -100,7 +100,6 @@ MonoBehaviour:
   backgroundImage: {fileID: 7311992536676520974}
   selectButton: {fileID: 6502002288309008133}
   hoverScale: 1.05
-  hoverDuration: 0.1
 --- !u!1 &2510000265050371511
 GameObject:
   m_ObjectHideFlags: 0

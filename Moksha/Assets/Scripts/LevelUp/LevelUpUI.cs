@@ -1,10 +1,10 @@
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 
 /// <summary>
-/// Optimized level-up UI with card pooling.
-/// Uses object pooling instead of Instantiate/Destroy.
+/// Optimized level-up UI with card pooling and animations.
 /// </summary>
 public class LevelUpUI : MonoBehaviour
 {
@@ -19,6 +19,7 @@ public class LevelUpUI : MonoBehaviour
     [Header("Settings")]
     [SerializeField] private int cardsToShow = 3;
     [SerializeField] private GameObject playerObject;
+    [SerializeField] private float staggerDelay = 0.1f;
 
     [Header("Audio")]
     [SerializeField] private AudioSource audioSource;
@@ -35,6 +36,7 @@ public class LevelUpUI : MonoBehaviour
 
     // Cached
     private bool hasAudioSource;
+    private LayoutGroup layoutGroup;
 
     public bool IsShowing => panel != null && panel.activeSelf;
 
@@ -47,8 +49,11 @@ public class LevelUpUI : MonoBehaviour
         }
         Instance = this;
 
-        // Pre-allocate
         acquiredPowerUps = new Dictionary<PowerUp, int>(32);
+        
+        // Get layout group if present
+        if (cardContainer != null)
+            layoutGroup = cardContainer.GetComponent<LayoutGroup>();
         
         // Create card pool
         cardPool = new PowerUpCard[cardsToShow];
@@ -95,10 +100,8 @@ public class LevelUpUI : MonoBehaviour
     {
         if (powerUpDatabase == null) return;
 
-        // Hide all cards first
         HideAllCards();
 
-        // Get random power-ups
         List<PowerUp> choices = powerUpDatabase.GetRandomPowerUps(cardsToShow, acquiredPowerUps);
         if (choices.Count == 0)
         {
@@ -106,19 +109,52 @@ public class LevelUpUI : MonoBehaviour
             return;
         }
 
-        // Setup cards from pool
-        activeCardCount = choices.Count;
-        for (int i = 0; i < activeCardCount; i++)
-        {
-            cardPool[i].Setup(choices[i], OnCardSelected);
-            cardPool[i].gameObject.SetActive(true);
-        }
-
+        // Show panel first so layout can work
         panel.SetActive(true);
         Time.timeScale = 0f;
 
+        // Activate cards and set them up (hidden initially)
+        activeCardCount = choices.Count;
+        for (int i = 0; i < activeCardCount; i++)
+        {
+            cardPool[i].ResetCard();
+            cardPool[i].gameObject.SetActive(true);
+            cardPool[i].Setup(choices[i], OnCardSelected);
+            cardPool[i].PrepareForAnimation(); // Hide until animation starts
+        }
+
+        // Start coroutine to animate after layout
+        StartCoroutine(AnimateCardsAfterLayout());
+
         if (hasAudioSource && levelUpSound != null)
             audioSource.PlayOneShot(levelUpSound);
+    }
+
+    private IEnumerator AnimateCardsAfterLayout()
+    {
+        // Force layout rebuild
+        if (layoutGroup != null)
+        {
+            LayoutRebuilder.ForceRebuildLayoutImmediate(cardContainer as RectTransform);
+        }
+        
+        // Wait one frame for layout to fully complete
+        yield return null;
+
+        // Now capture each card's position and start animations
+        for (int i = 0; i < activeCardCount; i++)
+        {
+            PowerUpCard card = cardPool[i];
+            if (card != null && card.RectTransform != null)
+            {
+                // Capture the position layout gave this card
+                Vector3 targetPos = card.RectTransform.localPosition;
+                
+                // Start animation with stagger delay
+                float delay = i * staggerDelay;
+                card.PlayEntryAnimation(targetPos, delay);
+            }
+        }
     }
 
     private void OnCardSelected(PowerUp selectedPowerUp)
@@ -128,7 +164,6 @@ public class LevelUpUI : MonoBehaviour
         if (playerObject != null)
             selectedPowerUp.Apply(playerObject);
 
-        // Track acquisition
         if (acquiredPowerUps.TryGetValue(selectedPowerUp, out int count))
             acquiredPowerUps[selectedPowerUp] = count + 1;
         else
@@ -157,7 +192,10 @@ public class LevelUpUI : MonoBehaviour
         for (int i = 0; i < cardPool.Length; i++)
         {
             if (cardPool[i] != null)
+            {
+                cardPool[i].ResetCard();
                 cardPool[i].gameObject.SetActive(false);
+            }
         }
         activeCardCount = 0;
     }
