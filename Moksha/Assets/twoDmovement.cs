@@ -1,12 +1,13 @@
-using UnityEngine;
+﻿using UnityEngine;
 
 public class TwoDMovement : MonoBehaviour
 {
     float velocityX = 0.0f;
     float velocityZ = 0.0f;
 
-    public float acceleration = 1.0f;
-    public float deceleration = 1.0f;
+    public float acceleration = 5.0f;
+    public float deceleration = 2.0f;
+    public float maxSpeed = 0.5f;
 
     Animator animator;
 
@@ -22,50 +23,47 @@ public class TwoDMovement : MonoBehaviour
         bool right = Input.GetKey(KeyCode.D);
         bool left = Input.GetKey(KeyCode.A);
 
-        if (forward && velocityZ < 0.5f)
+        // -------- ACCELERATION (WORLD INPUT) --------
+        if (forward && velocityZ < maxSpeed)
             velocityZ += acceleration * Time.deltaTime;
 
-        if (backward && velocityZ > -0.5f)
+        if (backward && velocityZ > -maxSpeed)
             velocityZ -= acceleration * Time.deltaTime;
-        
-        if (right && velocityX < 0.5f)
+
+        if (right && velocityX < maxSpeed)
             velocityX += acceleration * Time.deltaTime;
 
-        if (left && velocityX > -0.5f)
+        if (left && velocityX > -maxSpeed)
             velocityX -= acceleration * Time.deltaTime;
 
-        // Deceleration
-        if (!forward && velocityZ > 0.0f)
+        // -------- DECELERATION --------
+        if (!forward && velocityZ > 0f)
             velocityZ -= deceleration * Time.deltaTime;
 
-        //if (!forward && velocityZ < 0.0f)
-        //    velocityZ = 0.0f;
-
-        if (!backward && velocityZ < 0.0f)
+        if (!backward && velocityZ < 0f)
             velocityZ += deceleration * Time.deltaTime;
 
-        //if (!backward && velocityZ > 0.0f)
-        //    velocityZ = 0.0f;
-
-        // Clamp to zero (avoid jitter)
-
-
-        if (!right && velocityX > 0.0f)
+        if (!right && velocityX > 0f)
             velocityX -= deceleration * Time.deltaTime;
 
-        //if (!right && velocityX < 0.00f)
-        //    velocityX = 0.0f;
-
-        if (!left && velocityX < 0.0f)
+        if (!left && velocityX < 0f)
             velocityX += deceleration * Time.deltaTime;
 
-        //if (!left && velocityX > 0.00f)
-        //    velocityX = 0.0f;
+        // -------- CLEAN SMALL VALUES --------
+        if (Mathf.Abs(velocityX) < 0.01f) velocityX = 0f;
+        if (Mathf.Abs(velocityZ) < 0.01f) velocityZ = 0f;
+
+        // -------- WORLD → LOCAL --------
+        Vector3 worldMove = new Vector3(velocityX, 0f, velocityZ);
+        Vector3 localMove = transform.InverseTransformDirection(worldMove);
+
+        float speed = Mathf.Max(0f, localMove.z);
+        speed = Mathf.Clamp01(speed / maxSpeed);
 
 
-
-
-        animator.SetFloat("VelocityX", velocityX);
-        animator.SetFloat("VelocityZ", velocityZ);
+        // -------- ANIMATOR --------
+        animator.SetFloat("VelocityX", localMove.x, 0.1f, Time.deltaTime);
+        animator.SetFloat("VelocityZ", localMove.z, 0.1f, Time.deltaTime);
+        animator.SetFloat("Speed", speed, 0.1f, Time.deltaTime);
     }
 }
