@@ -202,33 +202,42 @@ public class BasicEnemy : EnemyBase
 
     protected override void Die()
     {
-        if (hasAnimator)
-            animator.SetTrigger(DieHash);
-
+        // Don't trigger death animation - keep running while dissolving
+        
         if (hasAudioSource && stats.deathSound != null)
             audioSource.PlayOneShot(stats.deathSound);
 
-        if (hasCharacterController)
-            characterController.enabled = false;
-        if (hasRigidbody)
-            rb.isKinematic = true;
-
-        // Start dissolve effect
+        // Start dissolve effect but keep moving
         if (hasDissolve)
         {
-            // Mark as dead but don't deactivate yet - let dissolve complete first
-            IsDead = true;
-            
             // Grant XP immediately
             if (ExperienceManager.Instance != null)
                 ExperienceManager.Instance.AddXP(cachedXPReward);
             
+            // Mark as dissolving - enemy keeps moving
+            IsDissolving = true;
+            
+            // Start dissolve - enemy keeps moving until this completes
             dissolveEffect.StartDissolve(() => {
+                // Only now fully disable the enemy
+                IsDissolving = false;
+                IsDead = true;
+                
+                if (hasCharacterController)
+                    characterController.enabled = false;
+                if (hasRigidbody)
+                    rb.isKinematic = true;
+                    
                 gameObject.SetActive(false);
             });
         }
         else
         {
+            if (hasCharacterController)
+                characterController.enabled = false;
+            if (hasRigidbody)
+                rb.isKinematic = true;
+                
             base.Die();
         }
     }

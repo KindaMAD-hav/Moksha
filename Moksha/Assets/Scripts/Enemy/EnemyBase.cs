@@ -42,6 +42,7 @@ public abstract class EnemyBase : MonoBehaviour
     public float CurrentHealth => currentHealth;
     public float MaxHealth => cachedMaxHealth;
     public bool IsDead { get; protected set; }
+    public bool IsDissolving { get; protected set; } // Still moving while dissolving
     public Transform Target => targetTransform;
     public int Index { get; set; } // For manager tracking
 
@@ -72,7 +73,10 @@ public abstract class EnemyBase : MonoBehaviour
     protected virtual void Update()
     {
         // Skip if managed by EnemyManager (it calls Tick instead)
-        if (isManagedByManager || IsDead || targetTransform == null) return;
+        if (isManagedByManager || targetTransform == null) return;
+        
+        // Allow movement while dissolving, only stop when fully dead
+        if (IsDead && !IsDissolving) return;
         
         cachedTargetPosition = targetTransform.position;
         UpdateBehavior(Time.deltaTime);
@@ -100,7 +104,8 @@ public abstract class EnemyBase : MonoBehaviour
     /// </summary>
     public virtual void Tick(float deltaTime, Vector3 targetPos)
     {
-        if (IsDead) return;
+        // Allow movement while dissolving, only stop when fully dead
+        if (IsDead && !IsDissolving) return;
         
         cachedTargetPosition = targetPos;
         UpdateBehavior(deltaTime);
@@ -177,6 +182,7 @@ public abstract class EnemyBase : MonoBehaviour
     public virtual void ResetEnemy()
     {
         IsDead = false;
+        IsDissolving = false;
         InitializeHealth();
     }
 
