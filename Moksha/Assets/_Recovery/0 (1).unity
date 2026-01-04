@@ -8652,8 +8652,8 @@ MonoBehaviour:
   playerTransform: {fileID: 0}
   minSpawnDistance: 13.1
   maxSpawnDistance: 19.6
-  spawnInterval: 2
-  maxEnemies: 20
+  spawnInterval: 0.12
+  maxEnemies: 245
   minSpawnInterval: 0.3
   spawnIntervalDecreaseRate: 0.01
   baseEnemiesPerSpawn: 1
@@ -8661,7 +8661,7 @@ MonoBehaviour:
   enemyTypes:
   - prefab: {fileID: 2124684102959905579, guid: cc725e9155f2ee44eb3e3fd99151b30c, type: 3}
     stats: {fileID: 11400000, guid: de28dcd17d9dd1c4aaba761d3dcdde5c, type: 2}
-    poolSize: 20
+    poolSize: 300
   currentEnemyCount: 0
   gameTime: 0
 --- !u!114 &719319646
@@ -11170,7 +11170,7 @@ Transform:
   m_GameObject: {fileID: 913657305}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 7.05, y: 1.36, z: 14.34}
+  m_LocalPosition: {x: 7.05, y: 1.36, z: 14.32}
   m_LocalScale: {x: 0.35, y: 0.35, z: 0.35}
   m_ConstrainProportionsScale: 1
   m_Children:
@@ -15482,81 +15482,6 @@ MeshCollider:
   m_Convex: 0
   m_CookingOptions: 30
   m_Mesh: {fileID: 5074941243508514199, guid: b2510ce44697bdc41a94e716b30febc0, type: 3}
---- !u!1001 &1374742869
-PrefabInstance:
-  m_ObjectHideFlags: 0
-  serializedVersion: 2
-  m_Modification:
-    serializedVersion: 3
-    m_TransformParent: {fileID: 2044629531}
-    m_Modifications:
-    - target: {fileID: 8504782995822726328, guid: bfdfeff25bb00534fb1f563858109328, type: 3}
-      propertyPath: m_Name
-      value: FX_Rage_Electricity 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 8504782995822726330, guid: bfdfeff25bb00534fb1f563858109328, type: 3}
-      propertyPath: looping
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 8504782995822726330, guid: bfdfeff25bb00534fb1f563858109328, type: 3}
-      propertyPath: lengthInSec
-      value: 0.5
-      objectReference: {fileID: 0}
-    - target: {fileID: 8504782995822726331, guid: bfdfeff25bb00534fb1f563858109328, type: 3}
-      propertyPath: m_LocalPosition.x
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 8504782995822726331, guid: bfdfeff25bb00534fb1f563858109328, type: 3}
-      propertyPath: m_LocalPosition.y
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 8504782995822726331, guid: bfdfeff25bb00534fb1f563858109328, type: 3}
-      propertyPath: m_LocalPosition.z
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 8504782995822726331, guid: bfdfeff25bb00534fb1f563858109328, type: 3}
-      propertyPath: m_LocalRotation.w
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 8504782995822726331, guid: bfdfeff25bb00534fb1f563858109328, type: 3}
-      propertyPath: m_LocalRotation.x
-      value: -0
-      objectReference: {fileID: 0}
-    - target: {fileID: 8504782995822726331, guid: bfdfeff25bb00534fb1f563858109328, type: 3}
-      propertyPath: m_LocalRotation.y
-      value: -0
-      objectReference: {fileID: 0}
-    - target: {fileID: 8504782995822726331, guid: bfdfeff25bb00534fb1f563858109328, type: 3}
-      propertyPath: m_LocalRotation.z
-      value: -0
-      objectReference: {fileID: 0}
-    - target: {fileID: 8504782995822726331, guid: bfdfeff25bb00534fb1f563858109328, type: 3}
-      propertyPath: m_LocalEulerAnglesHint.x
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 8504782995822726331, guid: bfdfeff25bb00534fb1f563858109328, type: 3}
-      propertyPath: m_LocalEulerAnglesHint.y
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 8504782995822726331, guid: bfdfeff25bb00534fb1f563858109328, type: 3}
-      propertyPath: m_LocalEulerAnglesHint.z
-      value: 0
-      objectReference: {fileID: 0}
-    m_RemovedComponents: []
-    m_RemovedGameObjects: []
-    m_AddedGameObjects: []
-    m_AddedComponents: []
-  m_SourcePrefab: {fileID: 100100000, guid: bfdfeff25bb00534fb1f563858109328, type: 3}
---- !u!4 &1374742870 stripped
-Transform:
-  m_CorrespondingSourceObject: {fileID: 8504782995822726331, guid: bfdfeff25bb00534fb1f563858109328, type: 3}
-  m_PrefabInstance: {fileID: 1374742869}
-  m_PrefabAsset: {fileID: 0}
---- !u!198 &1374742871 stripped
-ParticleSystem:
-  m_CorrespondingSourceObject: {fileID: 8504782995822726330, guid: bfdfeff25bb00534fb1f563858109328, type: 3}
-  m_PrefabInstance: {fileID: 1374742869}
-  m_PrefabAsset: {fileID: 0}
 --- !u!1001 &1375770626
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -17298,59 +17223,8 @@ Transform:
   m_Children:
   - {fileID: 116352872}
   - {fileID: 719319644}
-  - {fileID: 2044629531}
-  - {fileID: 1550609631}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!1 &1550609630
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 1550609631}
-  - component: {fileID: 1550609632}
-  m_Layer: 0
-  m_Name: LightningStrikeManager
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!4 &1550609631
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1550609630}
-  serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 1542832101}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &1550609632
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1550609630}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: ab17de4fcdc115748adcd19f286bdfbf, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::LightningStrikeManager
-  lightningPrefab: {fileID: 2044629532}
-  initialPoolSize: 10
-  maxPoolSize: 50
-  activeCount: 0
-  pooledCount: 0
 --- !u!1 &1553453517
 GameObject:
   m_ObjectHideFlags: 0
@@ -18703,7 +18577,6 @@ GameObject:
   m_Component:
   - component: {fileID: 1631789563}
   - component: {fileID: 1631789564}
-  - component: {fileID: 1631789565}
   m_Layer: 0
   m_Name: Floor
   m_TagString: Untagged
@@ -18897,29 +18770,6 @@ MonoBehaviour:
   rotationStep: 90
   historySize: 6
   repeatPenalty: 0.7
-  floorColliderHeight: 0.1
-  colliderPaddingPercent: 0.05
---- !u!65 &1631789565
-BoxCollider:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1631789562}
-  m_Material: {fileID: 0}
-  m_IncludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_ExcludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_LayerOverridePriority: 0
-  m_IsTrigger: 0
-  m_ProvidesContacts: 0
-  m_Enabled: 1
-  serializedVersion: 3
-  m_Size: {x: 1, y: 1, z: 1}
-  m_Center: {x: 0, y: 0, z: 0}
 --- !u!114 &1636591908
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -24325,57 +24175,6 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 2043445213}
   m_Mesh: {fileID: -5053925668127403250, guid: b2510ce44697bdc41a94e716b30febc0, type: 3}
---- !u!1 &2044629530
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 2044629531}
-  - component: {fileID: 2044629532}
-  m_Layer: 0
-  m_Name: LightningStrikeVFX
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!4 &2044629531
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2044629530}
-  serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: -18.53, y: 28.956, z: -13.45}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children:
-  - {fileID: 1374742870}
-  m_Father: {fileID: 1542832101}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &2044629532
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2044629530}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 05261863c2aeab149ae66db1337210ac, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::LightningStrikeVFX
-  duration: 1
-  spawnOffset: {x: 0, y: 5, z: 0}
-  particleSystems:
-  - {fileID: 1374742871}
-  audioSource: {fileID: 0}
-  strikeSound: {fileID: 0}
 --- !u!1 &2045806169
 GameObject:
   m_ObjectHideFlags: 0
@@ -24945,7 +24744,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::LevelUpUI
   panel: {fileID: 237148595}
   cardContainer: {fileID: 237148596}
-  cardPrefab: {fileID: 1666707899728039567, guid: e162001b5634cc047900642e28ac9adc, type: 3}
+  cardPrefab: {fileID: 6156764485161062343, guid: 6c2093a1d6d29e24c9c282f266e22964, type: 3}
   powerUpDatabase: {fileID: 11400000, guid: a4353c2a2849f5c499fef7c71eda02d1, type: 2}
   cardsToShow: 3
   playerObject: {fileID: 0}
