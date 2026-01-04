@@ -1,6 +1,7 @@
 ﻿using UnityEngine;
 using System.Collections.Generic;
 
+[RequireComponent(typeof(BoxCollider))]
 public class FloorTileGenerator : MonoBehaviour
 {
     [Header("Floor Prefabs")]
@@ -28,6 +29,16 @@ public class FloorTileGenerator : MonoBehaviour
 
     [Range(0f, 1f)]
     public float repeatPenalty = 0.7f;
+
+    [Header("Unified Floor Collider")]
+    [Tooltip("Keep this very small. Example: 0.1")]
+    public float floorColliderHeight = 0.1f;
+
+    [Tooltip("Extra size added to X/Z as a percentage (0.05 = 5%)")]
+    [Range(0f, 0.2f)]
+    public float colliderPaddingPercent = 0.05f;
+
+    private BoxCollider floorCollider;
 
     [ContextMenu("Generate Floor")]
     public void Generate()
@@ -71,7 +82,6 @@ public class FloorTileGenerator : MonoBehaviour
                     int stepIndex = Random.Range(0, steps);
                     float angle = stepIndex * rotationStep;
 
-                    // WORLD Y rotation (correct)
                     Quaternion yaw = Quaternion.AngleAxis(angle, Vector3.up);
                     finalRot = yaw * baseRotation;
                 }
@@ -84,7 +94,53 @@ public class FloorTileGenerator : MonoBehaviour
                     history.RemoveAt(0);
             }
         }
+
+        UpdateUnifiedFloorCollider(tileSize, right, forward, up);
     }
+
+    // --------------------------------------------------
+    // Unified Floor Collider
+    // --------------------------------------------------
+
+    private void UpdateUnifiedFloorCollider(
+    Vector3 tileSize,
+    Vector3 right,
+    Vector3 forward,
+    Vector3 up
+)
+    {
+        if (!floorCollider)
+        {
+            floorCollider = GetComponent<BoxCollider>();
+            if (!floorCollider)
+                floorCollider = gameObject.AddComponent<BoxCollider>();
+        }
+
+        float baseWidth = tilesX * tileSize.x;
+        float baseDepth = tilesZ * tileSize.z;
+
+        float paddedWidth = baseWidth * (1f + colliderPaddingPercent);
+        float paddedDepth = baseDepth * (1f + colliderPaddingPercent);
+
+        // Size includes padding (symmetric)
+        floorCollider.size = new Vector3(
+            paddedWidth,
+            floorColliderHeight,
+            paddedDepth
+        );
+
+        // Center ONLY accounts for grid placement, NOT padding
+        Vector3 center =
+            startLocalPosition +
+            right * (baseWidth * 0.5f) +
+            forward * (baseDepth * 0.5f) +
+            up * (floorColliderHeight * 0.5f);
+
+        floorCollider.center = center;
+    }
+
+
+
 
     // --------------------------------------------------
     // Blue-noise-ish picker
