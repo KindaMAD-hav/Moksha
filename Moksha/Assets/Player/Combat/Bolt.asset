@@ -22,5 +22,5 @@ MonoBehaviour:
   projectileSpeed: 20
   lifeTime: 5
   baseProjectiles: 1
-  spreadDegrees: 0
+  spreadDegrees: 20
   basePierce: 0
