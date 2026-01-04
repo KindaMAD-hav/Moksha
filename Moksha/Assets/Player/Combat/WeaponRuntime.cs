@@ -47,6 +47,14 @@ public class WeaponRuntime
         // Default: shoot where the player is aiming
         Vector3 dir = owner.GetFlatAimDirection();
 
+        // Fallback: use aimPivot forward if no input this frame
+        if (dir.sqrMagnitude < 0.0001f)
+        {
+            dir = owner.aimTransform.forward;
+            dir.y = 0f;
+            dir.Normalize();
+        }
+
         // Soft auto-aim: if there's a target, shoot directly at it
         if (owner.TryAcquireTarget(out Transform target) && target != null)
         {

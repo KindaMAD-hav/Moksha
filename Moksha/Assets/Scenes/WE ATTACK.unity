@@ -905,7 +905,6 @@ Transform:
   m_LocalScale: {x: 0.35, y: 0.35, z: 0.35}
   m_ConstrainProportionsScale: 1
   m_Children:
-  - {fileID: 1178542590}
   - {fileID: 1442688940}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
@@ -944,9 +943,10 @@ MonoBehaviour:
   firePoint: {fileID: 598799501}
   enemyMask:
     serializedVersion: 2
-    m_Bits: 0
+    m_Bits: 384
   autoAimRange: 12
-  startingWeapons: []
+  startingWeapons:
+  - {fileID: 11400000, guid: 0add1eadef1833042bc5ef31dd63a52e, type: 2}
 --- !u!1 &61906786
 GameObject:
   m_ObjectHideFlags: 0
@@ -6692,10 +6692,11 @@ Transform:
   m_GameObject: {fileID: 598799500}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0.55, y: 0, z: 0}
+  m_LocalPosition: {x: 0, y: 0, z: 1}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
-  m_Children: []
+  m_Children:
+  - {fileID: 1178542590}
   m_Father: {fileID: 1442688940}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &609040018
@@ -13518,7 +13519,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!4 &1178542590
 Transform:
   m_ObjectHideFlags: 0
@@ -13527,12 +13528,12 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1178542589}
   serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 1.6, y: 0, z: 0.117}
-  m_LocalScale: {x: 2.7, y: 0.35, z: 0.35}
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 1.0499997, y: 0, z: 0.116999485}
+  m_LocalScale: {x: 2.6999996, y: 0.34999993, z: 0.34999993}
   m_ConstrainProportionsScale: 0
   m_Children: []
-  m_Father: {fileID: 60038523}
+  m_Father: {fileID: 598799501}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!65 &1178542591
 BoxCollider:
@@ -26144,6 +26145,10 @@ PrefabInstance:
     - target: {fileID: 9059609539505162581, guid: 836845e505102d74883bb0c3129023d9, type: 3}
       propertyPath: m_Name
       value: Projectile
+      objectReference: {fileID: 0}
+    - target: {fileID: 9059609539505162581, guid: 836845e505102d74883bb0c3129023d9, type: 3}
+      propertyPath: m_IsActive
+      value: 0
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []

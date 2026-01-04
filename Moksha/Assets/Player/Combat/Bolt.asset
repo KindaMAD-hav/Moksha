@@ -19,7 +19,7 @@ MonoBehaviour:
     m_Bits: 128
   baseFireRate: 4
   baseDamage: 3
-  projectileSpeed: 18
+  projectileSpeed: 20
   lifeTime: 5
   baseProjectiles: 1
   spreadDegrees: 0

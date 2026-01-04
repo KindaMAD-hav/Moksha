@@ -1,66 +1,67 @@
 using UnityEngine;
 
-/// <summary>
-/// Simple forward-moving projectile.
-/// - Moves on XZ plane
-/// - Trigger hits anything in hitMask
-/// - Calls IPurifiable.Purify(amount)
-/// </summary>
 public class SimpleProjectile : MonoBehaviour
 {
     Vector3 dir;
     float speed;
-    float amount;
-    int pierceLeft;
-    float timeLeft;
+    float lifetime;
+    float damage;
+    int pierce;
     LayerMask hitMask;
 
-    public void Init(Vector3 direction, float purificationAmount, float speed, int pierce, float lifeTime, LayerMask hitMask)
-    {
-        dir = direction;
-        dir.y = 0f;
-        if (dir.sqrMagnitude < 0.001f) dir = transform.forward;
-        dir.Normalize();
+    float aliveTime;
 
+    /// <summary>
+    /// Called immediately after spawn by WeaponRuntime
+    /// </summary>
+    public void Init(
+        Vector3 direction,
+        float damage,
+        float speed,
+        int pierce,
+        float lifetime,
+        LayerMask hitMask
+    )
+    {
+        this.dir = direction.normalized;
+        this.damage = damage;
         this.speed = speed;
-        this.amount = purificationAmount;
-        pierceLeft = pierce;
-        timeLeft = lifeTime;
+        this.pierce = pierce;
+        this.lifetime = lifetime;
         this.hitMask = hitMask;
 
-        transform.rotation = Quaternion.LookRotation(dir, Vector3.up);
+        aliveTime = 0f;
     }
 
     void Update()
     {
-        float dt = Time.deltaTime;
+        transform.position += dir * speed * Time.deltaTime;
 
-        transform.position += dir * speed * dt;
-
-        timeLeft -= dt;
-        if (timeLeft <= 0f)
+        aliveTime += Time.deltaTime;
+        if (aliveTime >= lifetime)
+        {
             Destroy(gameObject);
+        }
     }
 
     void OnTriggerEnter(Collider other)
     {
-        // Only interact with allowed layers
+        // Layer filtering (cheap & important for swarm scenes)
         if ((hitMask.value & (1 << other.gameObject.layer)) == 0)
             return;
 
-        // Try to find something purifiable on this object or its parents.
-        IPurifiable purifiable = other.GetComponentInParent<IPurifiable>();
-        if (purifiable != null)
-        {
-            purifiable.Purify(amount);
-        }
-
-        if (pierceLeft > 0)
-        {
-            pierceLeft--;
+        if (!other.TryGetComponent<IPurifiable>(out var target))
             return;
-        }
 
-        Destroy(gameObject);
+        target.Purify(damage);
+
+        if (pierce > 0)
+        {
+            pierce--;
+        }
+        else
+        {
+            Destroy(gameObject);
+        }
     }
 }
