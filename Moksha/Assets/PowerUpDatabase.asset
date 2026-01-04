@@ -14,6 +14,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::PowerUpDatabase
   allPowerUps:
   - {fileID: 11400000, guid: e0ab72af0d447cc4b80dc450d3af023f, type: 2}
+  - {fileID: 11400000, guid: 24e4e9cc0e8520c48986df4d9211cc31, type: 2}
+  - {fileID: 11400000, guid: 6739f43143a31f64cb9588dbb8a20df9, type: 2}
   commonWeight: 60
   uncommonWeight: 25
   rareWeight: 10
