@@ -10625,15 +10625,12 @@ MonoBehaviour:
   menuCanvas: {fileID: 70325863}
   menuContent: {fileID: 622644809}
   shardContainer: {fileID: 18845538}
+  backgroundImage: {fileID: 0}
   pauseKey: 27
-  shardColumns: 5
-  shardRows: 4
-  shardMaterial: {fileID: 2100000, guid: 5e60804ea74aa094480c3d65fdfbdbc4, type: 2}
-  randomizeShards: 1
+  shardColumns: 3
+  shardRows: 3
   openDuration: 0.6
   closeDuration: 0.4
-  maxScatterDistance: 300
-  maxRotation: 45
   staggerAmount: 0.05
   openCurve:
     serializedVersion: 2
@@ -10683,9 +10680,14 @@ MonoBehaviour:
     m_PreInfinity: 2
     m_PostInfinity: 2
     m_RotationOrder: 4
-  centerGapWidth: 400
-  centerGapHeight: 300
+  edgeOffset: 100
+  maxRotation: 45
+  moveDirection: 4
+  backgroundColor: {r: 0, g: 0, b: 0, a: 1}
+  backgroundFadeDuration: 0.3
   enableDebugLogs: 1
+  zigzagSegments: 4
+  zigzagAmplitude: 0.3
 --- !u!1 &889951309
 GameObject:
   m_ObjectHideFlags: 0

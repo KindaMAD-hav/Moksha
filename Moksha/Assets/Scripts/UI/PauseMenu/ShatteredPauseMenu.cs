@@ -16,6 +16,7 @@ public class ShatteredPauseMenu : MonoBehaviour
     [SerializeField] private Canvas menuCanvas;
     [SerializeField] private GameObject menuContent;
     [SerializeField] private RectTransform shardContainer;
+    [SerializeField] private Image backgroundImage; // Black background
 
     [Header("Input")]
     [SerializeField] private KeyCode pauseKey = KeyCode.Escape;
@@ -27,18 +28,34 @@ public class ShatteredPauseMenu : MonoBehaviour
     [Header("Animation Settings")]
     [SerializeField] private float openDuration = 0.6f;
     [SerializeField] private float closeDuration = 0.4f;
-    [SerializeField] private float maxScatterDistance = 300f;
-    [SerializeField] private float maxRotation = 45f;
     [SerializeField] private float staggerAmount = 0.05f;
     [SerializeField] private AnimationCurve openCurve = AnimationCurve.EaseInOut(0, 0, 1, 1);
     [SerializeField] private AnimationCurve closeCurve = AnimationCurve.EaseInOut(0, 0, 1, 1);
 
-    [Header("Center Gap")]
-    [SerializeField] private float centerGapWidth = 400f;
-    [SerializeField] private float centerGapHeight = 300f;
+    [Header("Shard Movement")]
+    [SerializeField] private float edgeOffset = 100f; // How far off-screen shards move
+    [SerializeField] private float maxRotation = 30f;
+    [SerializeField] private ShardMoveDirection moveDirection = ShardMoveDirection.ToEdges;
+
+    [Header("Background")]
+    [SerializeField] private Color backgroundColor = Color.black;
+    [SerializeField] private float backgroundFadeDuration = 0.3f;
 
     [Header("Debug")]
     [SerializeField] private bool enableDebugLogs = true;
+
+    public enum ShardMoveDirection
+    {
+        ToEdges,        // Shards move to nearest edge
+        SplitHorizontal, // Left half goes left, right half goes right
+        SplitVertical,   // Top goes up, bottom goes down
+        Explode,        // All shards move outward from center
+        LightningBolt   // Zigzag split like a horizontal lightning bolt
+    }
+
+    [Header("Lightning Bolt Settings")]
+    [SerializeField] private int zigzagSegments = 4; // Number of zigzag points
+    [SerializeField] private float zigzagAmplitude = 0.3f; // How far zigzag deviates (0-0.5, as fraction of width)
 
     // Runtime
     private List<UIGlassShard> shards = new List<UIGlassShard>();
@@ -51,7 +68,7 @@ public class ShatteredPauseMenu : MonoBehaviour
 
     private void Awake()
     {
-        Log("ShatteredPauseMenu Awake called");
+        Log("ShatteredPauseMenu Awake");
         
         if (Instance != null && Instance != this)
         {
@@ -61,50 +78,59 @@ public class ShatteredPauseMenu : MonoBehaviour
         Instance = this;
 
         if (mainCamera == null)
-        {
             mainCamera = Camera.main;
-            Log($"Main camera auto-assigned: {(mainCamera != null ? mainCamera.name : "NULL")}");
-        }
 
         if (menuCanvas != null)
-        {
             menuCanvas.gameObject.SetActive(false);
-            Log("Menu canvas hidden");
-        }
-        else
-        {
-            Log("WARNING: menuCanvas is not assigned!");
-        }
 
         if (menuContent != null)
-        {
             menuContent.SetActive(false);
+
+        // Setup background image if not assigned
+        if (backgroundImage == null && shardContainer != null)
+        {
+            CreateBackgroundImage();
         }
 
-        if (shardContainer == null)
+        if (backgroundImage != null)
         {
-            Log("WARNING: shardContainer is not assigned!");
+            backgroundImage.color = new Color(backgroundColor.r, backgroundColor.g, backgroundColor.b, 0f);
+            backgroundImage.gameObject.SetActive(false);
         }
+    }
+
+    private void CreateBackgroundImage()
+    {
+        GameObject bgObj = new GameObject("Background");
+        bgObj.transform.SetParent(shardContainer.parent, false);
+        bgObj.transform.SetAsFirstSibling(); // Behind everything
+        
+        RectTransform rt = bgObj.AddComponent<RectTransform>();
+        rt.anchorMin = Vector2.zero;
+        rt.anchorMax = Vector2.one;
+        rt.offsetMin = Vector2.zero;
+        rt.offsetMax = Vector2.zero;
+        
+        backgroundImage = bgObj.AddComponent<Image>();
+        backgroundImage.color = new Color(backgroundColor.r, backgroundColor.g, backgroundColor.b, 0f);
+        backgroundImage.raycastTarget = false;
+        
+        Log("Created background image");
     }
 
     private void Start()
     {
-        Log($"ShatteredPauseMenu Start - Pause key is: {pauseKey}");
+        Log($"ShatteredPauseMenu Start - Pause key: {pauseKey}");
     }
 
     private void Update()
     {
-        if (Input.GetKeyDown(pauseKey))
+        if (Input.GetKeyDown(pauseKey) && !isAnimating)
         {
-            Log($"Pause key ({pauseKey}) pressed! isPaused={isPaused}, isAnimating={isAnimating}");
-            
-            if (!isAnimating)
-            {
-                if (isPaused)
-                    Resume();
-                else
-                    Pause();
-            }
+            if (isPaused)
+                Resume();
+            else
+                Pause();
         }
     }
 
@@ -133,26 +159,32 @@ public class ShatteredPauseMenu : MonoBehaviour
         Log("PauseRoutine started");
         isAnimating = true;
 
-        // Capture screenshot at end of frame
+        // Capture screenshot
         yield return new WaitForEndOfFrame();
         CaptureScreenshot();
 
-        // Show canvas first (so shards are visible)
+        // Show canvas
         if (menuCanvas != null)
             menuCanvas.gameObject.SetActive(true);
 
+        // Show and prepare background (start transparent)
+        if (backgroundImage != null)
+        {
+            backgroundImage.gameObject.SetActive(true);
+            backgroundImage.color = new Color(backgroundColor.r, backgroundColor.g, backgroundColor.b, 0f);
+        }
+
         // Create shards
         CreateShards();
-        Log($"Created {shards.Count} shards");
 
         // Pause time
         Time.timeScale = 0f;
         isPaused = true;
 
-        // Animate shards opening
+        // Animate shards opening AND fade in background simultaneously
         yield return StartCoroutine(AnimateShardsOpen());
 
-        // Show menu content after shards open
+        // Show menu content
         if (menuContent != null)
             menuContent.SetActive(true);
 
@@ -168,9 +200,13 @@ public class ShatteredPauseMenu : MonoBehaviour
         if (menuContent != null)
             menuContent.SetActive(false);
 
+        // Animate shards closing AND fade out background
         yield return StartCoroutine(AnimateShardsClose());
 
         ClearShards();
+
+        if (backgroundImage != null)
+            backgroundImage.gameObject.SetActive(false);
 
         if (menuCanvas != null)
             menuCanvas.gameObject.SetActive(false);
@@ -185,7 +221,6 @@ public class ShatteredPauseMenu : MonoBehaviour
     {
         int width = Screen.width;
         int height = Screen.height;
-        Log($"Capturing screenshot: {width}x{height}");
 
         if (screenshotTexture == null || screenshotTexture.width != width || screenshotTexture.height != height)
         {
@@ -195,10 +230,9 @@ public class ShatteredPauseMenu : MonoBehaviour
             screenshotTexture = new Texture2D(width, height, TextureFormat.RGB24, false);
         }
 
-        // Read pixels directly from screen
         screenshotTexture.ReadPixels(new Rect(0, 0, width, height), 0, 0);
         screenshotTexture.Apply();
-        Log("Screenshot captured");
+        Log($"Screenshot captured: {width}x{height}");
     }
 
     private void CreateShards()
@@ -211,7 +245,6 @@ public class ShatteredPauseMenu : MonoBehaviour
             return;
         }
 
-        // Get the canvas rect size
         RectTransform canvasRect = menuCanvas.GetComponent<RectTransform>();
         float canvasWidth = canvasRect.rect.width;
         float canvasHeight = canvasRect.rect.height;
@@ -221,69 +254,161 @@ public class ShatteredPauseMenu : MonoBehaviour
 
         Vector2 canvasCenter = new Vector2(canvasWidth / 2f, canvasHeight / 2f);
 
-        Log($"Canvas size: {canvasWidth}x{canvasHeight}, Shard size: {shardWidth}x{shardHeight}");
+        Log($"Creating {shardColumns}x{shardRows} shards, size: {shardWidth}x{shardHeight}");
 
         for (int row = 0; row < shardRows; row++)
         {
             for (int col = 0; col < shardColumns; col++)
             {
-                // Calculate shard position (bottom-left origin)
+                // Calculate shard position (center of each grid cell)
                 float x = col * shardWidth + shardWidth / 2f;
                 float y = row * shardHeight + shardHeight / 2f;
                 Vector2 shardCenter = new Vector2(x, y);
 
-                // Calculate UV rect for this shard
+                // Calculate UV rect
                 float uvX = (float)col / shardColumns;
                 float uvY = (float)row / shardRows;
-                float uvW = 1f / shardColumns;
-                float uvH = 1f / shardRows;
-                Rect uvRect = new Rect(uvX, uvY, uvW, uvH);
+                Rect uvRect = new Rect(uvX, uvY, 1f / shardColumns, 1f / shardRows);
 
-                // Calculate scatter direction (away from center)
-                Vector2 dirFromCenter = shardCenter - canvasCenter;
-                if (dirFromCenter.sqrMagnitude < 0.01f)
-                    dirFromCenter = Random.insideUnitCircle.normalized;
-                else
-                    dirFromCenter.Normalize();
+                // Calculate target position based on move direction
+                Vector2 targetPos = CalculateTargetPosition(shardCenter, canvasWidth, canvasHeight, canvasCenter, col, row);
+                Vector2 moveOffset = targetPos - shardCenter;
 
-                // Distance-based scatter
-                float distFromCenter = Vector2.Distance(shardCenter, canvasCenter);
-                float maxDist = Vector2.Distance(Vector2.zero, canvasCenter);
-                float normalizedDist = distFromCenter / maxDist;
-
-                Vector2 scatterOffset = dirFromCenter * maxScatterDistance * (0.3f + normalizedDist * 0.7f);
-
-                // Extra offset to create center gap
-                float centerThresholdX = canvasWidth * 0.35f;
-                float centerThresholdY = canvasHeight * 0.35f;
-
-                if (Mathf.Abs(shardCenter.x - canvasCenter.x) < centerThresholdX)
-                {
-                    float gapMult = 1f - Mathf.Abs(shardCenter.x - canvasCenter.x) / centerThresholdX;
-                    scatterOffset.x += Mathf.Sign(dirFromCenter.x) * centerGapWidth * gapMult;
-                }
-                if (Mathf.Abs(shardCenter.y - canvasCenter.y) < centerThresholdY)
-                {
-                    float gapMult = 1f - Mathf.Abs(shardCenter.y - canvasCenter.y) / centerThresholdY;
-                    scatterOffset.y += Mathf.Sign(dirFromCenter.y) * centerGapHeight * gapMult;
-                }
-
+                // Random rotation
                 float randomRot = Random.Range(-maxRotation, maxRotation);
 
-                // Create UI shard
-                UIGlassShard shard = CreateUIShard(shardCenter, shardWidth, shardHeight, uvRect, scatterOffset, randomRot);
+                // Create shard
+                UIGlassShard shard = CreateUIShard(shardCenter, shardWidth, shardHeight, uvRect, moveOffset, randomRot);
                 shards.Add(shard);
             }
         }
+
+        Log($"Created {shards.Count} shards");
+    }
+
+    private Vector2 CalculateTargetPosition(Vector2 shardPos, float canvasWidth, float canvasHeight, 
+        Vector2 center, int col, int row)
+    {
+        switch (moveDirection)
+        {
+            case ShardMoveDirection.SplitHorizontal:
+                // Left half goes left, right half goes right
+                if (shardPos.x < center.x)
+                    return new Vector2(-edgeOffset, shardPos.y);
+                else
+                    return new Vector2(canvasWidth + edgeOffset, shardPos.y);
+
+            case ShardMoveDirection.SplitVertical:
+                // Bottom half goes down, top half goes up
+                if (shardPos.y < center.y)
+                    return new Vector2(shardPos.x, -edgeOffset);
+                else
+                    return new Vector2(shardPos.x, canvasHeight + edgeOffset);
+
+            case ShardMoveDirection.ToEdges:
+                // Move to nearest edge
+                float distLeft = shardPos.x;
+                float distRight = canvasWidth - shardPos.x;
+                float distBottom = shardPos.y;
+                float distTop = canvasHeight - shardPos.y;
+
+                float minDist = Mathf.Min(distLeft, distRight, distBottom, distTop);
+
+                if (minDist == distLeft)
+                    return new Vector2(-edgeOffset, shardPos.y);
+                else if (minDist == distRight)
+                    return new Vector2(canvasWidth + edgeOffset, shardPos.y);
+                else if (minDist == distBottom)
+                    return new Vector2(shardPos.x, -edgeOffset);
+                else
+                    return new Vector2(shardPos.x, canvasHeight + edgeOffset);
+
+            case ShardMoveDirection.Explode:
+                // Move outward from center
+                Vector2 dir = (shardPos - center).normalized;
+                if (dir.sqrMagnitude < 0.01f)
+                    dir = Random.insideUnitCircle.normalized;
+                
+                // Calculate distance to edge in this direction
+                float distToEdge = CalculateDistanceToEdge(shardPos, dir, canvasWidth, canvasHeight);
+                return shardPos + dir * (distToEdge + edgeOffset);
+
+            case ShardMoveDirection.LightningBolt:
+            default:
+                // Zigzag lightning bolt split - horizontal
+                // Determine which side of the zigzag line this shard is on
+                bool isLeftOfBolt = IsLeftOfLightningBolt(shardPos, canvasWidth, canvasHeight);
+                if (isLeftOfBolt)
+                    return new Vector2(-edgeOffset, shardPos.y);
+                else
+                    return new Vector2(canvasWidth + edgeOffset, shardPos.y);
+        }
+    }
+
+    /// <summary>
+    /// Determines if a point is on the left side of the lightning bolt zigzag line.
+    /// The zigzag goes from top to bottom, alternating left and right.
+    /// </summary>
+    private bool IsLeftOfLightningBolt(Vector2 pos, float canvasWidth, float canvasHeight)
+    {
+        float centerX = canvasWidth / 2f;
+        float amplitude = canvasWidth * zigzagAmplitude;
+        
+        // Calculate which segment this Y position falls into
+        float segmentHeight = canvasHeight / zigzagSegments;
+        int segmentIndex = Mathf.FloorToInt(pos.y / segmentHeight);
+        segmentIndex = Mathf.Clamp(segmentIndex, 0, zigzagSegments - 1);
+        
+        // Calculate the Y position within the segment (0 to 1)
+        float segmentStartY = segmentIndex * segmentHeight;
+        float tInSegment = (pos.y - segmentStartY) / segmentHeight;
+        
+        // Determine the X positions at the start and end of this segment
+        // Alternate direction: even segments go right, odd segments go left
+        float startX, endX;
+        if (segmentIndex % 2 == 0)
+        {
+            // Going from left to right as we go up
+            startX = centerX - amplitude;
+            endX = centerX + amplitude;
+        }
+        else
+        {
+            // Going from right to left as we go up  
+            startX = centerX + amplitude;
+            endX = centerX - amplitude;
+        }
+        
+        // Interpolate to find the X position of the bolt at this Y
+        float boltX = Mathf.Lerp(startX, endX, tInSegment);
+        
+        return pos.x < boltX;
+    }
+
+    private float CalculateDistanceToEdge(Vector2 pos, Vector2 dir, float width, float height)
+    {
+        float dist = float.MaxValue;
+
+        // Check intersection with each edge
+        if (dir.x > 0)
+            dist = Mathf.Min(dist, (width - pos.x) / dir.x);
+        else if (dir.x < 0)
+            dist = Mathf.Min(dist, -pos.x / dir.x);
+
+        if (dir.y > 0)
+            dist = Mathf.Min(dist, (height - pos.y) / dir.y);
+        else if (dir.y < 0)
+            dist = Mathf.Min(dist, -pos.y / dir.y);
+
+        return Mathf.Max(0, dist);
     }
 
     private UIGlassShard CreateUIShard(Vector2 position, float width, float height, Rect uvRect, 
-        Vector2 scatterOffset, float rotation)
+        Vector2 moveOffset, float rotation)
     {
         GameObject shardObj = new GameObject($"Shard_{shards.Count}");
         shardObj.transform.SetParent(shardContainer, false);
 
-        // Setup RectTransform
         RectTransform rt = shardObj.AddComponent<RectTransform>();
         rt.anchorMin = Vector2.zero;
         rt.anchorMax = Vector2.zero;
@@ -291,26 +416,20 @@ public class ShatteredPauseMenu : MonoBehaviour
         rt.anchoredPosition = position;
         rt.sizeDelta = new Vector2(width, height);
 
-        // Add RawImage to display the screenshot portion
         RawImage rawImage = shardObj.AddComponent<RawImage>();
         rawImage.texture = screenshotTexture;
         rawImage.uvRect = uvRect;
         rawImage.raycastTarget = false;
 
-        // Add shard component
         UIGlassShard shard = shardObj.AddComponent<UIGlassShard>();
-        shard.Initialize(position, scatterOffset, rotation);
+        shard.Initialize(position, moveOffset, rotation);
 
         return shard;
     }
 
     private IEnumerator AnimateShardsOpen()
     {
-        if (shards.Count == 0)
-        {
-            Log("WARNING: No shards to animate!");
-            yield break;
-        }
+        if (shards.Count == 0) yield break;
 
         float[] delays = CalculateStaggerDelays();
         float maxDelay = 0f;
@@ -320,12 +439,11 @@ public class ShatteredPauseMenu : MonoBehaviour
         float totalDuration = openDuration + maxDelay;
         float elapsed = 0f;
 
-        Log($"Animating {shards.Count} shards over {totalDuration:F2}s");
-
         while (elapsed < totalDuration)
         {
             elapsed += Time.unscaledDeltaTime;
 
+            // Animate shards
             for (int i = 0; i < shards.Count; i++)
             {
                 float shardElapsed = elapsed - delays[i];
@@ -337,16 +455,33 @@ public class ShatteredPauseMenu : MonoBehaviour
                 }
             }
 
+            // Fade in background
+            if (backgroundImage != null)
+            {
+                float bgT = Mathf.Clamp01(elapsed / backgroundFadeDuration);
+                backgroundImage.color = new Color(
+                    backgroundColor.r, 
+                    backgroundColor.g, 
+                    backgroundColor.b, 
+                    bgT * backgroundColor.a
+                );
+            }
+
             yield return null;
         }
 
+        // Ensure final state
         foreach (var shard in shards)
             shard.SetOpenAmount(1f);
+
+        if (backgroundImage != null)
+            backgroundImage.color = backgroundColor;
     }
 
     private IEnumerator AnimateShardsClose()
     {
         float elapsed = 0f;
+        float startAlpha = backgroundImage != null ? backgroundImage.color.a : 0f;
 
         while (elapsed < closeDuration)
         {
@@ -356,11 +491,26 @@ public class ShatteredPauseMenu : MonoBehaviour
             foreach (var shard in shards)
                 shard.SetOpenAmount(t);
 
+            // Fade out background
+            if (backgroundImage != null)
+            {
+                float bgT = 1f - Mathf.Clamp01(elapsed / closeDuration);
+                backgroundImage.color = new Color(
+                    backgroundColor.r, 
+                    backgroundColor.g, 
+                    backgroundColor.b, 
+                    startAlpha * bgT
+                );
+            }
+
             yield return null;
         }
 
         foreach (var shard in shards)
             shard.SetOpenAmount(0f);
+
+        if (backgroundImage != null)
+            backgroundImage.color = new Color(backgroundColor.r, backgroundColor.g, backgroundColor.b, 0f);
     }
 
     private float[] CalculateStaggerDelays()
@@ -373,6 +523,7 @@ public class ShatteredPauseMenu : MonoBehaviour
         for (int i = 0; i < shards.Count; i++)
         {
             float dist = Vector2.Distance(shards[i].OriginalPosition, canvasCenter);
+            // Center shards animate first
             delays[i] = (1f - dist / maxDist) * staggerAmount * shards.Count;
         }
 
@@ -399,7 +550,6 @@ public class ShatteredPauseMenu : MonoBehaviour
     {
         if (screenshotTexture != null)
             Destroy(screenshotTexture);
-
         ClearShards();
     }
 
