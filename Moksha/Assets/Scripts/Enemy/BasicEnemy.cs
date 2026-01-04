@@ -12,6 +12,7 @@ public class BasicEnemy : EnemyBase
     [Header("Optional Components")]
     [SerializeField] private Animator animator;
     [SerializeField] private AudioSource audioSource;
+    [SerializeField] private EnemyDissolve dissolveEffect;
 
     // Animator parameter hashes (static for all instances)
     private static readonly int SpeedHash = Animator.StringToHash("Speed");
@@ -25,6 +26,7 @@ public class BasicEnemy : EnemyBase
     private bool hasCharacterController;
     private bool hasRigidbody;
     private bool hasAudioSource;
+    private bool hasDissolve;
 
     // State
     private float attackTimer;
@@ -49,12 +51,14 @@ public class BasicEnemy : EnemyBase
         audioSource = GetComponent<AudioSource>();
         characterController = GetComponent<CharacterController>();
         rb = GetComponent<Rigidbody>();
+        dissolveEffect = GetComponent<EnemyDissolve>();
 
         // Cache booleans for fast null checks
         hasAnimator = animator != null;
         hasCharacterController = characterController != null;
         hasRigidbody = rb != null;
         hasAudioSource = audioSource != null;
+        hasDissolve = dissolveEffect != null;
 
         GenerateNoiseOffset();
     }
@@ -209,7 +213,24 @@ public class BasicEnemy : EnemyBase
         if (hasRigidbody)
             rb.isKinematic = true;
 
-        base.Die();
+        // Start dissolve effect
+        if (hasDissolve)
+        {
+            // Mark as dead but don't deactivate yet - let dissolve complete first
+            IsDead = true;
+            
+            // Grant XP immediately
+            if (ExperienceManager.Instance != null)
+                ExperienceManager.Instance.AddXP(cachedXPReward);
+            
+            dissolveEffect.StartDissolve(() => {
+                gameObject.SetActive(false);
+            });
+        }
+        else
+        {
+            base.Die();
+        }
     }
 
     public override void ResetEnemy()
@@ -225,6 +246,8 @@ public class BasicEnemy : EnemyBase
             characterController.enabled = true;
         if (hasRigidbody)
             rb.isKinematic = false;
+        if (hasDissolve)
+            dissolveEffect.ResetDissolve();
 
         GenerateNoiseOffset();
     }
@@ -250,6 +273,13 @@ public class BasicEnemy : EnemyBase
         Gizmos.DrawWireSphere(transform.position, stats.attackRange);
         Gizmos.color = Color.yellow;
         Gizmos.DrawWireSphere(transform.position, stats.stoppingDistance);
+    }
+
+    [ContextMenu("Kill This Enemy")]
+    public void DebugKill()
+    {
+        if (IsDead) return;
+        TakeDamage(cachedMaxHealth + 1f);
     }
 #endif
 }
