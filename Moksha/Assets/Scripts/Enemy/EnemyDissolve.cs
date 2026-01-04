@@ -1,9 +1,11 @@
-using System.Collections;
+using System;
+using System.Runtime.CompilerServices;
 using UnityEngine;
 
 /// <summary>
 /// Handles dissolve effect for enemies on death.
 /// Creates material instances to avoid affecting other enemies with shared materials.
+/// Optimized to avoid GC allocations during dissolve.
 /// </summary>
 public class EnemyDissolve : MonoBehaviour
 {
@@ -24,12 +26,21 @@ public class EnemyDissolve : MonoBehaviour
     
     // Cached
     private Renderer[] renderers;
-    private Material[][] materialInstances; // Per-renderer material arrays
+    private Material[][] materialInstances;
+    private bool[][] hasDissolveProperty; // Cache which materials have the property
     private int dissolvePropertyID;
     private bool hasInitialized;
+    private bool hasMaterialInstances;
+    
+    // Dissolve state (non-coroutine based)
     private bool isDissolving;
-    private Coroutine dissolveCoroutine;
-    private Vector4 dissolveVector; // Reusable vector to avoid allocations
+    private float dissolveTimer;
+    private float delayTimer;
+    private bool inDelayPhase;
+    private Action onCompleteCallback;
+    
+    // Reusable vector
+    private Vector4 dissolveVector;
 
     private void Awake()
     {
@@ -41,6 +52,7 @@ public class EnemyDissolve : MonoBehaviour
     {
         renderers = GetComponentsInChildren<Renderer>();
         materialInstances = new Material[renderers.Length][];
+        hasDissolveProperty = new bool[renderers.Length][];
         hasInitialized = true;
     }
 
@@ -57,72 +69,102 @@ public class EnemyDissolve : MonoBehaviour
             if (renderers[i] == null) continue;
             
             // Using .materials creates instances automatically (not sharedMaterials)
-            materialInstances[i] = renderers[i].materials;
+            Material[] mats = renderers[i].materials;
+            materialInstances[i] = mats;
+            
+            // Cache which materials have the dissolve property
+            hasDissolveProperty[i] = new bool[mats.Length];
+            for (int j = 0; j < mats.Length; j++)
+            {
+                hasDissolveProperty[i][j] = mats[j] != null && mats[j].HasProperty(dissolvePropertyID);
+            }
         }
+        
+        hasMaterialInstances = true;
     }
 
     /// <summary>
     /// Starts the dissolve effect. Call this when the enemy dies.
+    /// Uses Update loop instead of coroutine to avoid GC allocations.
     /// </summary>
-    public void StartDissolve(System.Action onComplete = null)
+    public void StartDissolve(Action onComplete = null)
     {
         if (isDissolving) return;
         
         // Ensure we have material instances
-        if (materialInstances == null || materialInstances[0] == null)
+        if (!hasMaterialInstances)
         {
             CreateMaterialInstances();
         }
         
-        if (dissolveCoroutine != null)
-            StopCoroutine(dissolveCoroutine);
-            
-        dissolveCoroutine = StartCoroutine(DissolveRoutine(onComplete));
+        onCompleteCallback = onComplete;
+        dissolveTimer = 0f;
+        delayTimer = 0f;
+        inDelayPhase = delayBeforeDissolve > 0f;
+        isDissolving = true;
+        enabled = true; // Enable Update
     }
 
-    private IEnumerator DissolveRoutine(System.Action onComplete)
+    private void Update()
     {
-        isDissolving = true;
+        if (!isDissolving) return;
         
-        // Optional delay before starting dissolve
-        if (delayBeforeDissolve > 0f)
-            yield return new WaitForSeconds(delayBeforeDissolve);
+        float dt = Time.deltaTime;
         
-        float elapsed = 0f;
-        
-        while (elapsed < dissolveDuration)
+        // Handle delay phase
+        if (inDelayPhase)
         {
-            elapsed += Time.deltaTime;
-            float t = dissolveCurve.Evaluate(elapsed / dissolveDuration);
-            float dissolveValue = Mathf.Lerp(dissolveStartValue, dissolveEndValue, t);
-            
-            SetDissolveValue(dissolveValue);
-            
-            yield return null;
+            delayTimer += dt;
+            if (delayTimer >= delayBeforeDissolve)
+            {
+                inDelayPhase = false;
+            }
+            return;
         }
         
-        // Ensure final value
-        SetDissolveValue(dissolveEndValue);
+        // Dissolve phase
+        dissolveTimer += dt;
+        float t = dissolveTimer / dissolveDuration;
         
-        isDissolving = false;
-        onComplete?.Invoke();
+        if (t >= 1f)
+        {
+            // Complete
+            SetDissolveValue(dissolveEndValue);
+            isDissolving = false;
+            enabled = false; // Disable Update
+            
+            onCompleteCallback?.Invoke();
+            onCompleteCallback = null;
+        }
+        else
+        {
+            float curveT = dissolveCurve.Evaluate(t);
+            float value = dissolveStartValue + (dissolveEndValue - dissolveStartValue) * curveT;
+            SetDissolveValue(value);
+        }
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private void SetDissolveValue(float value)
     {
         // Set the appropriate axis of the vector
-        dissolveVector = Vector4.zero;
-        dissolveVector[dissolveAxis] = value;
+        dissolveVector.x = dissolveAxis == 0 ? value : 0f;
+        dissolveVector.y = dissolveAxis == 1 ? value : 0f;
+        dissolveVector.z = dissolveAxis == 2 ? value : 0f;
+        dissolveVector.w = 0f;
         
         for (int i = 0; i < renderers.Length; i++)
         {
-            if (materialInstances[i] == null) continue;
+            Material[] mats = materialInstances[i];
+            if (mats == null) continue;
             
-            for (int j = 0; j < materialInstances[i].Length; j++)
+            bool[] hasProp = hasDissolveProperty[i];
+            for (int j = 0; j < mats.Length; j++)
             {
-                if (materialInstances[i][j] != null && materialInstances[i][j].HasProperty(dissolvePropertyID))
+                // Use cached property check
+                if (hasProp[j])
                 {
-                    materialInstances[i][j].SetVector(dissolvePropertyID, dissolveVector);
+                    mats[j].SetVector(dissolvePropertyID, dissolveVector);
                 }
             }
         }
@@ -133,14 +175,17 @@ public class EnemyDissolve : MonoBehaviour
     /// </summary>
     public void ResetDissolve()
     {
-        if (dissolveCoroutine != null)
-        {
-            StopCoroutine(dissolveCoroutine);
-            dissolveCoroutine = null;
-        }
-        
         isDissolving = false;
-        SetDissolveValue(dissolveStartValue);
+        inDelayPhase = false;
+        dissolveTimer = 0f;
+        delayTimer = 0f;
+        onCompleteCallback = null;
+        enabled = false;
+        
+        if (hasMaterialInstances)
+        {
+            SetDissolveValue(dissolveStartValue);
+        }
     }
 
     /// <summary>
@@ -153,22 +198,30 @@ public class EnemyDissolve : MonoBehaviour
         
         for (int i = 0; i < materialInstances.Length; i++)
         {
-            if (materialInstances[i] == null) continue;
+            Material[] mats = materialInstances[i];
+            if (mats == null) continue;
             
-            for (int j = 0; j < materialInstances[i].Length; j++)
+            for (int j = 0; j < mats.Length; j++)
             {
-                if (materialInstances[i][j] != null)
+                if (mats[j] != null)
                 {
-                    Destroy(materialInstances[i][j]);
+                    Destroy(mats[j]);
                 }
             }
         }
         
         materialInstances = null;
+        hasDissolveProperty = null;
+        hasMaterialInstances = false;
     }
 
     private void OnDestroy()
     {
         CleanupMaterials();
+    }
+    
+    private void OnDisable()
+    {
+        // Don't run Update when disabled
     }
 }

@@ -1,3 +1,4 @@
+using System.Runtime.CompilerServices;
 using UnityEngine;
 
 /// <summary>
@@ -22,21 +23,23 @@ public class BasicEnemy : EnemyBase
     // Cached components
     private CharacterController characterController;
     private Rigidbody rb;
-    private bool hasAnimator;
-    private bool hasCharacterController;
-    private bool hasRigidbody;
-    private bool hasAudioSource;
-    private bool hasDissolve;
+    private byte componentFlags; // Bit flags for component presence
+    
+    // Component flag bits
+    private const byte FLAG_ANIMATOR = 1;
+    private const byte FLAG_CHAR_CONTROLLER = 2;
+    private const byte FLAG_RIGIDBODY = 4;
+    private const byte FLAG_AUDIO = 8;
+    private const byte FLAG_DISSOLVE = 16;
 
     // State
     private float attackTimer;
-    private Vector3 noiseOffset;
+    private float noiseX, noiseZ;
     private float lastAnimSpeed;
 
     // Cached vectors (avoid allocations)
     private Vector3 moveDirection;
     private Vector3 movement;
-    private Quaternion targetRotation;
 
     // Cached IDamageable on target (avoid GetComponent every attack)
     private IDamageable targetDamageable;
@@ -53,25 +56,25 @@ public class BasicEnemy : EnemyBase
         rb = GetComponent<Rigidbody>();
         dissolveEffect = GetComponent<EnemyDissolve>();
 
-        // Cache booleans for fast null checks
-        hasAnimator = animator != null;
-        hasCharacterController = characterController != null;
-        hasRigidbody = rb != null;
-        hasAudioSource = audioSource != null;
-        hasDissolve = dissolveEffect != null;
+        // Set component flags (faster than null checks)
+        componentFlags = 0;
+        if (animator != null) componentFlags |= FLAG_ANIMATOR;
+        if (characterController != null) componentFlags |= FLAG_CHAR_CONTROLLER;
+        if (rb != null) componentFlags |= FLAG_RIGIDBODY;
+        if (audioSource != null) componentFlags |= FLAG_AUDIO;
+        if (dissolveEffect != null) componentFlags |= FLAG_DISSOLVE;
 
         GenerateNoiseOffset();
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private void GenerateNoiseOffset()
     {
-        // Use faster random generation
         float x = Random.value * 2f - 1f;
         float z = Random.value * 2f - 1f;
         float invMag = movementNoise / Mathf.Sqrt(x * x + z * z + 0.0001f);
-        noiseOffset.x = x * invMag;
-        noiseOffset.y = 0f;
-        noiseOffset.z = z * invMag;
+        noiseX = x * invMag;
+        noiseZ = z * invMag;
     }
 
     protected override void UpdateBehavior(float deltaTime)
@@ -99,43 +102,50 @@ public class BasicEnemy : EnemyBase
         }
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private void ChaseTarget(float deltaTime)
     {
         GetNormalizedDirectionToTarget(out moveDirection);
-        if (moveDirection.x == 0f && moveDirection.z == 0f) return;
-
-        // Add noise (small contribution)
-        float noiseScale = 0.1f;
-        moveDirection.x += noiseOffset.x * noiseScale;
-        moveDirection.z += noiseOffset.z * noiseScale;
         
-        // Re-normalize (fast approximation)
-        float sqrMag = moveDirection.x * moveDirection.x + moveDirection.z * moveDirection.z;
+        // Early exit if no direction
+        if (moveDirection.x == 0f & moveDirection.z == 0f) return;
+
+        // Add noise (small contribution) - inline multiplication
+        const float noiseScale = 0.1f;
+        float dirX = moveDirection.x + noiseX * noiseScale;
+        float dirZ = moveDirection.z + noiseZ * noiseScale;
+        
+        // Re-normalize (fast)
+        float sqrMag = dirX * dirX + dirZ * dirZ;
         if (sqrMag > 0.0001f)
         {
             float invMag = 1f / Mathf.Sqrt(sqrMag);
-            moveDirection.x *= invMag;
-            moveDirection.z *= invMag;
+            dirX *= invMag;
+            dirZ *= invMag;
         }
+        
+        moveDirection.x = dirX;
+        moveDirection.z = dirZ;
 
         // Rotate towards target
         RotateTowards(deltaTime);
 
         // Calculate movement
         float moveAmount = cachedMoveSpeed * deltaTime;
-        movement.x = moveDirection.x * moveAmount;
-        movement.z = moveDirection.z * moveAmount;
+        movement.x = dirX * moveAmount;
+        movement.z = dirZ * moveAmount;
 
-        if (hasCharacterController)
+        // Apply movement based on available component
+        if ((componentFlags & FLAG_CHAR_CONTROLLER) != 0)
         {
             movement.y = -2f * deltaTime; // Gravity
             characterController.Move(movement);
         }
-        else if (hasRigidbody)
+        else if ((componentFlags & FLAG_RIGIDBODY) != 0)
         {
             Vector3 vel = rb.linearVelocity;
-            vel.x = moveDirection.x * cachedMoveSpeed;
-            vel.z = moveDirection.z * cachedMoveSpeed;
+            vel.x = dirX * cachedMoveSpeed;
+            vel.z = dirZ * cachedMoveSpeed;
             rb.linearVelocity = vel;
         }
         else
@@ -145,10 +155,10 @@ public class BasicEnemy : EnemyBase
         }
     }
 
-    [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private void RotateTowards(float deltaTime)
     {
-        targetRotation = Quaternion.LookRotation(moveDirection, Vector3.up);
+        Quaternion targetRotation = Quaternion.LookRotation(moveDirection, Vector3.up);
         cachedTransform.rotation = Quaternion.RotateTowards(
             cachedTransform.rotation,
             targetRotation,
@@ -156,21 +166,23 @@ public class BasicEnemy : EnemyBase
         );
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private void TryAttack()
     {
         if (attackTimer > 0f) return;
 
         attackTimer = cachedAttackCooldown;
 
-        if (hasAnimator)
+        if ((componentFlags & FLAG_ANIMATOR) != 0)
             animator.SetTrigger(AttackHash);
 
-        if (hasAudioSource && stats.attackSound != null)
+        if ((componentFlags & FLAG_AUDIO) != 0 && stats.attackSound != null)
             audioSource.PlayOneShot(stats.attackSound);
 
         DealDamage();
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private void DealDamage()
     {
         if (targetTransform == null) return;
@@ -189,11 +201,11 @@ public class BasicEnemy : EnemyBase
         }
     }
 
-    [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private void SetAnimSpeed(float speed)
     {
         // Only update animator if value changed (reduces animator overhead)
-        if (hasAnimator && speed != lastAnimSpeed)
+        if ((componentFlags & FLAG_ANIMATOR) != 0 && speed != lastAnimSpeed)
         {
             animator.SetFloat(SpeedHash, speed);
             lastAnimSpeed = speed;
@@ -202,13 +214,11 @@ public class BasicEnemy : EnemyBase
 
     protected override void Die()
     {
-        // Don't trigger death animation - keep running while dissolving
-        
-        if (hasAudioSource && stats.deathSound != null)
+        if ((componentFlags & FLAG_AUDIO) != 0 && stats.deathSound != null)
             audioSource.PlayOneShot(stats.deathSound);
 
         // Start dissolve effect but keep moving
-        if (hasDissolve)
+        if ((componentFlags & FLAG_DISSOLVE) != 0)
         {
             // Grant XP immediately
             if (ExperienceManager.Instance != null)
@@ -218,28 +228,40 @@ public class BasicEnemy : EnemyBase
             IsDissolving = true;
             
             // Start dissolve - enemy keeps moving until this completes
-            dissolveEffect.StartDissolve(() => {
-                // Only now fully disable the enemy
-                IsDissolving = false;
-                IsDead = true;
-                
-                if (hasCharacterController)
-                    characterController.enabled = false;
-                if (hasRigidbody)
-                    rb.isKinematic = true;
-                    
-                gameObject.SetActive(false);
-            });
+            dissolveEffect.StartDissolve(OnDissolveComplete);
         }
         else
         {
-            if (hasCharacterController)
-                characterController.enabled = false;
-            if (hasRigidbody)
-                rb.isKinematic = true;
-                
+            DisableMovement();
             base.Die();
         }
+    }
+    
+    private void OnDissolveComplete()
+    {
+        // Only now fully disable the enemy
+        IsDissolving = false;
+        IsDead = true;
+        DisableMovement();
+        gameObject.SetActive(false);
+    }
+    
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private void DisableMovement()
+    {
+        if ((componentFlags & FLAG_CHAR_CONTROLLER) != 0)
+            characterController.enabled = false;
+        if ((componentFlags & FLAG_RIGIDBODY) != 0)
+            rb.isKinematic = true;
+    }
+    
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private void EnableMovement()
+    {
+        if ((componentFlags & FLAG_CHAR_CONTROLLER) != 0)
+            characterController.enabled = true;
+        if ((componentFlags & FLAG_RIGIDBODY) != 0)
+            rb.isKinematic = false;
     }
 
     public override void ResetEnemy()
@@ -247,15 +269,13 @@ public class BasicEnemy : EnemyBase
         base.ResetEnemy();
         
         attackTimer = 0f;
-        lastAnimSpeed = -1f; // Force animator update on next tick
+        lastAnimSpeed = -1f;
         checkedDamageable = false;
         targetDamageable = null;
         
-        if (hasCharacterController)
-            characterController.enabled = true;
-        if (hasRigidbody)
-            rb.isKinematic = false;
-        if (hasDissolve)
+        EnableMovement();
+        
+        if ((componentFlags & FLAG_DISSOLVE) != 0)
             dissolveEffect.ResetDissolve();
 
         GenerateNoiseOffset();
