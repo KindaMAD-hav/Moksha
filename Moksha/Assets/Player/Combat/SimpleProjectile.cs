@@ -46,6 +46,13 @@ public class SimpleProjectile : MonoBehaviour
 
     void OnTriggerEnter(Collider other)
     {
+        Debug.Log("Projectile trigger hit: " + other.name);
+        Debug.Log("Collider layer: " + LayerMask.LayerToName(other.gameObject.layer));
+        Debug.Log("HitMask allows it: " + ((hitMask.value & (1 << other.gameObject.layer)) != 0));
+
+        var target1 = other.GetComponentInParent<Purifiable>();
+        Debug.Log("Found Purifiable: " + (target1 != null));
+
         // Layer filtering
         if ((hitMask.value & (1 << other.gameObject.layer)) == 0)
             return;
@@ -66,5 +73,6 @@ public class SimpleProjectile : MonoBehaviour
             Destroy(gameObject);
         }
     }
+
 
 }

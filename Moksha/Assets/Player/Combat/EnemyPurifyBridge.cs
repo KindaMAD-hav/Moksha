@@ -1,16 +1,17 @@
-using UnityEngine;
-
-public class EnemyPurifyBridge : MonoBehaviour
+public class EnemyPurifyBridge : Purifiable
 {
-    // Start is called once before the first execution of Update after the MonoBehaviour is created
-    void Start()
+    EnemyBase enemy;
+
+    void Awake()
     {
-        
+        enemy = GetComponent<EnemyBase>();
     }
 
-    // Update is called once per frame
-    void Update()
+    public override void Purify(float amount)
     {
-        
+        if (enemy == null) return;
+        if (enemy.IsDead) return;
+
+        enemy.TakeDamage(amount);
     }
 }
