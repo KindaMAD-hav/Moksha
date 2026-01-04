@@ -76,16 +76,22 @@ public class WeaponRuntime
 
         float totalSpread = baseSpread;
 
-        float step = projectileCount > 1 ? totalSpread / (projectileCount - 1) : 0f;
-        float start = -totalSpread * 0.5f;
+        float step = 0f;
+        float start = 0f;
 
         float dmg = def.baseDamage * damageMult;
         float spd = def.projectileSpeed * speedMult;
         int pierce = def.basePierce + bonusPierce;
 
+        if (projectileCount > 1)
+        {
+            step = totalSpread / (projectileCount - 1);
+            start = -totalSpread * 0.5f;
+        }
+
         for (int i = 0; i < projectileCount; i++)
         {
-            float angle = start + step * i;
+            float angle = (projectileCount == 1) ? 0f : (start + step * i);
             Vector3 shotDir = Quaternion.AngleAxis(angle, Vector3.up) * dir;
             SpawnProjectile(firePos, shotDir, dmg, spd, pierce);
         }
