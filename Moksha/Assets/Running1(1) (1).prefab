@@ -108,6 +108,12 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: f8959b9b92591d74a83f34472fe92c35, type: 3}
       insertIndex: -1
       addedObject: {fileID: 8222079118235880452}
+    - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: f8959b9b92591d74a83f34472fe92c35, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 3037261558953651257}
+    - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: f8959b9b92591d74a83f34472fe92c35, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 3422134387491369345}
   m_SourcePrefab: {fileID: 100100000, guid: f8959b9b92591d74a83f34472fe92c35, type: 3}
 --- !u!1 &2124684102959905579 stripped
 GameObject:
@@ -199,8 +205,61 @@ MonoBehaviour:
   stats: {fileID: 11400000, guid: de28dcd17d9dd1c4aaba761d3dcdde5c, type: 2}
   currentHealth: 0
   targetTransform: {fileID: 0}
-  attackTimer: 0
-  isAttacking: 0
   movementNoise: 0.5
   animator: {fileID: 2998287595109514381}
   audioSource: {fileID: 0}
+  dissolveEffect: {fileID: 0}
+--- !u!114 &3037261558953651257
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2124684102959905579}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 546eb6be2dfaf0a41962e7354808915b, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::EnemyDissolve
+  dissolveDuration: 1.5
+  dissolveStartValue: 0
+  dissolveEndValue: 1
+  dissolveCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 0
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    - serializedVersion: 3
+      time: 1
+      value: 1
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  delayBeforeDissolve: 0.2
+  dissolvePropertyName: _DissolveOffest
+  dissolveAxis: 1
+--- !u!114 &3422134387491369345
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2124684102959905579}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e3768fa555258ce469061aeb41add250, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::EnemyPurifyBridge
