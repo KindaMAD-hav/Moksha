@@ -22,8 +22,8 @@ public class ShatteredPauseMenu : MonoBehaviour
     [SerializeField] private KeyCode pauseKey = KeyCode.Escape;
 
     [Header("Shard Settings")]
-    [SerializeField] private int shardColumns = 5;
-    [SerializeField] private int shardRows = 4;
+    [SerializeField] private int shardColumns = 12;
+    [SerializeField] private int shardRows = 8;
 
     [Header("Animation Settings")]
     [SerializeField] private float openDuration = 0.6f;
@@ -54,8 +54,10 @@ public class ShatteredPauseMenu : MonoBehaviour
     }
 
     [Header("Lightning Bolt Settings")]
-    [SerializeField] private int zigzagSegments = 4; // Number of zigzag points
-    [SerializeField] private float zigzagAmplitude = 0.3f; // How far zigzag deviates (0-0.5, as fraction of width)
+    [Tooltip("Number of zigzag peaks. More = more jagged. Should match or divide evenly into shardColumns for best results.")]
+    [SerializeField] private int zigzagSegments = 6;
+    [Tooltip("How far the zigzag deviates from center (0.1 = subtle, 0.4 = dramatic). As fraction of screen height.")]
+    [SerializeField] private float zigzagAmplitude = 0.25f;
 
     // Runtime
     private List<UIGlassShard> shards = new List<UIGlassShard>();
@@ -335,54 +337,54 @@ public class ShatteredPauseMenu : MonoBehaviour
 
             case ShardMoveDirection.LightningBolt:
             default:
-                // Zigzag lightning bolt split - horizontal
-                // Determine which side of the zigzag line this shard is on
-                bool isLeftOfBolt = IsLeftOfLightningBolt(shardPos, canvasWidth, canvasHeight);
-                if (isLeftOfBolt)
-                    return new Vector2(-edgeOffset, shardPos.y);
+                // Horizontal zigzag split - top goes up, bottom goes down
+                // The zigzag line runs LEFT to RIGHT, oscillating UP and DOWN
+                bool isAboveBolt = IsAboveLightningBolt(shardPos, canvasWidth, canvasHeight);
+                if (isAboveBolt)
+                    return new Vector2(shardPos.x, canvasHeight + edgeOffset); // Move up
                 else
-                    return new Vector2(canvasWidth + edgeOffset, shardPos.y);
+                    return new Vector2(shardPos.x, -edgeOffset); // Move down
         }
     }
 
     /// <summary>
-    /// Determines if a point is on the left side of the lightning bolt zigzag line.
-    /// The zigzag goes from top to bottom, alternating left and right.
+    /// Determines if a point is above the horizontal lightning bolt zigzag line.
+    /// The zigzag runs from left to right, oscillating up and down around the center.
     /// </summary>
-    private bool IsLeftOfLightningBolt(Vector2 pos, float canvasWidth, float canvasHeight)
+    private bool IsAboveLightningBolt(Vector2 pos, float canvasWidth, float canvasHeight)
     {
-        float centerX = canvasWidth / 2f;
-        float amplitude = canvasWidth * zigzagAmplitude;
+        float centerY = canvasHeight / 2f;
+        float amplitude = canvasHeight * zigzagAmplitude;
         
-        // Calculate which segment this Y position falls into
-        float segmentHeight = canvasHeight / zigzagSegments;
-        int segmentIndex = Mathf.FloorToInt(pos.y / segmentHeight);
+        // Calculate which segment this X position falls into
+        float segmentWidth = canvasWidth / zigzagSegments;
+        int segmentIndex = Mathf.FloorToInt(pos.x / segmentWidth);
         segmentIndex = Mathf.Clamp(segmentIndex, 0, zigzagSegments - 1);
         
-        // Calculate the Y position within the segment (0 to 1)
-        float segmentStartY = segmentIndex * segmentHeight;
-        float tInSegment = (pos.y - segmentStartY) / segmentHeight;
+        // Calculate the X position within the segment (0 to 1)
+        float segmentStartX = segmentIndex * segmentWidth;
+        float tInSegment = (pos.x - segmentStartX) / segmentWidth;
         
-        // Determine the X positions at the start and end of this segment
-        // Alternate direction: even segments go right, odd segments go left
-        float startX, endX;
+        // Determine the Y positions at the start and end of this segment
+        // Alternate direction: even segments go up, odd segments go down
+        float startY, endY;
         if (segmentIndex % 2 == 0)
         {
-            // Going from left to right as we go up
-            startX = centerX - amplitude;
-            endX = centerX + amplitude;
+            // Going from down to up as we go right
+            startY = centerY - amplitude;
+            endY = centerY + amplitude;
         }
         else
         {
-            // Going from right to left as we go up  
-            startX = centerX + amplitude;
-            endX = centerX - amplitude;
+            // Going from up to down as we go right
+            startY = centerY + amplitude;
+            endY = centerY - amplitude;
         }
         
-        // Interpolate to find the X position of the bolt at this Y
-        float boltX = Mathf.Lerp(startX, endX, tInSegment);
+        // Interpolate to find the Y position of the bolt at this X
+        float boltY = Mathf.Lerp(startY, endY, tInSegment);
         
-        return pos.x < boltX;
+        return pos.y > boltY;
     }
 
     private float CalculateDistanceToEdge(Vector2 pos, Vector2 dir, float width, float height)
