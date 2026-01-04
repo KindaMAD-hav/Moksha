@@ -1,10 +1,10 @@
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 
 /// <summary>
-/// Controls the level-up UI panel that displays power-up cards.
-/// Pauses the game when shown and resumes when a selection is made.
+/// Optimized level-up UI with card pooling and animations.
 /// </summary>
 public class LevelUpUI : MonoBehaviour
 {
@@ -19,16 +19,24 @@ public class LevelUpUI : MonoBehaviour
     [Header("Settings")]
     [SerializeField] private int cardsToShow = 3;
     [SerializeField] private GameObject playerObject;
+    [SerializeField] private float staggerDelay = 0.1f;
 
-    [Header("Audio (Optional)")]
+    [Header("Audio")]
     [SerializeField] private AudioSource audioSource;
     [SerializeField] private AudioClip levelUpSound;
     [SerializeField] private AudioClip selectSound;
 
-    // Track acquired power-ups and their stack counts
-    private Dictionary<PowerUp, int> acquiredPowerUps = new Dictionary<PowerUp, int>();
-    private List<PowerUpCard> activeCards = new List<PowerUpCard>();
-    private int pendingLevelUps = 0;
+    // Object pool for cards
+    private PowerUpCard[] cardPool;
+    private int activeCardCount;
+    
+    // Track acquired power-ups
+    private Dictionary<PowerUp, int> acquiredPowerUps;
+    private int pendingLevelUps;
+
+    // Cached
+    private bool hasAudioSource;
+    private LayoutGroup layoutGroup;
 
     public bool IsShowing => panel != null && panel.activeSelf;
 
@@ -41,17 +49,36 @@ public class LevelUpUI : MonoBehaviour
         }
         Instance = this;
 
+        acquiredPowerUps = new Dictionary<PowerUp, int>(32);
+        
+        // Get layout group if present
+        if (cardContainer != null)
+            layoutGroup = cardContainer.GetComponent<LayoutGroup>();
+        
+        // Create card pool
+        cardPool = new PowerUpCard[cardsToShow];
+        for (int i = 0; i < cardsToShow; i++)
+        {
+            PowerUpCard card = Instantiate(cardPrefab, cardContainer);
+            card.gameObject.SetActive(false);
+            cardPool[i] = card;
+        }
+
         if (panel != null)
             panel.SetActive(false);
+            
+        hasAudioSource = audioSource != null;
     }
 
     private void Start()
     {
-        // Auto-find player if not assigned
         if (playerObject == null)
-            playerObject = GameObject.FindGameObjectWithTag("Player");
+        {
+            var player = GameObject.FindGameObjectWithTag("Player");
+            if (player != null)
+                playerObject = player;
+        }
 
-        // Subscribe to level up events
         if (ExperienceManager.Instance != null)
             ExperienceManager.Instance.OnLevelUp += HandleLevelUp;
     }
@@ -65,135 +92,122 @@ public class LevelUpUI : MonoBehaviour
     private void HandleLevelUp(int newLevel)
     {
         pendingLevelUps++;
-        
-        // Only show if not already showing
         if (!IsShowing)
             ShowLevelUpPanel();
     }
 
-    /// <summary>
-    /// Shows the level-up panel with random power-up choices.
-    /// </summary>
     public void ShowLevelUpPanel()
     {
-        if (powerUpDatabase == null)
-        {
-            Debug.LogError("[LevelUpUI] PowerUpDatabase not assigned!");
-            return;
-        }
+        if (powerUpDatabase == null) return;
 
-        // Clear existing cards
-        ClearCards();
+        HideAllCards();
 
-        // Get random power-ups
         List<PowerUp> choices = powerUpDatabase.GetRandomPowerUps(cardsToShow, acquiredPowerUps);
-
         if (choices.Count == 0)
         {
-            Debug.LogWarning("[LevelUpUI] No power-ups available to show!");
             pendingLevelUps = 0;
             return;
         }
 
-        // Create cards
-        foreach (var powerUp in choices)
-        {
-            PowerUpCard card = Instantiate(cardPrefab, cardContainer);
-            card.Setup(powerUp, OnCardSelected);
-            activeCards.Add(card);
-        }
-
-        // Show panel and pause game
+        // Show panel first so layout can work
         panel.SetActive(true);
         Time.timeScale = 0f;
 
-        // Play sound
-        if (audioSource != null && levelUpSound != null)
+        // Activate cards and set them up (hidden initially)
+        activeCardCount = choices.Count;
+        for (int i = 0; i < activeCardCount; i++)
+        {
+            cardPool[i].ResetCard();
+            cardPool[i].gameObject.SetActive(true);
+            cardPool[i].Setup(choices[i], OnCardSelected);
+            cardPool[i].PrepareForAnimation(); // Hide until animation starts
+        }
+
+        // Start coroutine to animate after layout
+        StartCoroutine(AnimateCardsAfterLayout());
+
+        if (hasAudioSource && levelUpSound != null)
             audioSource.PlayOneShot(levelUpSound);
+    }
+
+    private IEnumerator AnimateCardsAfterLayout()
+    {
+        // Force layout rebuild
+        if (layoutGroup != null)
+        {
+            LayoutRebuilder.ForceRebuildLayoutImmediate(cardContainer as RectTransform);
+        }
+        
+        // Wait one frame for layout to fully complete
+        yield return null;
+
+        // Now capture each card's position and start animations
+        for (int i = 0; i < activeCardCount; i++)
+        {
+            PowerUpCard card = cardPool[i];
+            if (card != null && card.RectTransform != null)
+            {
+                // Capture the position layout gave this card
+                Vector3 targetPos = card.RectTransform.localPosition;
+                
+                // Start animation with stagger delay
+                float delay = i * staggerDelay;
+                card.PlayEntryAnimation(targetPos, delay);
+            }
+        }
     }
 
     private void OnCardSelected(PowerUp selectedPowerUp)
     {
         if (selectedPowerUp == null) return;
 
-        // Apply the power-up
         if (playerObject != null)
             selectedPowerUp.Apply(playerObject);
 
-        // Track acquisition
-        if (acquiredPowerUps.ContainsKey(selectedPowerUp))
-            acquiredPowerUps[selectedPowerUp]++;
+        if (acquiredPowerUps.TryGetValue(selectedPowerUp, out int count))
+            acquiredPowerUps[selectedPowerUp] = count + 1;
         else
             acquiredPowerUps[selectedPowerUp] = 1;
 
-        Debug.Log($"[LevelUpUI] Selected: {selectedPowerUp.powerUpName}");
-
-        // Play sound
-        if (audioSource != null && selectSound != null)
+        if (hasAudioSource && selectSound != null)
             audioSource.PlayOneShot(selectSound);
 
-        // Handle pending level ups
         pendingLevelUps--;
 
         if (pendingLevelUps > 0)
-        {
-            // More level ups pending, show again
             ShowLevelUpPanel();
-        }
         else
-        {
-            // Hide panel and resume game
             HidePanel();
-        }
     }
 
     private void HidePanel()
     {
-        ClearCards();
+        HideAllCards();
         panel.SetActive(false);
         Time.timeScale = 1f;
     }
 
-    private void ClearCards()
+    private void HideAllCards()
     {
-        foreach (var card in activeCards)
+        for (int i = 0; i < cardPool.Length; i++)
         {
-            if (card != null)
-                Destroy(card.gameObject);
+            if (cardPool[i] != null)
+            {
+                cardPool[i].ResetCard();
+                cardPool[i].gameObject.SetActive(false);
+            }
         }
-        activeCards.Clear();
+        activeCardCount = 0;
     }
 
-    /// <summary>
-    /// Get the current stack count for a power-up
-    /// </summary>
     public int GetPowerUpStacks(PowerUp powerUp)
     {
         return acquiredPowerUps.TryGetValue(powerUp, out int stacks) ? stacks : 0;
     }
 
-    /// <summary>
-    /// Get all acquired power-ups
-    /// </summary>
-    public Dictionary<PowerUp, int> GetAcquiredPowerUps()
-    {
-        return new Dictionary<PowerUp, int>(acquiredPowerUps);
-    }
-
-    /// <summary>
-    /// Reset all acquired power-ups (for new game)
-    /// </summary>
     public void ResetPowerUps()
     {
         acquiredPowerUps.Clear();
         pendingLevelUps = 0;
     }
-
-#if UNITY_EDITOR
-    [ContextMenu("Test Show Panel")]
-    public void TestShowPanel()
-    {
-        ShowLevelUpPanel();
-    }
-#endif
 }
