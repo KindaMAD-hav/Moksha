@@ -6,7 +6,7 @@ using UnityEngine;
 /// Base class for all enemies. Optimized for high enemy counts.
 /// Uses cached values, aggressive inlining, and avoids allocations.
 /// </summary>
-public abstract class EnemyBase : MonoBehaviour
+public abstract class EnemyBase : MonoBehaviour, IDamageable
 {
     [Header("Stats (Override with EnemyStats SO)")]
     [SerializeField] protected EnemyStats stats;

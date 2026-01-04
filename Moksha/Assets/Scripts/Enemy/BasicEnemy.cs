@@ -312,11 +312,3 @@ public class BasicEnemy : EnemyBase
     }
 #endif
 }
-
-/// <summary>
-/// Interface for anything that can take damage.
-/// </summary>
-public interface IDamageable
-{
-    void TakeDamage(float damage);
-}

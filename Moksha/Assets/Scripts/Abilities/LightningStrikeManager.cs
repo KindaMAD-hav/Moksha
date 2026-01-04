@@ -66,20 +66,50 @@ public class LightningStrikeManager : MonoBehaviour
     }
 
     /// <summary>
-    /// Spawn a lightning strike at the target position
+    /// Spawn a lightning strike at the exact target position (e.g., enemy's head).
+    /// The VFX will position itself above and strike down to this point.
     /// </summary>
-    public LightningStrikeVFX SpawnLightning(Vector3 targetPosition)
+    /// <param name="targetPosition">Exact world position to strike (e.g., enemy head)</param>
+    public LightningStrikeVFX SpawnLightningAtTarget(Vector3 targetPosition)
     {
         LightningStrikeVFX vfx = GetFromPool();
         
         if (vfx != null)
         {
-            vfx.Activate(targetPosition);
+            vfx.ActivateAtTarget(targetPosition);
             activeList.Add(vfx);
             UpdateDebugCounts();
         }
         
         return vfx;
+    }
+    
+    /// <summary>
+    /// Spawn a lightning strike that follows a target transform.
+    /// Use this when you want the lightning to track a moving enemy.
+    /// </summary>
+    /// <param name="target">Transform to follow (e.g., enemy's head bone or root)</param>
+    /// <param name="offset">Offset from target position (e.g., Vector3.up * 1.5f for head height)</param>
+    public LightningStrikeVFX SpawnLightningFollowing(Transform target, Vector3 offset = default)
+    {
+        LightningStrikeVFX vfx = GetFromPool();
+        
+        if (vfx != null)
+        {
+            vfx.ActivateAndFollow(target, offset);
+            activeList.Add(vfx);
+            UpdateDebugCounts();
+        }
+        
+        return vfx;
+    }
+
+    /// <summary>
+    /// Legacy spawn method - same as SpawnLightningAtTarget
+    /// </summary>
+    public LightningStrikeVFX SpawnLightning(Vector3 targetPosition)
+    {
+        return SpawnLightningAtTarget(targetPosition);
     }
 
     /// <summary>
@@ -164,10 +194,16 @@ public class LightningStrikeManager : MonoBehaviour
     }
 
 #if UNITY_EDITOR
-    [ContextMenu("Spawn Test Lightning")]
+    [ContextMenu("Spawn Test Lightning At Origin")]
     public void SpawnTestLightning()
     {
-        SpawnLightning(transform.position + Vector3.forward * 5f);
+        SpawnLightningAtTarget(Vector3.zero);
+    }
+    
+    [ContextMenu("Spawn Test Lightning In Front")]
+    public void SpawnTestLightningInFront()
+    {
+        SpawnLightningAtTarget(transform.position + Vector3.forward * 5f + Vector3.up * 1.5f);
     }
 #endif
 }

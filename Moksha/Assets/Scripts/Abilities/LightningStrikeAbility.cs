@@ -107,13 +107,23 @@ public class LightningStrikeAbility : MonoBehaviour
             EnemyBase enemy = nearbyEnemies[i];
             if (enemy == null || enemy.IsDead) continue;
             
-            // Get precise head position
-            Vector3 strikePosition = GetEnemyHeadPosition(enemy);
+            // Get head transform and offset for tracking
+            Transform enemyTransform = enemy.transform;
+            Vector3 headOffset;
+            Transform headTransform = GetEnemyHeadTransform(enemy, out headOffset);
             
-            // Spawn lightning VFX at head position
+            // Spawn lightning VFX that follows the enemy
             if (LightningStrikeManager.Instance != null)
             {
-                LightningStrikeManager.Instance.SpawnLightningAtTarget(strikePosition);
+                // Use head transform if found, otherwise use enemy root with offset
+                if (headTransform != null)
+                {
+                    LightningStrikeManager.Instance.SpawnLightningFollowing(headTransform);
+                }
+                else
+                {
+                    LightningStrikeManager.Instance.SpawnLightningFollowing(enemyTransform, headOffset);
+                }
             }
             
             // Deal damage
@@ -171,6 +181,65 @@ public class LightningStrikeAbility : MonoBehaviour
         // Final fallback: enemy position + height offset
         Vector3 basePos = enemyTransform.position;
         return new Vector3(basePos.x, basePos.y + headHeightOffset, basePos.z);
+    }
+    
+    /// <summary>
+    /// Get the enemy's head transform for tracking, or calculate offset if no head bone found.
+    /// Returns the head transform if found, otherwise returns null and sets headOffset.
+    /// </summary>
+    private Transform GetEnemyHeadTransform(EnemyBase enemy, out Vector3 headOffset)
+    {
+        Transform enemyTransform = enemy.transform;
+        int instanceId = enemy.GetInstanceID();
+        
+        // Try to get cached head transform
+        if (useHeadBone)
+        {
+            if (headTransformCache.TryGetValue(instanceId, out Transform cachedHead))
+            {
+                if (cachedHead != null)
+                {
+                    headOffset = Vector3.zero;
+                    return cachedHead;
+                }
+            }
+            else
+            {
+                // Search for head bone
+                Transform headBone = FindHeadBone(enemyTransform);
+                headTransformCache[instanceId] = headBone; // Cache even if null
+                
+                if (headBone != null)
+                {
+                    headOffset = Vector3.zero;
+                    return headBone;
+                }
+            }
+        }
+        
+        // No head bone found - calculate offset from enemy root
+        
+        // Try collider bounds
+        Collider col = enemy.GetComponent<Collider>();
+        if (col != null)
+        {
+            Bounds bounds = col.bounds;
+            float headY = bounds.max.y - enemyTransform.position.y;
+            headOffset = new Vector3(0f, headY, 0f);
+            return null;
+        }
+        
+        // Try CharacterController
+        CharacterController cc = enemy.GetComponent<CharacterController>();
+        if (cc != null)
+        {
+            headOffset = new Vector3(0f, cc.height, 0f);
+            return null;
+        }
+        
+        // Final fallback: default head height offset
+        headOffset = new Vector3(0f, headHeightOffset, 0f);
+        return null;
     }
 
     /// <summary>
