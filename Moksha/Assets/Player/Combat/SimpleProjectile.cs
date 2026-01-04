@@ -46,11 +46,13 @@ public class SimpleProjectile : MonoBehaviour
 
     void OnTriggerEnter(Collider other)
     {
-        // Layer filtering (cheap & important for swarm scenes)
+        // Layer filtering
         if ((hitMask.value & (1 << other.gameObject.layer)) == 0)
             return;
 
-        if (!other.TryGetComponent<IPurifiable>(out var target))
+        // IMPORTANT: allow colliders on child objects
+        Purifiable target = other.GetComponentInParent<Purifiable>();
+        if (target == null)
             return;
 
         target.Purify(damage);
@@ -64,4 +66,5 @@ public class SimpleProjectile : MonoBehaviour
             Destroy(gameObject);
         }
     }
+
 }

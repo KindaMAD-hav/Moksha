@@ -2,29 +2,80 @@ using UnityEngine;
 
 /// <summary>
 /// Quick test enemy script:
-/// - Implements IPurifiable
-/// - Destroys itself when purified
-/// Replace with your real Asura / soul-anchoring logic later.
+/// - Purification = "damage" to corruption
+/// - Destroys itself when corruption reaches 0
 /// </summary>
-public class AsuraPurifyDummy : MonoBehaviour, IPurifiable
+public class AsuraPurifyDummy : Purifiable
 {
+    [Header("Corruption (HP)")]
     public float maxCorruption = 20f;
+    public float currentCorruption;
 
-    float corruption;
+    [Header("Hit Feedback (optional)")]
+    public Renderer[] flashRenderers;
+    public float flashDuration = 0.06f;
+
+    float flashTimer;
 
     void Awake()
     {
-        corruption = maxCorruption;
+        currentCorruption = maxCorruption;
+
+        // Auto-find a renderer if none assigned (works for quick testing)
+        if (flashRenderers == null || flashRenderers.Length == 0)
+        {
+            var r = GetComponentInChildren<Renderer>();
+            if (r != null) flashRenderers = new[] { r };
+        }
     }
 
-    public void Purify(float amount)
+    void Update()
     {
-        corruption -= amount;
-
-        if (corruption <= 0f)
+        // Tiny, cheap "hit flash" timer (no coroutines needed)
+        if (flashTimer > 0f)
         {
-            // Later: spawn Soul Ember drops / VFX / audio
-            Destroy(gameObject);
+            flashTimer -= Time.deltaTime;
+            if (flashTimer <= 0f) SetFlash(false);
         }
+    }
+
+    public override void Purify(float amount)
+    {
+        if (amount <= 0f) return;
+
+        currentCorruption -= amount;
+
+        // Optional hit feedback
+        Flash();
+
+        if (currentCorruption <= 0f)
+        {
+            Die();
+        }
+    }
+
+    void Flash()
+    {
+        flashTimer = flashDuration;
+        SetFlash(true);
+    }
+
+    void SetFlash(bool on)
+    {
+        if (flashRenderers == null) return;
+
+        // Super-minimal: toggle renderer enabled briefly
+        // Later you can swap this to material tint or shader keyword.
+        for (int i = 0; i < flashRenderers.Length; i++)
+        {
+            if (flashRenderers[i] != null)
+                flashRenderers[i].enabled = !on;
+        }
+    }
+
+    void Die()
+    {
+        // Later: spawn soul embers / VFX / audio / notify wave manager
+        Destroy(gameObject);
     }
 }
