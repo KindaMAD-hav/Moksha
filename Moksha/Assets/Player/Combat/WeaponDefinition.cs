@@ -38,4 +38,8 @@ public class WeaponDefinition : ScriptableObject
 
     [Tooltip("How many additional targets the projectile can pass through (0 = no pierce).")]
     public int basePierce = 0;
+
+    [Header("Visuals")]
+    public BulletVisualProfile visualProfile;
+
 }

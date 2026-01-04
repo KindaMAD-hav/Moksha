@@ -104,6 +104,10 @@ public class WeaponRuntime
         Quaternion rot = Quaternion.LookRotation(dir, Vector3.up);
         GameObject go = Object.Instantiate(def.projectilePrefab, pos, rot);
 
+        var vis = go.GetComponent<BulletVisual>();
+        if (vis != null)
+            vis.ApplyProfile(def.visualProfile);
+
         SimpleProjectile proj = go.GetComponent<SimpleProjectile>();
         if (proj != null)
         {
