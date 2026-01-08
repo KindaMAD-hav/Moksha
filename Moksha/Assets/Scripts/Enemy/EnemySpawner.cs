@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Runtime.CompilerServices;
 using UnityEngine;
 
 /// <summary>
@@ -29,9 +30,9 @@ public class EnemySpawner : MonoBehaviour
     [SerializeField] private int currentEnemyCount;
     [SerializeField] private float gameTime;
 
-    // Object pools - using arrays for cache efficiency
-    private Dictionary<int, Queue<EnemyBase>> enemyPools;
-    private Dictionary<int, EnemySpawnEntry> entryByPrefabId;
+    // Object pools - array-based for cache efficiency
+    private Queue<EnemyBase>[] enemyPools;
+    private int[] prefabInstanceIds;
     
     // Cached calculations
     private float currentSpawnInterval;
@@ -39,14 +40,18 @@ public class EnemySpawner : MonoBehaviour
     private float spawnTimer;
     private bool isSpawning = true;
     
-    // Pre-allocated lists for spawn selection (avoid allocations)
-    private List<EnemySpawnEntry> availableEntries;
+    // Pre-allocated for spawn selection (avoid allocations)
+    private int[] availableIndices;
     private float[] cumulativeWeights;
+    private int availableCount;
     
     // Cached vectors
     private Vector3 spawnPosition;
     private Vector3 playerPos;
-    private Quaternion spawnRotation;
+
+    // Cached math
+    private float spawnDistanceRange;
+    private const float TWO_PI = 6.28318530718f;
 
     public int CurrentEnemyCount => currentEnemyCount;
     public float GameTime => gameTime;
@@ -62,12 +67,13 @@ public class EnemySpawner : MonoBehaviour
 
         currentSpawnInterval = spawnInterval;
         currentEnemiesPerSpawn = baseEnemiesPerSpawn;
+        spawnDistanceRange = maxSpawnDistance - minSpawnDistance;
         
         // Pre-allocate collections
         int typeCount = enemyTypes != null ? enemyTypes.Length : 0;
-        enemyPools = new Dictionary<int, Queue<EnemyBase>>(typeCount);
-        entryByPrefabId = new Dictionary<int, EnemySpawnEntry>(typeCount);
-        availableEntries = new List<EnemySpawnEntry>(typeCount);
+        enemyPools = new Queue<EnemyBase>[typeCount];
+        prefabInstanceIds = new int[typeCount];
+        availableIndices = new int[typeCount];
         cumulativeWeights = new float[typeCount];
     }
 
@@ -85,7 +91,7 @@ public class EnemySpawner : MonoBehaviour
 
     private void Update()
     {
-        if (!isSpawning || playerTransform == null) return;
+        if (!isSpawning | playerTransform == null) return;
 
         float dt = Time.deltaTime;
         gameTime += dt;
@@ -105,6 +111,7 @@ public class EnemySpawner : MonoBehaviour
         }
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private void SpawnWave()
     {
         int available = maxEnemies - currentEnemyCount;
@@ -120,32 +127,35 @@ public class EnemySpawner : MonoBehaviour
     {
         if (currentEnemyCount >= maxEnemies) return;
 
-        EnemySpawnEntry entry = SelectEnemyType();
-        if (entry == null || entry.prefab == null) return;
+        int entryIndex = SelectEnemyTypeIndex();
+        if (entryIndex < 0) return;
+        
+        EnemySpawnEntry entry = enemyTypes[entryIndex];
+        if (entry.prefab == null) return;
 
         // Calculate spawn position
         CalculateSpawnPosition();
 
         // Get from pool
-        int prefabId = entry.prefab.GetInstanceID();
-        EnemyBase enemy = GetFromPool(prefabId, entry);
+        EnemyBase enemy = GetFromPool(entryIndex, entry);
         if (enemy == null) return;
 
         // Setup enemy
         Transform enemyTransform = enemy.transform;
         enemyTransform.position = spawnPosition;
         
-        // Calculate rotation to face player
-        Vector3 lookDir = playerPos - spawnPosition;
-        lookDir.y = 0f;
-        if (lookDir.sqrMagnitude > 0.001f)
-            spawnRotation = Quaternion.LookRotation(lookDir);
-        enemyTransform.rotation = spawnRotation;
+        // Calculate rotation to face player (inline)
+        float lookX = playerPos.x - spawnPosition.x;
+        float lookZ = playerPos.z - spawnPosition.z;
+        if (lookX * lookX + lookZ * lookZ > 0.001f)
+        {
+            enemyTransform.rotation = Quaternion.LookRotation(new Vector3(lookX, 0f, lookZ));
+        }
         
         enemy.Initialize(entry.stats, playerTransform);
         enemy.gameObject.SetActive(true);
         
-        // Register with manager and subscribe to death
+        // Register with manager
         if (EnemyManager.Instance != null)
         {
             EnemyManager.Instance.RegisterEnemy(enemy);
@@ -160,48 +170,45 @@ public class EnemySpawner : MonoBehaviour
         currentEnemyCount++;
     }
 
-    private EnemySpawnEntry SelectEnemyType()
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private int SelectEnemyTypeIndex()
     {
-        // Build available list without allocations (reuse list)
-        availableEntries.Clear();
+        // Build available list without allocations
+        availableCount = 0;
         float totalWeight = 0f;
-        int count = 0;
 
         for (int i = 0; i < enemyTypes.Length; i++)
         {
             EnemySpawnEntry entry = enemyTypes[i];
             if (entry.stats != null && gameTime >= entry.stats.minSpawnTime)
             {
-                availableEntries.Add(entry);
+                availableIndices[availableCount] = i;
                 totalWeight += entry.stats.spawnWeight;
-                
-                // Store cumulative weight
-                if (count < cumulativeWeights.Length)
-                    cumulativeWeights[count] = totalWeight;
-                count++;
+                cumulativeWeights[availableCount] = totalWeight;
+                availableCount++;
             }
         }
 
-        if (count == 0) return null;
+        if (availableCount == 0) return -1;
 
         // Weighted random selection
         float random = Random.value * totalWeight;
-        for (int i = 0; i < count; i++)
+        for (int i = 0; i < availableCount; i++)
         {
             if (random <= cumulativeWeights[i])
-                return availableEntries[i];
+                return availableIndices[i];
         }
 
-        return availableEntries[count - 1];
+        return availableIndices[availableCount - 1];
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private void CalculateSpawnPosition()
     {
         playerPos = playerTransform.position;
         
-        // Use faster sin/cos approximation for angles
-        float angle = Random.value * 6.28318f; // 2 * PI
-        float distance = minSpawnDistance + Random.value * (maxSpawnDistance - minSpawnDistance);
+        float angle = Random.value * TWO_PI;
+        float distance = minSpawnDistance + Random.value * spawnDistanceRange;
 
         spawnPosition.x = playerPos.x + Mathf.Cos(angle) * distance;
         spawnPosition.y = playerPos.y;
@@ -217,35 +224,28 @@ public class EnemySpawner : MonoBehaviour
             EnemySpawnEntry entry = enemyTypes[i];
             if (entry.prefab == null) continue;
 
-            int prefabId = entry.prefab.GetInstanceID();
-            entryByPrefabId[prefabId] = entry;
+            prefabInstanceIds[i] = entry.prefab.GetInstanceID();
             
-            if (!enemyPools.ContainsKey(prefabId))
+            Queue<EnemyBase> pool = new Queue<EnemyBase>(entry.poolSize);
+            
+            // Pre-warm pool
+            for (int j = 0; j < entry.poolSize; j++)
             {
-                Queue<EnemyBase> pool = new Queue<EnemyBase>(entry.poolSize);
-                
-                // Pre-warm pool
-                for (int j = 0; j < entry.poolSize; j++)
-                {
-                    GameObject obj = Instantiate(entry.prefab, transform);
-                    EnemyBase enemy = obj.GetComponent<EnemyBase>();
-                    obj.SetActive(false);
-                    pool.Enqueue(enemy);
-                }
-                
-                enemyPools[prefabId] = pool;
+                GameObject obj = Instantiate(entry.prefab, transform);
+                EnemyBase enemy = obj.GetComponent<EnemyBase>();
+                obj.SetActive(false);
+                pool.Enqueue(enemy);
             }
+            
+            enemyPools[i] = pool;
         }
     }
 
-    private EnemyBase GetFromPool(int prefabId, EnemySpawnEntry entry)
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private EnemyBase GetFromPool(int index, EnemySpawnEntry entry)
     {
-        if (!enemyPools.TryGetValue(prefabId, out Queue<EnemyBase> pool))
-        {
-            pool = new Queue<EnemyBase>(16);
-            enemyPools[prefabId] = pool;
-        }
-
+        Queue<EnemyBase> pool = enemyPools[index];
+        
         EnemyBase enemy;
         if (pool.Count > 0)
         {
@@ -261,7 +261,8 @@ public class EnemySpawner : MonoBehaviour
         return enemy;
     }
 
-    private void ReturnToPool(EnemyBase enemy)
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private void ReturnToPool(EnemyBase enemy, int index)
     {
         enemy.OnDeath -= OnEnemyDeath;
         
@@ -269,26 +270,22 @@ public class EnemySpawner : MonoBehaviour
             EnemyManager.Instance.UnregisterEnemy(enemy);
 
         enemy.gameObject.SetActive(false);
-
-        // Find pool by stats reference
-        for (int i = 0; i < enemyTypes.Length; i++)
-        {
-            if (enemyTypes[i].stats == enemy.Stats)
-            {
-                int prefabId = enemyTypes[i].prefab.GetInstanceID();
-                if (enemyPools.TryGetValue(prefabId, out Queue<EnemyBase> pool))
-                {
-                    pool.Enqueue(enemy);
-                }
-                break;
-            }
-        }
+        enemyPools[index].Enqueue(enemy);
     }
 
     private void OnEnemyDeath(EnemyBase enemy)
     {
         currentEnemyCount--;
-        ReturnToPool(enemy);
+        
+        // Find pool index by stats reference
+        for (int i = 0; i < enemyTypes.Length; i++)
+        {
+            if (enemyTypes[i].stats == enemy.Stats)
+            {
+                ReturnToPool(enemy, i);
+                return;
+            }
+        }
     }
 
     public void StartSpawning() => isSpawning = true;
@@ -296,9 +293,9 @@ public class EnemySpawner : MonoBehaviour
 
     public void KillAllEnemies()
     {
-        // Use EnemyManager to iterate efficiently
         if (EnemyManager.Instance != null)
         {
+            // Use stack-allocated list for small counts, otherwise heap
             List<EnemyBase> tempList = new List<EnemyBase>(currentEnemyCount);
             EnemyManager.Instance.GetActiveEnemies(tempList);
             

@@ -1,9 +1,10 @@
 using System.Collections.Generic;
+using System.Runtime.CompilerServices;
 using UnityEngine;
 
 /// <summary>
 /// Centralized enemy manager that handles all enemy updates in batches.
-/// This dramatically reduces overhead from individual Update() calls.
+/// Optimized for cache efficiency and minimal overhead.
 /// </summary>
 public class EnemyManager : MonoBehaviour
 {
@@ -11,25 +12,18 @@ public class EnemyManager : MonoBehaviour
 
     [Header("Settings")]
     [SerializeField] private Transform playerTransform;
-    [SerializeField] private int enemiesPerFrame = 50; // Process enemies in batches
-    [SerializeField] private bool useJobSystem = false; // Future: Unity Jobs
 
     [Header("Debug")]
     [SerializeField] private int activeEnemyCount;
-    [SerializeField] private int processedThisFrame;
 
-    // Use array for cache-friendly iteration
+    // Dense array for cache-friendly iteration (no holes)
     private EnemyBase[] enemies;
     private int enemyCount;
     private int capacity;
-    private int currentIndex;
 
-    // Cached values
+    // Cached values - updated once per frame
     private Vector3 playerPosition;
     private float deltaTime;
-
-    // Free list for recycling indices
-    private Stack<int> freeIndices;
 
     private void Awake()
     {
@@ -40,10 +34,9 @@ public class EnemyManager : MonoBehaviour
         }
         Instance = this;
 
-        // Pre-allocate arrays
-        capacity = 500;
+        // Pre-allocate array
+        capacity = 512;
         enemies = new EnemyBase[capacity];
-        freeIndices = new Stack<int>(capacity);
         enemyCount = 0;
     }
 
@@ -61,70 +54,66 @@ public class EnemyManager : MonoBehaviour
     {
         if (playerTransform == null || enemyCount == 0) return;
 
+        // Cache once per frame
         deltaTime = Time.deltaTime;
         playerPosition = playerTransform.position;
-        processedThisFrame = 0;
 
-        // Process all enemies every frame for consistent behavior
-        // For massive counts, you could process in batches across frames
-        for (int i = 0; i < capacity && processedThisFrame < enemyCount; i++)
+        // Process all enemies - dense array means no null checks needed
+        int count = enemyCount;
+        for (int i = 0; i < count; i++)
         {
-            EnemyBase enemy = enemies[i];
-            if (enemy != null && !enemy.IsDead)
-            {
-                enemy.Tick(deltaTime, playerPosition);
-                processedThisFrame++;
-            }
+            enemies[i].Tick(deltaTime, playerPosition);
         }
 
-        activeEnemyCount = enemyCount;
+        activeEnemyCount = count;
     }
 
     /// <summary>
-    /// Register an enemy with the manager
+    /// Register an enemy with the manager. O(1) operation.
     /// </summary>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public void RegisterEnemy(EnemyBase enemy)
     {
-        int index;
-        
-        if (freeIndices.Count > 0)
+        // Grow array if needed
+        if (enemyCount >= capacity)
         {
-            index = freeIndices.Pop();
-        }
-        else
-        {
-            index = enemyCount;
-            
-            // Grow array if needed
-            if (index >= capacity)
-            {
-                capacity *= 2;
-                System.Array.Resize(ref enemies, capacity);
-            }
+            capacity *= 2;
+            System.Array.Resize(ref enemies, capacity);
         }
 
-        enemies[index] = enemy;
-        enemy.Index = index;
+        enemy.Index = enemyCount;
+        enemies[enemyCount] = enemy;
         enemyCount++;
     }
 
     /// <summary>
-    /// Unregister an enemy from the manager
+    /// Unregister an enemy from the manager. O(1) operation using swap-remove.
     /// </summary>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public void UnregisterEnemy(EnemyBase enemy)
     {
         int index = enemy.Index;
-        if (index >= 0 && index < capacity && enemies[index] == enemy)
+        if (index < 0 || index >= enemyCount) return;
+
+        int lastIndex = enemyCount - 1;
+
+        // Swap with last element (if not already last)
+        if (index < lastIndex)
         {
-            enemies[index] = null;
-            freeIndices.Push(index);
-            enemyCount--;
+            EnemyBase lastEnemy = enemies[lastIndex];
+            enemies[index] = lastEnemy;
+            lastEnemy.Index = index;
         }
+
+        enemies[lastIndex] = null;
+        enemy.Index = -1;
+        enemyCount--;
     }
 
     /// <summary>
     /// Get current player position (cached, updated once per frame)
     /// </summary>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public Vector3 GetPlayerPosition() => playerPosition;
 
     /// <summary>
@@ -141,10 +130,14 @@ public class EnemyManager : MonoBehaviour
     public void GetActiveEnemies(List<EnemyBase> result)
     {
         result.Clear();
-        for (int i = 0; i < capacity; i++)
+        if (result.Capacity < enemyCount)
+            result.Capacity = enemyCount;
+            
+        for (int i = 0; i < enemyCount; i++)
         {
-            if (enemies[i] != null && !enemies[i].IsDead)
-                result.Add(enemies[i]);
+            EnemyBase enemy = enemies[i];
+            if (!enemy.IsDead || enemy.IsDissolving)
+                result.Add(enemy);
         }
     }
 
@@ -155,18 +148,27 @@ public class EnemyManager : MonoBehaviour
     {
         result.Clear();
         float radiusSqr = radius * radius;
-        
-        for (int i = 0; i < capacity; i++)
+
+        for (int i = 0; i < enemyCount; i++)
         {
             EnemyBase enemy = enemies[i];
-            if (enemy != null && !enemy.IsDead)
+            if (enemy.IsDead && !enemy.IsDissolving) continue;
+            
+            // Manual squared distance (faster than Vector3.Distance)
+            Vector3 pos = enemy.transform.position;
+            float dx = pos.x - center.x;
+            float dy = pos.y - center.y;
+            float dz = pos.z - center.z;
+            
+            if (dx * dx + dy * dy + dz * dz <= radiusSqr)
             {
-                Vector3 diff = enemy.transform.position - center;
-                if (diff.x * diff.x + diff.y * diff.y + diff.z * diff.z <= radiusSqr)
-                {
-                    result.Add(enemy);
-                }
+                result.Add(enemy);
             }
         }
     }
+
+    /// <summary>
+    /// Get enemy count
+    /// </summary>
+    public int EnemyCount => enemyCount;
 }

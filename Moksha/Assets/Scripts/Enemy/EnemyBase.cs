@@ -1,11 +1,12 @@
 using System;
+using System.Runtime.CompilerServices;
 using UnityEngine;
 
 /// <summary>
 /// Base class for all enemies. Optimized for high enemy counts.
-/// Uses cached values and avoids allocations.
+/// Uses cached values, aggressive inlining, and avoids allocations.
 /// </summary>
-public abstract class EnemyBase : MonoBehaviour
+public abstract class EnemyBase : MonoBehaviour, IDamageable
 {
     [Header("Stats (Override with EnemyStats SO)")]
     [SerializeField] protected EnemyStats stats;
@@ -25,8 +26,8 @@ public abstract class EnemyBase : MonoBehaviour
     protected float cachedMaxHealth;
     protected float cachedMoveSpeed;
     protected float cachedRotationSpeed;
-    protected float cachedStoppingDistanceSqr; // Squared for fast distance checks
-    protected float cachedAttackRangeSqr;      // Squared for fast distance checks
+    protected float cachedStoppingDistanceSqr;
+    protected float cachedAttackRangeSqr;
     protected float cachedDamage;
     protected float cachedAttackCooldown;
     protected int cachedXPReward;
@@ -38,12 +39,34 @@ public abstract class EnemyBase : MonoBehaviour
     protected bool isManagedByManager;
     
     // Properties
-    public EnemyStats Stats => stats;
-    public float CurrentHealth => currentHealth;
-    public float MaxHealth => cachedMaxHealth;
+    public EnemyStats Stats
+    {
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        get => stats;
+    }
+    
+    public float CurrentHealth
+    {
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        get => currentHealth;
+    }
+    
+    public float MaxHealth
+    {
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        get => cachedMaxHealth;
+    }
+    
     public bool IsDead { get; protected set; }
-    public Transform Target => targetTransform;
-    public int Index { get; set; } // For manager tracking
+    public bool IsDissolving { get; protected set; }
+    
+    public Transform Target
+    {
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        get => targetTransform;
+    }
+    
+    public int Index { get; set; } = -1;
 
     protected virtual void Awake()
     {
@@ -72,7 +95,10 @@ public abstract class EnemyBase : MonoBehaviour
     protected virtual void Update()
     {
         // Skip if managed by EnemyManager (it calls Tick instead)
-        if (isManagedByManager || IsDead || targetTransform == null) return;
+        if (isManagedByManager | targetTransform == null) return;
+        
+        // Allow movement while dissolving, only stop when fully dead
+        if (IsDead & !IsDissolving) return;
         
         cachedTargetPosition = targetTransform.position;
         UpdateBehavior(Time.deltaTime);
@@ -81,6 +107,7 @@ public abstract class EnemyBase : MonoBehaviour
     /// <summary>
     /// Cache stats from ScriptableObject to avoid repeated property access
     /// </summary>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     protected virtual void CacheStats()
     {
         if (stats == null) return;
@@ -98,9 +125,12 @@ public abstract class EnemyBase : MonoBehaviour
     /// <summary>
     /// Called by EnemyManager instead of Update() for batched processing
     /// </summary>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public virtual void Tick(float deltaTime, Vector3 targetPos)
     {
-        if (IsDead) return;
+        // Allow movement while dissolving, only stop when fully dead
+        // Use bitwise OR for branchless check
+        if (IsDead & !IsDissolving) return;
         
         cachedTargetPosition = targetPos;
         UpdateBehavior(deltaTime);
@@ -109,6 +139,7 @@ public abstract class EnemyBase : MonoBehaviour
     /// <summary>
     /// Mark this enemy as managed by EnemyManager (disables Update)
     /// </summary>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public void SetManagedByManager(bool managed)
     {
         isManagedByManager = managed;
@@ -119,6 +150,7 @@ public abstract class EnemyBase : MonoBehaviour
     /// </summary>
     protected abstract void UpdateBehavior(float deltaTime);
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public virtual void InitializeHealth()
     {
         currentHealth = cachedMaxHealth;
@@ -126,6 +158,7 @@ public abstract class EnemyBase : MonoBehaviour
         OnHealthChanged?.Invoke(currentHealth, cachedMaxHealth);
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public virtual void TakeDamage(float damage)
     {
         if (IsDead) return;
@@ -161,6 +194,7 @@ public abstract class EnemyBase : MonoBehaviour
         gameObject.SetActive(false);
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public void SetTarget(Transform target)
     {
         targetTransform = target;
@@ -177,41 +211,47 @@ public abstract class EnemyBase : MonoBehaviour
     public virtual void ResetEnemy()
     {
         IsDead = false;
+        IsDissolving = false;
         InitializeHealth();
     }
 
     /// <summary>
     /// Get squared distance to target (faster than Distance)
     /// </summary>
-    [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     protected float GetSqrDistanceToTarget()
     {
-        Vector3 diff = cachedTargetPosition - cachedTransform.position;
-        diff.y = 0f;
-        return diff.x * diff.x + diff.z * diff.z;
+        float dx = cachedTargetPosition.x - cachedTransform.position.x;
+        float dz = cachedTargetPosition.z - cachedTransform.position.z;
+        return dx * dx + dz * dz;
     }
 
     /// <summary>
     /// Get direction to target (no normalization for speed)
     /// </summary>
-    [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
-    protected void GetDirectionToTarget(out Vector3 direction)
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    protected void GetDirectionToTarget(out float dirX, out float dirZ)
     {
-        direction = cachedTargetPosition - cachedTransform.position;
-        direction.y = 0f;
+        Vector3 pos = cachedTransform.position;
+        dirX = cachedTargetPosition.x - pos.x;
+        dirZ = cachedTargetPosition.z - pos.z;
     }
 
     /// <summary>
     /// Get normalized direction to target
     /// </summary>
-    [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.AggressiveInlining)]
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     protected void GetNormalizedDirectionToTarget(out Vector3 direction)
     {
-        GetDirectionToTarget(out direction);
+        Vector3 pos = cachedTransform.position;
+        direction.x = cachedTargetPosition.x - pos.x;
+        direction.y = 0f;
+        direction.z = cachedTargetPosition.z - pos.z;
+        
         float sqrMag = direction.x * direction.x + direction.z * direction.z;
         if (sqrMag > 0.0001f)
         {
-            float invMag = 1f / Mathf.Sqrt(sqrMag);
+            float invMag = 1f / Mathf.Sqrt(sqrMag); // Use Mathf for Unity
             direction.x *= invMag;
             direction.z *= invMag;
         }

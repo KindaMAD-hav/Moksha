@@ -1,0 +1,17 @@
+fileFormatVersion: 2
+guid: b7ad7ea446d9b2b49ba292503ff08d9f
+ScriptedImporter:
+  internalIDToNameTable: []
+  externalObjects: {}
+  serializedVersion: 2
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+  script: {fileID: 11500000, guid: 625f186215c104763be7675aa2d941aa, type: 3}
+AssetOrigin:
+  serializedVersion: 1
+  productId: 311449
+  packageName: Card Visual Effects Suite
+  packageVersion: 1.0.1
+  assetPath: Assets/Holographic Cards/Shaders/BackgroundShader.shadergraph
+  uploadId: 832512
