@@ -42,6 +42,7 @@ public class PlayerHealth : MonoBehaviour, IDamageable
     private Color[] originalColors;
     private MaterialPropertyBlock propertyBlock;
     private static readonly int ColorProperty = Shader.PropertyToID("_BaseColor");
+    private static readonly int ColorPropertyAlt = Shader.PropertyToID("_Color");
     private static readonly int EmissionColorProperty = Shader.PropertyToID("_EmissionColor");
     
     // Component flags
@@ -109,9 +110,51 @@ public class PlayerHealth : MonoBehaviour, IDamageable
         originalColors = new Color[flashRenderers.Length];
         for (int i = 0; i < flashRenderers.Length; i++)
         {
-            if (flashRenderers[i] != null && flashRenderers[i].material != null)
+            if (flashRenderers[i] == null) continue;
+            
+            // FIXED: Use MaterialPropertyBlock to safely get color
+            // This handles different shader color properties (_Color, _BaseColor, etc.)
+            try
             {
-                originalColors[i] = flashRenderers[i].material.color;
+                flashRenderers[i].GetPropertyBlock(propertyBlock);
+                
+                // Try _BaseColor first (URP/HDRP standard)
+                if (propertyBlock.HasColor(ColorProperty))
+                {
+                    originalColors[i] = propertyBlock.GetColor(ColorProperty);
+                }
+                // Fallback to _Color (Built-in RP standard)
+                else if (propertyBlock.HasColor(ColorPropertyAlt))
+                {
+                    originalColors[i] = propertyBlock.GetColor(ColorPropertyAlt);
+                }
+                // Last resort: try to get from material directly
+                else if (flashRenderers[i].material != null)
+                {
+                    if (flashRenderers[i].material.HasProperty(ColorProperty))
+                    {
+                        originalColors[i] = flashRenderers[i].material.GetColor(ColorProperty);
+                    }
+                    else if (flashRenderers[i].material.HasProperty(ColorPropertyAlt))
+                    {
+                        originalColors[i] = flashRenderers[i].material.GetColor(ColorPropertyAlt);
+                    }
+                    else
+                    {
+                        // Default to white if no color property exists
+                        originalColors[i] = Color.white;
+                        Debug.LogWarning($"[PlayerHealth] Renderer '{flashRenderers[i].name}' has no color property. Using white.");
+                    }
+                }
+                else
+                {
+                    originalColors[i] = Color.white;
+                }
+            }
+            catch (Exception e)
+            {
+                Debug.LogWarning($"[PlayerHealth] Could not cache color for renderer '{flashRenderers[i].name}': {e.Message}");
+                originalColors[i] = Color.white;
             }
         }
     }
@@ -181,6 +224,8 @@ public class PlayerHealth : MonoBehaviour, IDamageable
 
         currentHealth = Mathf.Min(currentHealth + amount, maxHealth);
         OnHealthChanged?.Invoke(currentHealth, maxHealth);
+        
+        Debug.Log($"[PlayerHealth] Healed {amount} HP - Current: {currentHealth}/{maxHealth}");
     }
 
     public void SetMaxHealth(float newMax, bool healToFull = false)
@@ -237,13 +282,16 @@ public class PlayerHealth : MonoBehaviour, IDamageable
             
             flashRenderers[i].GetPropertyBlock(propertyBlock);
             
-            if (flashState)
+            Color targetColor = flashState ? damageFlashColor : originalColors[i];
+            
+            // Try both color properties for compatibility
+            if (flashRenderers[i].material.HasProperty(ColorProperty))
             {
-                propertyBlock.SetColor(ColorProperty, damageFlashColor);
+                propertyBlock.SetColor(ColorProperty, targetColor);
             }
-            else
+            if (flashRenderers[i].material.HasProperty(ColorPropertyAlt))
             {
-                propertyBlock.SetColor(ColorProperty, originalColors[i]);
+                propertyBlock.SetColor(ColorPropertyAlt, targetColor);
             }
             
             flashRenderers[i].SetPropertyBlock(propertyBlock);
@@ -259,7 +307,17 @@ public class PlayerHealth : MonoBehaviour, IDamageable
             if (flashRenderers[i] == null) continue;
             
             flashRenderers[i].GetPropertyBlock(propertyBlock);
-            propertyBlock.SetColor(ColorProperty, originalColors[i]);
+            
+            // Try both color properties for compatibility
+            if (flashRenderers[i].material.HasProperty(ColorProperty))
+            {
+                propertyBlock.SetColor(ColorProperty, originalColors[i]);
+            }
+            if (flashRenderers[i].material.HasProperty(ColorPropertyAlt))
+            {
+                propertyBlock.SetColor(ColorPropertyAlt, originalColors[i]);
+            }
+            
             flashRenderers[i].SetPropertyBlock(propertyBlock);
         }
     }

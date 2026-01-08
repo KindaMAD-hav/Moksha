@@ -12,12 +12,15 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: e3d799018cd31c04b9fabca035582e4c, type: 3}
   m_Name: HealingPoweUp
   m_EditorClassIdentifier: Assembly-CSharp::HealingPowerUp
+  powerUpName: Healing Aura
+  description: Periodically heals the player over time. Stacks increase healing amount
+    and reduce cooldown.
+  icon: {fileID: 0}
+  rarity: 0
+  canStack: 1
+  maxStacks: 0
   baseHealAmount: 10
   baseCooldown: 3
   healAmountPerStack: 5
   cooldownReductionPerStack: 0.2
   minCooldown: 0.5
-  powerUpName: Healing Aura
-  description: Periodically heals the player over time. Stacks increase healing amount
-    and reduce cooldown.
-  icon: {fileID: 0}
