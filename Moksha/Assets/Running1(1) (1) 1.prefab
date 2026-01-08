@@ -339,7 +339,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 546eb6be2dfaf0a41962e7354808915b, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::EnemyDissolve
-  dissolveDuration: 1.5
+  dissolveDuration: 0.62
   dissolveStartValue: -0.6
   dissolveEndValue: 1
   dissolveCurve:
