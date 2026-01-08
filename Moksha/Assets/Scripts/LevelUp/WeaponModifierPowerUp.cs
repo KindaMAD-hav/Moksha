@@ -13,7 +13,8 @@ public enum WeaponUpgradeKind
     FireRatePercent = 1,
     ProjectileSpeedPercent = 2,
     AddProjectiles = 3,
-    AddPierce = 4
+    AddPierce = 4,
+    SpreadPercent = 5
 }
 
 [CreateAssetMenu(fileName = "WeaponModifier", menuName = "Power-Ups/Weapon Modifier")]
@@ -114,6 +115,9 @@ public class WeaponModifierPowerUp : PowerUp
 
             case WeaponUpgradeKind.AddPierce:
                 wr.AddPierce(intValue);
+                break;
+            case WeaponUpgradeKind.SpreadPercent:
+                wr.AddSpreadPercent(pct);
                 break;
         }
     }

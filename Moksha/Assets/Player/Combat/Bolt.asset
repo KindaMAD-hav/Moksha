@@ -22,5 +22,6 @@ MonoBehaviour:
   projectileSpeed: 20
   lifeTime: 5
   baseProjectiles: 1
-  spreadDegrees: 0
+  spreadDegrees: 20
   basePierce: 0
+  visualProfile: {fileID: 11400000, guid: ab1303dfc4d75e6439a95ac1379dedfc, type: 2}

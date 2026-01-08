@@ -13,8 +13,10 @@ public class WeaponRuntime
     public float damageMult = 1f;
     public float fireRateMult = 1f;
     public float speedMult = 1f;
+    public float spreadMult = 1f;
     public int bonusProjectiles = 0;
     public int bonusPierce = 0;
+   
 
     float cooldown;
 
@@ -64,18 +66,32 @@ public class WeaponRuntime
         }
 
         int projectileCount = Mathf.Max(1, def.baseProjectiles + bonusProjectiles);
-        float totalSpread = def.spreadDegrees;
+        float baseSpread = def.spreadDegrees * spreadMult;
 
-        float step = projectileCount > 1 ? totalSpread / (projectileCount - 1) : 0f;
-        float start = -totalSpread * 0.5f;
+        // Ensure pellets are visible when projectile count > 1
+        if (projectileCount > 1 && baseSpread <= 0.001f)
+        {
+            baseSpread = 6f; // degrees, tweakable
+        }
+
+        float totalSpread = baseSpread;
+
+        float step = 0f;
+        float start = 0f;
 
         float dmg = def.baseDamage * damageMult;
         float spd = def.projectileSpeed * speedMult;
         int pierce = def.basePierce + bonusPierce;
 
+        if (projectileCount > 1)
+        {
+            step = totalSpread / (projectileCount - 1);
+            start = -totalSpread * 0.5f;
+        }
+
         for (int i = 0; i < projectileCount; i++)
         {
-            float angle = start + step * i;
+            float angle = (projectileCount == 1) ? 0f : (start + step * i);
             Vector3 shotDir = Quaternion.AngleAxis(angle, Vector3.up) * dir;
             SpawnProjectile(firePos, shotDir, dmg, spd, pierce);
         }
@@ -87,6 +103,10 @@ public class WeaponRuntime
 
         Quaternion rot = Quaternion.LookRotation(dir, Vector3.up);
         GameObject go = Object.Instantiate(def.projectilePrefab, pos, rot);
+
+        var vis = go.GetComponent<BulletVisual>();
+        if (vis != null)
+            vis.ApplyProfile(def.visualProfile);
 
         SimpleProjectile proj = go.GetComponent<SimpleProjectile>();
         if (proj != null)
@@ -109,4 +129,10 @@ public class WeaponRuntime
 
     /// <param name="pct">Example: 0.25f = +25%</param>
     public void AddSpeedPercent(float pct) => speedMult *= (1f + pct);
+
+    /// <param name="pct">Example: 0.25f = +25% spread</param>
+    public void AddSpreadPercent(float pct)
+    {
+        spreadMult *= (1f + pct);
+    }
 }

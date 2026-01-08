@@ -10,10 +10,10 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 9dbcff7ca79ee1a47b4ad63847f8c49b, type: 3}
-  m_Name: Bullets Per Spread
+  m_Name: SpreadMultiplier
   m_EditorClassIdentifier: Assembly-CSharp::WeaponModifierPowerUp
-  powerUpName: Bullets Per Spread
-  description: +1 Pellet
+  powerUpName: SpreadMultiplier
+  description: 'Increases Bullet Spread '
   icon: {fileID: 0}
   rarity: 0
   canStack: 1
@@ -21,6 +21,6 @@ MonoBehaviour:
   targetMode: 0
   targetWeaponName: 
   targetWeapon: {fileID: 11400000, guid: 0add1eadef1833042bc5ef31dd63a52e, type: 2}
-  upgradeKind: 3
-  percentValue: 100
+  upgradeKind: 5
+  percentValue: 20
   intValue: 1
