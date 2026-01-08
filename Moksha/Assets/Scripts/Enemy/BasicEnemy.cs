@@ -1,4 +1,4 @@
-using System.Runtime.CompilerServices;
+﻿using System.Runtime.CompilerServices;
 using UnityEngine;
 
 /// <summary>
@@ -79,6 +79,7 @@ public class BasicEnemy : EnemyBase
 
     protected override void UpdateBehavior(float deltaTime)
     {
+        FaceTargetInstant(); // 🔥 always face player
         float sqrDistance = GetSqrDistanceToTarget();
         
         // Update attack cooldown
@@ -100,6 +101,19 @@ public class BasicEnemy : EnemyBase
         {
             SetAnimSpeed(0f);
         }
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private void FaceTargetInstant()
+    {
+        if (targetTransform == null) return;
+
+        Vector3 dir = targetTransform.position - cachedTransform.position;
+        dir.y = 0f;
+
+        if (dir.sqrMagnitude < 0.0001f) return;
+
+        cachedTransform.rotation = Quaternion.LookRotation(dir);
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -158,7 +172,14 @@ public class BasicEnemy : EnemyBase
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private void RotateTowards(float deltaTime)
     {
-        Quaternion targetRotation = Quaternion.LookRotation(moveDirection, Vector3.up);
+        if (targetTransform == null) return;
+
+        Vector3 dir = targetTransform.position - cachedTransform.position;
+        dir.y = 0f;
+
+        if (dir.sqrMagnitude < 0.0001f) return;
+
+        Quaternion targetRotation = Quaternion.LookRotation(dir);
         cachedTransform.rotation = Quaternion.RotateTowards(
             cachedTransform.rotation,
             targetRotation,
@@ -303,6 +324,9 @@ public class BasicEnemy : EnemyBase
         Gizmos.color = Color.yellow;
         Gizmos.DrawWireSphere(transform.position, stats.stoppingDistance);
     }
+
+    
+
 
     [ContextMenu("Kill This Enemy")]
     public void DebugKill()
