@@ -10,7 +10,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: df216b44e432a664f9f59aa94c2bc0b2, type: 3}
-  m_Name: NewEnemyStats
+  m_Name: BasicMobStats
   m_EditorClassIdentifier: Assembly-CSharp::EnemyStats
   enemyName: BasicMob
   icon: {fileID: 0}

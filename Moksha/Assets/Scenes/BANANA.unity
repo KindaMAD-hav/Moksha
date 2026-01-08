@@ -8662,6 +8662,9 @@ MonoBehaviour:
   - prefab: {fileID: 2124684102959905579, guid: cc725e9155f2ee44eb3e3fd99151b30c, type: 3}
     stats: {fileID: 11400000, guid: de28dcd17d9dd1c4aaba761d3dcdde5c, type: 2}
     poolSize: 20
+  - prefab: {fileID: 2475981611131618683, guid: ff7a59e9084803344af17b5c260a4a87, type: 3}
+    stats: {fileID: 11400000, guid: cdf44a39385d9e54cb867510b740d334, type: 2}
+    poolSize: 20
   currentEnemyCount: 0
   gameTime: 0
 --- !u!114 &719319646
@@ -11048,7 +11051,7 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 913657305}
-  m_Enabled: 0
+  m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 75b243e32e20efe4389e9d4a0f9afadc, type: 3}
   m_Name: 
