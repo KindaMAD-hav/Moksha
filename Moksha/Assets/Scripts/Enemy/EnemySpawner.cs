@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 using UnityEngine;
 
@@ -16,6 +16,11 @@ public class EnemySpawner : MonoBehaviour
     [SerializeField] private float maxSpawnDistance = 25f;
     [SerializeField] private float spawnInterval = 2f;
     [SerializeField] private int maxEnemies = 200;
+
+    [Header("Spawn Bounds")]
+    [SerializeField] private Vector2 worldMin; // bottom-left (X,Z)
+    [SerializeField] private Vector2 worldMax; // top-right (X,Z)
+
 
     [Header("Difficulty Scaling")]
     [SerializeField] private float minSpawnInterval = 0.3f;
@@ -110,6 +115,14 @@ public class EnemySpawner : MonoBehaviour
             SpawnWave();
         }
     }
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private bool IsInsideBounds(Vector3 pos)
+    {
+        return pos.x >= worldMin.x &&
+               pos.x <= worldMax.x &&
+               pos.z >= worldMin.y &&
+               pos.z <= worldMax.y;
+    }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private void SpawnWave()
@@ -133,8 +146,8 @@ public class EnemySpawner : MonoBehaviour
         EnemySpawnEntry entry = enemyTypes[entryIndex];
         if (entry.prefab == null) return;
 
-        // Calculate spawn position
-        CalculateSpawnPosition();
+        if (!CalculateSpawnPosition())
+            return; // skip spawning this enemy
 
         // Get from pool
         EnemyBase enemy = GetFromPool(entryIndex, entry);
@@ -203,17 +216,30 @@ public class EnemySpawner : MonoBehaviour
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private void CalculateSpawnPosition()
+    private bool CalculateSpawnPosition()
     {
         playerPos = playerTransform.position;
-        
-        float angle = Random.value * TWO_PI;
-        float distance = minSpawnDistance + Random.value * spawnDistanceRange;
 
-        spawnPosition.x = playerPos.x + Mathf.Cos(angle) * distance;
-        spawnPosition.y = playerPos.y;
-        spawnPosition.z = playerPos.z + Mathf.Sin(angle) * distance;
+        const int MAX_ATTEMPTS = 12;
+
+        for (int i = 0; i < MAX_ATTEMPTS; i++)
+        {
+            float angle = Random.value * TWO_PI;
+            float distance = minSpawnDistance + Random.value * spawnDistanceRange;
+
+            spawnPosition.x = playerPos.x + Mathf.Cos(angle) * distance;
+            spawnPosition.y = playerPos.y;
+            spawnPosition.z = playerPos.z + Mathf.Sin(angle) * distance;
+
+            if (IsValidSpawnPosition(spawnPosition))
+                return true;
+        }
+
+        // ❌ No fallback clamp — just fail
+        return false;
     }
+
+
 
     private void InitializePools()
     {
@@ -260,6 +286,21 @@ public class EnemySpawner : MonoBehaviour
 
         return enemy;
     }
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private bool IsValidSpawnPosition(Vector3 pos)
+    {
+        float dx = pos.x - playerPos.x;
+        float dz = pos.z - playerPos.z;
+        float sqrDist = dx * dx + dz * dz;
+
+        return sqrDist >= minSpawnDistance * minSpawnDistance &&
+               sqrDist <= maxSpawnDistance * maxSpawnDistance &&
+               pos.x >= worldMin.x &&
+               pos.x <= worldMax.x &&
+               pos.z >= worldMin.y &&
+               pos.z <= worldMax.y;
+    }
+
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private void ReturnToPool(EnemyBase enemy, int index)
@@ -329,6 +370,19 @@ public class EnemySpawner : MonoBehaviour
         Gizmos.DrawWireSphere(center.position, minSpawnDistance);
         Gizmos.color = Color.red;
         Gizmos.DrawWireSphere(center.position, maxSpawnDistance);
+        Gizmos.color = Color.cyan;
+        Vector3 center1 = new Vector3(
+            (worldMin.x + worldMax.x) * 0.5f,
+            0f,
+            (worldMin.y + worldMax.y) * 0.5f
+        );
+        Vector3 size = new Vector3(
+            worldMax.x - worldMin.x,
+            0.1f,
+            worldMax.y - worldMin.y
+        );
+        Gizmos.DrawWireCube(center1, size);
+
     }
 #endif
 }

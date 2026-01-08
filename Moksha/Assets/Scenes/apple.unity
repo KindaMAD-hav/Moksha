@@ -8983,10 +8983,12 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::EnemySpawner
   playerTransform: {fileID: 0}
-  minSpawnDistance: 13.1
-  maxSpawnDistance: 19.6
+  minSpawnDistance: 20
+  maxSpawnDistance: 30
   spawnInterval: 2
   maxEnemies: 20
+  worldMin: {x: -2.7, y: 0.52}
+  worldMax: {x: 38.58, y: 42.8}
   minSpawnInterval: 0.3
   spawnIntervalDecreaseRate: 0.01
   baseEnemiesPerSpawn: 1
@@ -11477,7 +11479,7 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 913657305}
-  m_Enabled: 0
+  m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 75b243e32e20efe4389e9d4a0f9afadc, type: 3}
   m_Name: 
@@ -11487,7 +11489,7 @@ MonoBehaviour:
   enemyMask:
     serializedVersion: 2
     m_Bits: 128
-  autoAimRange: 12
+  autoAimRange: 53.8
   startingWeapons:
   - {fileID: 11400000, guid: 0add1eadef1833042bc5ef31dd63a52e, type: 2}
 --- !u!114 &913657307
