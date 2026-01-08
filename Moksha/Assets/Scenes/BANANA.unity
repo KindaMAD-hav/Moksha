@@ -6544,6 +6544,75 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 507053331}
   m_Mesh: {fileID: -5053925668127403250, guid: b2510ce44697bdc41a94e716b30febc0, type: 3}
+--- !u!1 &510756826
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 510756827}
+  - component: {fileID: 510756829}
+  - component: {fileID: 510756828}
+  m_Layer: 0
+  m_Name: HealingManager
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &510756827
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 510756826}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 1542832101}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &510756828
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 510756826}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ddd99578d02673f43ad4a7f45756610a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::HealingVFX
+  particleSystems:
+  - {fileID: 1708424893}
+  audioSource: {fileID: 0}
+  healSound: {fileID: 0}
+  minPitch: 0.95
+  maxPitch: 1.05
+  autoDeactivate: 0
+  duration: 2
+--- !u!114 &510756829
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 510756826}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9ea6c812b4ac36940b71840cbe211f28, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::HealingAbility
+  healAmount: 0
+  cooldown: 0
+  currentStacks: 0
+  cooldownTimer: 0
 --- !u!1 &530093111
 GameObject:
   m_ObjectHideFlags: 0
@@ -17895,6 +17964,7 @@ Transform:
   - {fileID: 719319644}
   - {fileID: 2044629531}
   - {fileID: 1550609631}
+  - {fileID: 510756827}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1550609630
@@ -20935,6 +21005,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: CFXR3 Magic Aura A (Runic) 1
       objectReference: {fileID: 0}
+    - target: {fileID: 3280519133390621005, guid: f9466087c2075554caf9d8f0d8f201a2, type: 3}
+      propertyPath: m_IsActive
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 3280519133390621042, guid: f9466087c2075554caf9d8f0d8f201a2, type: 3}
       propertyPath: m_LocalScale.x
       value: 3.82
@@ -21058,6 +21132,11 @@ MonoBehaviour:
   m_ShadowLayerMask: 1
   m_RenderingLayers: 1
   m_ShadowRenderingLayers: 1
+--- !u!198 &1708424893 stripped
+ParticleSystem:
+  m_CorrespondingSourceObject: {fileID: 3280519133390621004, guid: f9466087c2075554caf9d8f0d8f201a2, type: 3}
+  m_PrefabInstance: {fileID: 1708424886}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1 &1711790123
 GameObject:
   m_ObjectHideFlags: 0
