@@ -26,7 +26,13 @@ public class LightningStrikeVFX : MonoBehaviour
     [Header("Audio")]
     [SerializeField] private float minPitch = 0.9f;
     [SerializeField] private float maxPitch = 1.1f;
-    
+
+    [Header("Camera Shake")]
+    [SerializeField] private float shakeDuration = 0.25f;
+    [SerializeField] private float shakeStrength = 0.6f;
+
+    private CameraShake cameraShake;
+
     // Runtime
     private float timer;
     private bool isActive;
@@ -41,18 +47,14 @@ public class LightningStrikeVFX : MonoBehaviour
     private void Awake()
     {
         cachedTransform = transform;
-        
-        // Auto-find particle systems if not assigned
+
         if (particleSystems == null || particleSystems.Length == 0)
-        {
             particleSystems = GetComponentsInChildren<ParticleSystem>();
-        }
-        
-        // Auto-find audio source
+
         if (audioSource == null)
-        {
             audioSource = GetComponent<AudioSource>();
-        }
+
+        cameraShake = FindObjectOfType<CameraShake>();
     }
 
     /// <summary>
@@ -114,6 +116,10 @@ public class LightningStrikeVFX : MonoBehaviour
         {
             audioSource.pitch = Random.Range(minPitch, maxPitch);
             audioSource.PlayOneShot(strikeSound);
+        }
+        if (cameraShake != null)
+        {
+            cameraShake.Shake(shakeDuration, shakeStrength);
         }
     }
     
