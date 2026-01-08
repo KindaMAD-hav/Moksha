@@ -1,37 +1,54 @@
 using UnityEngine;
 
 /// <summary>
-/// One-shot camera shake that works with camera follow scripts
+/// Configurable one-shot camera shake
+/// - Intensity: how far the camera moves
+/// - Frequency: how fast it jitters
+/// Works with camera follow scripts
 /// </summary>
 public class CameraShake : MonoBehaviour
 {
-    private float shakeTimer;
-    private float shakeStrength;
+    [Header("Shake Parameters")]
+    [SerializeField] private float defaultIntensity = 0.3f;
+    [SerializeField] private float defaultFrequency = 25f;
 
-    private Vector3 shakeOffset;
+    private float shakeTimer;
+    private float shakeIntensity;
+    private float shakeFrequency;
+
+    private float noiseTime;
 
     /// <summary>
-    /// Trigger a one-time camera shake
+    /// Trigger camera shake
     /// </summary>
-    public void Shake(float duration, float strength)
+    public void Shake(float duration, float intensity, float frequency)
     {
         shakeTimer = duration;
-        shakeStrength = strength;
+        shakeIntensity = intensity;
+        shakeFrequency = frequency;
+        noiseTime = Random.value * 10f;
+    }
+
+    /// <summary>
+    /// Trigger camera shake using defaults
+    /// </summary>
+    public void Shake(float duration, float intensity)
+    {
+        Shake(duration, intensity, defaultFrequency);
     }
 
     private void LateUpdate()
     {
-        if (shakeTimer > 0f)
-        {
-            shakeTimer -= Time.deltaTime;
-            shakeOffset = Random.insideUnitSphere * shakeStrength;
-        }
-        else
-        {
-            shakeOffset = Vector3.zero;
-        }
+        if (shakeTimer <= 0f) return;
 
-        // Apply shake as an additive offset
-        transform.position += shakeOffset;
+        shakeTimer -= Time.deltaTime;
+
+        noiseTime += Time.deltaTime * shakeFrequency;
+
+        float x = (Mathf.PerlinNoise(noiseTime, 0f) - 0.5f) * 2f;
+        float y = (Mathf.PerlinNoise(0f, noiseTime) - 0.5f) * 2f;
+
+        Vector3 offset = new Vector3(x, y, 0f) * shakeIntensity;
+        transform.position += offset;
     }
 }

@@ -24,7 +24,12 @@ public class PlayerHealth : MonoBehaviour, IDamageable
     [SerializeField] private AudioSource audioSource;
     [SerializeField] private AudioClip hurtSound;
     [SerializeField] private AudioClip deathSound;
-    
+
+    [Header("Camera Shake")]
+    [SerializeField] private float damageShakeDuration = 0.12f;
+    [SerializeField] private float damageShakeStrength = 0.25f;
+    private CameraShake cameraShake;
+
     // Events
     public event Action<float, float> OnHealthChanged;
     public event Action OnDeath;
@@ -83,6 +88,7 @@ public class PlayerHealth : MonoBehaviour, IDamageable
 
     private void Awake()
     {
+        cameraShake = FindObjectOfType<CameraShake>();
         cachedTransform = transform;
         propertyBlock = new MaterialPropertyBlock();
         
@@ -103,6 +109,7 @@ public class PlayerHealth : MonoBehaviour, IDamageable
         }
         
         InitializeHealth();
+        cameraShake = FindObjectOfType<CameraShake>();
     }
 
     private void CacheOriginalColors()
@@ -198,7 +205,11 @@ public class PlayerHealth : MonoBehaviour, IDamageable
 
         currentHealth -= damage;
         OnDamaged?.Invoke();
-        
+        if (cameraShake != null)
+        {
+            cameraShake?.Shake(damageShakeDuration, damageShakeStrength, 35f);
+        }
+
         // Play hurt sound
         if ((componentFlags & FLAG_AUDIO) != 0 && hurtSound != null)
         {

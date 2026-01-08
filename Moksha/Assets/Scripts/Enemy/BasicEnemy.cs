@@ -15,16 +15,31 @@ public class BasicEnemy : EnemyBase
     [SerializeField] private AudioSource audioSource;
     [SerializeField] private EnemyDissolve dissolveEffect;
 
+    [Header("Damage Flash")]
+    [SerializeField] private Renderer[] flashRenderers;
+    [SerializeField] private Color damageFlashColor = new Color(1f, 0.2f, 0.2f, 1f);
+    [SerializeField] private float flashDuration = 0.12f;
+
+
     // Animator parameter hashes (static for all instances)
     private static readonly int SpeedHash = Animator.StringToHash("Speed");
     private static readonly int AttackHash = Animator.StringToHash("Attack");
     private static readonly int DieHash = Animator.StringToHash("Die");
+    // Shader color property IDs (local to enemy)
+    private static readonly int ColorProperty = Shader.PropertyToID("_BaseColor");
+    private static readonly int ColorPropertyAlt = Shader.PropertyToID("_Color");
+
 
     // Cached components
     private CharacterController characterController;
     private Rigidbody rb;
     private byte componentFlags; // Bit flags for component presence
-    
+    private MaterialPropertyBlock flashBlock;
+    private Color[] originalColors;
+    private float flashTimer;
+    private bool isFlashing;
+
+
     // Component flag bits
     private const byte FLAG_ANIMATOR = 1;
     private const byte FLAG_CHAR_CONTROLLER = 2;
@@ -55,6 +70,29 @@ public class BasicEnemy : EnemyBase
         characterController = GetComponent<CharacterController>();
         rb = GetComponent<Rigidbody>();
         dissolveEffect = GetComponent<EnemyDissolve>();
+        // Auto-find renderers if not assigned
+        if (flashRenderers == null || flashRenderers.Length == 0)
+        {
+            flashRenderers = GetComponentsInChildren<Renderer>();
+        }
+
+        if (flashRenderers != null && flashRenderers.Length > 0)
+        {
+            flashBlock = new MaterialPropertyBlock();
+            originalColors = new Color[flashRenderers.Length];
+
+            for (int i = 0; i < flashRenderers.Length; i++)
+            {
+                if (flashRenderers[i] == null) continue;
+
+                flashRenderers[i].GetPropertyBlock(flashBlock);
+
+                if (flashBlock.HasColor(ColorProperty))
+                    originalColors[i] = flashBlock.GetColor(ColorProperty);
+                else
+                    originalColors[i] = Color.white;
+            }
+        }
 
         // Set component flags (faster than null checks)
         componentFlags = 0;
@@ -101,6 +139,16 @@ public class BasicEnemy : EnemyBase
         {
             SetAnimSpeed(0f);
         }
+        // Damage flash update
+        if (isFlashing)
+        {
+            flashTimer -= deltaTime;
+            if (flashTimer <= 0f)
+            {
+                EndFlash();
+            }
+        }
+
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -314,6 +362,57 @@ public class BasicEnemy : EnemyBase
     {
         DealDamage();
     }
+
+    public override void TakeDamage(float damage)
+    {
+        base.TakeDamage(damage);
+
+        if (!IsDead)
+            StartFlash();
+    }
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private void StartFlash()
+    {
+        if (flashRenderers == null || flashRenderers.Length == 0) return;
+
+        isFlashing = true;
+        flashTimer = flashDuration;
+
+        for (int i = 0; i < flashRenderers.Length; i++)
+        {
+            if (flashRenderers[i] == null) continue;
+
+            flashRenderers[i].GetPropertyBlock(flashBlock);
+
+            if (flashRenderers[i].material.HasProperty("_BaseColor"))
+                flashBlock.SetColor("_BaseColor", damageFlashColor);
+            if (flashRenderers[i].material.HasProperty("_Color"))
+                flashBlock.SetColor("_Color", damageFlashColor);
+
+            flashRenderers[i].SetPropertyBlock(flashBlock);
+        }
+    }
+
+    private void EndFlash()
+    {
+        isFlashing = false;
+
+        for (int i = 0; i < flashRenderers.Length; i++)
+        {
+            if (flashRenderers[i] == null) continue;
+
+            flashRenderers[i].GetPropertyBlock(flashBlock);
+
+            if (flashRenderers[i].material.HasProperty("_BaseColor"))
+                flashBlock.SetColor("_BaseColor", originalColors[i]);
+            if (flashRenderers[i].material.HasProperty("_Color"))
+                flashBlock.SetColor("_Color", originalColors[i]);
+
+            flashRenderers[i].SetPropertyBlock(flashBlock);
+        }
+    }
+
+
 
 #if UNITY_EDITOR
     private void OnDrawGizmosSelected()

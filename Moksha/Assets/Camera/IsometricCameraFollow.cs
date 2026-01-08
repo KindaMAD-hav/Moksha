@@ -4,12 +4,7 @@ public class IsometricCameraFollow : MonoBehaviour
 {
     public Transform target;
     public Vector3 offset = new Vector3(-10f, 12f, -10f);
-    public float smoothTime = 0.15f; [Header("Camera Shake")]
-    [SerializeField] private float shakeDuration = 0.25f;
-    [SerializeField] private float shakeStrength = 0.6f;
-
-    private CameraShake cameraShake;
-
+    public float smoothTime = 0.15f;
 
     Vector3 vel;
 
