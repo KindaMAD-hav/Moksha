@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::EnemyStats
   enemyName: Minotaur
   icon: {fileID: 0}
-  maxHealth: 1
+  maxHealth: 10
   moveSpeed: 3
   rotationSpeed: 360
   stoppingDistance: 1.5
