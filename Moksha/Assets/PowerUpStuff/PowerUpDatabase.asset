@@ -13,10 +13,10 @@ MonoBehaviour:
   m_Name: PowerUpDatabase
   m_EditorClassIdentifier: Assembly-CSharp::PowerUpDatabase
   allPowerUps:
-  - {fileID: 11400000, guid: 3f4c921385837f940b16a3055250dfef, type: 2}
-  - {fileID: 11400000, guid: 3f4c921385837f940b16a3055250dfef, type: 2}
-  - {fileID: 11400000, guid: 3f4c921385837f940b16a3055250dfef, type: 2}
-  - {fileID: 11400000, guid: 3f4c921385837f940b16a3055250dfef, type: 2}
+  - {fileID: 11400000, guid: 7ec5d9c840a55854db8cd76f30486736, type: 2}
+  - {fileID: 11400000, guid: 7ec5d9c840a55854db8cd76f30486736, type: 2}
+  - {fileID: 11400000, guid: 7ec5d9c840a55854db8cd76f30486736, type: 2}
+  - {fileID: 11400000, guid: 7ec5d9c840a55854db8cd76f30486736, type: 2}
   - {fileID: 11400000, guid: 3f4c921385837f940b16a3055250dfef, type: 2}
   - {fileID: 11400000, guid: 3f4c921385837f940b16a3055250dfef, type: 2}
   - {fileID: 11400000, guid: 3f4c921385837f940b16a3055250dfef, type: 2}
