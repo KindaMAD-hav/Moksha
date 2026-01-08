@@ -14,8 +14,8 @@ public class EnemyDamageNumberManager : MonoBehaviour
     [SerializeField] private float radialOffset = 0.45f;     // around enemy
     [SerializeField] private float radialJitter = 0.15f;     // tiny randomness
 
-    [Header("Glow")]
-    [SerializeField] private bool useAttackerColorGlow = true;
+    //[Header("Glow")]
+    //[SerializeField] private bool useAttackerColorGlow = true;
 
     // Per-enemy counter so repeated hits "orbit" around them (prevents overlap)
     private readonly Dictionary<int, int> _spawnSerialByEnemy = new Dictionary<int, int>(256);
@@ -48,10 +48,6 @@ public class EnemyDamageNumberManager : MonoBehaviour
         if (activeNumbers.TryGetValue(id, out dmg) && dmg != null)
         {
             dmg.AddValue(damage);
-
-            if (useAttackerColorGlow)
-                dmg.SetAttackerColor(attackerColor);
-
             return;
         }
 
@@ -59,11 +55,7 @@ public class EnemyDamageNumberManager : MonoBehaviour
         Vector3 pos = enemy.position + GetNonOverlappingOffset(enemy);
         dmg = Instantiate(damageNumberPrefab, pos, Quaternion.identity);
 
-        dmg.useAttackerColorGlow = useAttackerColorGlow;
         dmg.SetValue(damage);
-
-        if (useAttackerColorGlow)
-            dmg.SetAttackerColor(attackerColor);
 
         activeNumbers[id] = dmg;
 

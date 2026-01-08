@@ -14,15 +14,21 @@ public class DamageNumber : MonoBehaviour
     public Gradient damageColorGradient;
     public float maxDamageForColor = 100f;
 
-    [Header("Glow Mode")]
-    public bool useAttackerColorGlow = false;
+    //[Header("Glow Mode")]
+    //public bool useAttackerColorGlow = false;
 
     [Header("Animated Glow (Disabled if attacker glow is ON)")]
     public float minGlowCycleSpeed = 0.6f;
     public float maxGlowCycleSpeed = 3.5f;
     public float glowIntensity = 1.6f;
-    [Range(0f, 1f)] public float forbiddenHueMin = 0.10f;
-    [Range(0f, 1f)] public float forbiddenHueMax = 0.20f;
+    //[Range(0f, 1f)] public float forbiddenHueMin = 0.10f;
+    //[Range(0f, 1f)] public float forbiddenHueMax = 0.20f;
+
+    [Header("Glow Gradient (Auto-Generated if empty)")]
+    public Gradient glowGradient;
+    public float minGlowGradientSpeed = 0.6f;
+    public float maxGlowGradientSpeed = 4.5f;
+
 
     [Header("Motion")]
     public Vector2 randomSpread = new Vector2(0.35f, 0.15f);
@@ -68,7 +74,7 @@ public class DamageNumber : MonoBehaviour
     float _time;
     //int _damage;
 
-    float _glowHue;
+    //float _glowHue;
     float _glowSpeed;
     float _baseSettledScale = 1f;
 
@@ -91,7 +97,31 @@ public class DamageNumber : MonoBehaviour
             text.fontMaterial = _runtimeMat;
         }
         cameraTransform = Camera.main.transform;
+        EnsureGlowGradient();
     }
+
+    void EnsureGlowGradient()
+    {
+        if (glowGradient != null && glowGradient.colorKeys.Length > 0)
+            return;
+
+        glowGradient = new Gradient();
+
+        glowGradient.SetKeys(
+            new GradientColorKey[]
+            {
+            new GradientColorKey(new Color(0.6f, 0.05f, 0.05f), 0f),   // dark blood red
+            new GradientColorKey(new Color(1f, 0.25f, 0.05f), 0.45f), // hot orange-red
+            new GradientColorKey(new Color(1f, 0.65f, 0.1f), 1f),     // bright orange
+            },
+            new GradientAlphaKey[]
+            {
+            new GradientAlphaKey(1f, 0f),
+            new GradientAlphaKey(1f, 1f)
+            }
+        );
+    }
+
 
     public void SetValue(int value)
     {
@@ -153,20 +183,21 @@ public class DamageNumber : MonoBehaviour
     {
         float t = Mathf.Clamp01(currentValue / maxDamageForColor);
 
-
+        // base text color (still uses existing gradient)
         _baseColor = damageColorGradient.Evaluate(t);
         _baseColor.a = 1f;
         text.color = _baseColor;
 
-        _glowSpeed = Mathf.Lerp(minGlowCycleSpeed, maxGlowCycleSpeed, t);
-        _glowHue = Random.value;
+        // glow speed scales with damage
+        _glowSpeed = Mathf.Lerp(minGlowGradientSpeed, maxGlowGradientSpeed, t);
     }
 
-    public void SetAttackerColor(Color c)
-    {
-        if (_runtimeMat == null) return;
-        _runtimeMat.SetColor("_GlowColor", c * glowIntensity);
-    }
+
+    //public void SetAttackerColor(Color c)
+    //{
+    //    if (_runtimeMat == null) return;
+    //    _runtimeMat.SetColor("_GlowColor", c * glowIntensity);
+    //}
 
     void Update()
     {
@@ -230,16 +261,14 @@ public class DamageNumber : MonoBehaviour
         }
 
 
-        if (_runtimeMat != null && !useAttackerColorGlow)
+        if (_runtimeMat != null)
         {
-            _glowHue = (_glowHue + Time.deltaTime * _glowSpeed) % 1f;
-
-            if (_glowHue > forbiddenHueMin && _glowHue < forbiddenHueMax)
-                _glowHue = forbiddenHueMax;
-
-            Color glow = Color.HSVToRGB(_glowHue, 1f, 1f) * glowIntensity;
+            float glowT = (_time * _glowSpeed) % 1f;
+            Color glow = glowGradient.Evaluate(glowT) * glowIntensity;
             _runtimeMat.SetColor("_GlowColor", glow);
         }
+
+
 
         if (_time > lifetime - fadeOutTime)
         {
