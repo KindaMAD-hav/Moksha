@@ -423,7 +423,7 @@ MonoBehaviour:
   nameText: {fileID: 3325854532987115260}
   descriptionText: {fileID: 9057289994982563576}
   rarityText: {fileID: 0}
-  borderImage: {fileID: 5176016153560106971}
+  borderImage: {fileID: 0}
   backgroundImage: {fileID: 7648725737173771431}
   selectButton: {fileID: 0}
   canvasGroup: {fileID: 0}

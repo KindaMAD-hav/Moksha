@@ -11959,7 +11959,7 @@ MonoBehaviour:
   aimStick: {fileID: 1636591908}
   pointerPosition: {fileID: 1950441513}
   aimPivot: {fileID: 907260371}
-  debugAiming: 1
+  debugAiming: 0
   debugMovement: 0
 --- !u!143 &913657308
 CharacterController:
@@ -12052,13 +12052,12 @@ Transform:
   m_GameObject: {fileID: 913657305}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 20.713, y: 0.519, z: 19.48}
+  m_LocalPosition: {x: 20.713, y: 0.164, z: 19.48}
   m_LocalScale: {x: 0.35, y: 0.35, z: 0.35}
   m_ConstrainProportionsScale: 1
   m_Children:
   - {fileID: 907260371}
   - {fileID: 1708424887}
-  - {fileID: 1561340934}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!114 &913657312
@@ -16218,7 +16217,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 4203d25a9e8bfeb41adebb128b30d42a, type: 3}
   m_Name: 
   m_EditorClassIdentifier: '::'
-  playerHealth: {fileID: 1755259037}
+  playerHealth: {fileID: 913657312}
   gameOverPanel: {fileID: 2015640736}
   retryButton: {fileID: 1654736275}
   homeButton: {fileID: 1764506913}
@@ -21506,6 +21505,7 @@ Transform:
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 1606410277}
+  - {fileID: 1561340934}
   m_Father: {fileID: 907260371}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1698203757
@@ -25852,7 +25852,7 @@ PrefabInstance:
   serializedVersion: 2
   m_Modification:
     serializedVersion: 3
-    m_TransformParent: {fileID: 913657311}
+    m_TransformParent: {fileID: 1696428217}
     m_Modifications:
     - target: {fileID: -8679921383154817045, guid: e82baa4c1c53ef041ac681feaf143ea2, type: 3}
       propertyPath: m_LocalScale.x
@@ -25876,7 +25876,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: e82baa4c1c53ef041ac681feaf143ea2, type: 3}
       propertyPath: m_LocalPosition.z
-      value: 0
+      value: -1
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: e82baa4c1c53ef041ac681feaf143ea2, type: 3}
       propertyPath: m_LocalRotation.w
@@ -27382,7 +27382,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::LevelUpUI
   panel: {fileID: 237148595}
   cardContainer: {fileID: 237148596}
-  cardPrefab: {fileID: 6156764485161062343, guid: 6c2093a1d6d29e24c9c282f266e22964, type: 3}
+  cardPrefab: {fileID: 1666707899728039567, guid: e162001b5634cc047900642e28ac9adc, type: 3}
   powerUpDatabase: {fileID: 11400000, guid: a4353c2a2849f5c499fef7c71eda02d1, type: 2}
   cardsToShow: 3
   playerObject: {fileID: 0}
