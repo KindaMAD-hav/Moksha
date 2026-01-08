@@ -5220,10 +5220,10 @@ Light:
     m_Type: 2
     m_Resolution: -1
     m_CustomResolution: -1
-    m_Strength: 1
-    m_Bias: 0.05
-    m_NormalBias: 0.4
-    m_NearPlane: 0.2
+    m_Strength: 0.942
+    m_Bias: 10
+    m_NormalBias: 9.77
+    m_NearPlane: 8.97
     m_CullingMatrixOverride:
       e00: 1
       e01: 0
@@ -5273,13 +5273,13 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 410087039}
   serializedVersion: 2
-  m_LocalRotation: {x: 0.40821788, y: -0.23456968, z: 0.10938163, w: 0.8754261}
-  m_LocalPosition: {x: 0, y: 3, z: 0}
+  m_LocalRotation: {x: 0.12354354, y: 0.8630572, z: -0.25499406, w: 0.4181475}
+  m_LocalPosition: {x: 0, y: 3, z: -0.79}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 0}
-  m_LocalEulerAnglesHint: {x: 50, y: -30, z: 0}
+  m_LocalEulerAnglesHint: {x: -327.08, y: -231.7, z: 0}
 --- !u!114 &410087042
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -8664,6 +8664,9 @@ MonoBehaviour:
     poolSize: 20
   - prefab: {fileID: 2475981611131618683, guid: ff7a59e9084803344af17b5c260a4a87, type: 3}
     stats: {fileID: 11400000, guid: cdf44a39385d9e54cb867510b740d334, type: 2}
+    poolSize: 20
+  - prefab: {fileID: 8658893934564567433, guid: 71e68d70d955b0e48a48f179e2875448, type: 3}
+    stats: {fileID: 11400000, guid: b4d66de6ffce7f9489c8a2a71f9713a5, type: 2}
     poolSize: 20
   currentEnemyCount: 0
   gameTime: 0
