@@ -51,6 +51,9 @@ public class DamageNumber : MonoBehaviour
     public float stackGlowBoost = 0.35f;        // temporary glow boost
 
     private Transform cameraTransform;
+    private int currentValue;
+    private float lifeTimer;
+
 
 
     float _stackPulse;
@@ -58,10 +61,12 @@ public class DamageNumber : MonoBehaviour
 
     Vector3 _velocity;
     bool _stopped;
+    bool _hasPopped;
+
 
     Vector3 _moveDir;
     float _time;
-    int _damage;
+    //int _damage;
 
     float _glowHue;
     float _glowSpeed;
@@ -88,42 +93,66 @@ public class DamageNumber : MonoBehaviour
         cameraTransform = Camera.main.transform;
     }
 
-    public void SetValue(int damage)
+    public void SetValue(int value)
     {
-        _damage = damage;
-        text.text = _damage.ToString();
+        currentValue = value;
+        text.text = currentValue.ToString();
+
+        _time = 0f;
+        _hasPopped = false; // allow initial pop
+
         RecalculateVisuals();
     }
 
-    public void AddDamage(int extraDamage)
-    {
-        _damage += extraDamage;
-        text.text = _damage.ToString();
 
-        _time = 0f; // still refresh lifetime
 
-        // ✨ subtle stacking response (no pop restart)
-        _stackPulse += stackScalePulse;
-        _stackGlowTimer = 0.12f;
+    //public void AddDamage(int extraDamage)
+    //{
+    //    _damage += extraDamage;
+    //    text.text = _damage.ToString();
 
-        RecalculateVisuals();
-    }
+    //    _time = 0f; // still refresh lifetime
+
+    //    // ✨ subtle stacking response (no pop restart)
+    //    _stackPulse += stackScalePulse;
+    //    _stackGlowTimer = 0.12f;
+
+    //    RecalculateVisuals();
+    //}
     private void LateUpdate()
     {
         if (cameraTransform == null) return;
 
-        Vector3 dir = transform.position - cameraTransform.position;
-        dir.y = 0f; // keep upright
-
-        if (dir.sqrMagnitude < 0.0001f) return;
-
-        transform.rotation = Quaternion.LookRotation(dir);
+        // Match camera rotation exactly (orthographic-safe)
+        transform.rotation = Quaternion.Euler(
+            0f,
+            cameraTransform.eulerAngles.y,
+            0f
+        );
     }
+    public void AddValue(int value)
+    {
+        currentValue += value;
+        text.text = currentValue.ToString();
+
+        // ❌ DO NOT reset time to 0
+        // lock time past pop so we never replay it
+        _time = Mathf.Max(_time, popDuration);
+        _hasPopped = true;
+
+        // subtle stacking feedback only
+        _stackPulse += stackScalePulse;
+        _stackPulse = Mathf.Min(_stackPulse, 0.15f);
+
+        RecalculateVisuals();
+    }
+
 
 
     void RecalculateVisuals()
     {
-        float t = Mathf.Clamp01(_damage / maxDamageForColor);
+        float t = Mathf.Clamp01(currentValue / maxDamageForColor);
+
 
         _baseColor = damageColorGradient.Evaluate(t);
         _baseColor.a = 1f;
@@ -182,10 +211,11 @@ public class DamageNumber : MonoBehaviour
             }
         }
 
-        if (_time < popDuration)
+        if (_time < popDuration && !_hasPopped)
         {
             float t = _time / popDuration;
-            float bonus = Mathf.Min(maxBonusScale, bonusScalePerDamage * _damage);
+            float bonus = Mathf.Min(maxBonusScale, bonusScalePerDamage * currentValue);
+
 
             float s = Mathf.Lerp(startScale, peakScale + bonus, EaseOutBack(t));
             transform.localScale = Vector3.one * s;

@@ -245,6 +245,6 @@ MonoBehaviour:
   maxBonusScale: 0.6
   movementBounds: {fileID: 0}
   stopSmoothTime: 0.15
-  stackScalePulse: 0.12
+  stackScalePulse: 0.4
   stackPulseDecay: 18
   stackGlowBoost: 0.35

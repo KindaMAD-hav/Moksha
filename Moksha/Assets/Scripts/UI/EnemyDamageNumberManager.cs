@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 using UnityEngine;
 
@@ -23,6 +23,10 @@ public class EnemyDamageNumberManager : MonoBehaviour
     private const float TWO_PI = 6.28318530718f;
     private const float GOLDEN_ANGLE = 2.399963229728653f; // ~137.5 degrees in radians
 
+    private readonly Dictionary<int, DamageNumber> activeNumbers =
+    new Dictionary<int, DamageNumber>(256);
+
+
     private void Awake()
     {
         if (Instance != null && Instance != this) { Destroy(gameObject); return; }
@@ -36,15 +40,49 @@ public class EnemyDamageNumberManager : MonoBehaviour
     {
         if (damageNumberPrefab == null || enemy == null) return;
 
+        int id = enemy.GetInstanceID();
+
+        DamageNumber dmg;
+
+        // ✅ STACK if already exists
+        if (activeNumbers.TryGetValue(id, out dmg) && dmg != null)
+        {
+            dmg.AddValue(damage);
+
+            if (useAttackerColorGlow)
+                dmg.SetAttackerColor(attackerColor);
+
+            return;
+        }
+
+        // ❌ otherwise spawn new
         Vector3 pos = enemy.position + GetNonOverlappingOffset(enemy);
-        var dmg = Instantiate(damageNumberPrefab, pos, Quaternion.identity);
+        dmg = Instantiate(damageNumberPrefab, pos, Quaternion.identity);
 
         dmg.useAttackerColorGlow = useAttackerColorGlow;
         dmg.SetValue(damage);
 
         if (useAttackerColorGlow)
             dmg.SetAttackerColor(attackerColor);
+
+        activeNumbers[id] = dmg;
+
+        // cleanup when destroyed
+        StartCoroutine(RemoveWhenDestroyed(enemy, dmg));
     }
+
+    private System.Collections.IEnumerator RemoveWhenDestroyed(
+    Transform enemy,
+    DamageNumber dmg)
+    {
+        int id = enemy.GetInstanceID();
+
+        while (dmg != null)
+            yield return null;
+
+        activeNumbers.Remove(id);
+    }
+
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private Vector3 GetNonOverlappingOffset(Transform enemy)
