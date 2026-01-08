@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Runtime.CompilerServices;
 using UnityEngine;
 
@@ -164,7 +164,17 @@ public abstract class EnemyBase : MonoBehaviour, IDamageable
         if (IsDead) return;
 
         currentHealth -= damage;
-        
+
+        // 🔥 DAMAGE NUMBER HERE
+        if (EnemyDamageNumberManager.Instance != null)
+        {
+            EnemyDamageNumberManager.Instance.ShowDamage(
+                cachedTransform,
+                Mathf.RoundToInt(damage),
+                Color.white // or override later
+            );
+        }
+
         if (currentHealth <= 0f)
         {
             currentHealth = 0f;
@@ -176,6 +186,7 @@ public abstract class EnemyBase : MonoBehaviour, IDamageable
             OnHit();
         }
     }
+
 
     protected virtual void OnHit()
     {
