@@ -50,6 +50,9 @@ public class DamageNumber : MonoBehaviour
     public float stackPulseDecay = 18f;        // how fast it settles
     public float stackGlowBoost = 0.35f;        // temporary glow boost
 
+    private Transform cameraTransform;
+
+
     float _stackPulse;
     float _stackGlowTimer;
 
@@ -82,6 +85,7 @@ public class DamageNumber : MonoBehaviour
             _runtimeMat = Instantiate(text.fontMaterial);
             text.fontMaterial = _runtimeMat;
         }
+        cameraTransform = Camera.main.transform;
     }
 
     public void SetValue(int damage)
@@ -104,6 +108,18 @@ public class DamageNumber : MonoBehaviour
 
         RecalculateVisuals();
     }
+    private void LateUpdate()
+    {
+        if (cameraTransform == null) return;
+
+        Vector3 dir = transform.position - cameraTransform.position;
+        dir.y = 0f; // keep upright
+
+        if (dir.sqrMagnitude < 0.0001f) return;
+
+        transform.rotation = Quaternion.LookRotation(dir);
+    }
+
 
     void RecalculateVisuals()
     {
