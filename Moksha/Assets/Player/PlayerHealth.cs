@@ -359,6 +359,7 @@ public class PlayerHealth : MonoBehaviour, IDamageable
     }
 
     [ContextMenu("Test Take 10 Damage")]
+    [ContextMenu("Test Take 10 Damage")]
     private void TestDamage()
     {
         TakeDamage(10f);
