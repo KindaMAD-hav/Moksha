@@ -7,7 +7,7 @@ Material:
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_Name: ShaderAccessories
+  m_Name: SkeletonShaderMaterial
   m_Shader: {fileID: -6465566751694194690, guid: 479a3a5ebe2be224c9db1e0fd92977df, type: 3}
   m_Parent: {fileID: 0}
   m_ModifiedSerializedProperties: 0
@@ -67,10 +67,10 @@ Material:
     - _QueueOffset: 0
     - _Smoothness: 0.871
     m_Colors:
-    - _BaseColor: {r: 0.32156864, g: 0.27058825, b: 0.2392157, a: 1}
+    - _BaseColor: {r: 0.7294118, g: 0.7294118, b: 0.73333335, a: 1}
     - _DirectionFactor: {r: 0, g: 0.1, b: 0, a: 0}
     - _DissolveDirection: {r: 0, g: 0, b: 0, a: 0}
-    - _DissolveOffest: {r: 0, g: -2.42, b: 0, a: 0}
+    - _DissolveOffest: {r: 0, g: -2.71, b: 0, a: 0}
     - _EdgeColor: {r: 1, g: 0, b: 0, a: 1}
     - _NoiseUVSpeed: {r: 1, g: 1, b: 0, a: 0}
     - _Offest: {r: 0, g: 0, b: 0, a: 0}

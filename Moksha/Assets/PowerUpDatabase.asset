@@ -19,7 +19,7 @@ MonoBehaviour:
   - {fileID: 11400000, guid: 4294039a1ef790349a77c720fffff24d, type: 2}
   - {fileID: 11400000, guid: b86094450d4a9de458959fb4fbd96399, type: 2}
   - {fileID: 11400000, guid: 282774aa78243134dadffd05faf6f7f4, type: 2}
-  - {fileID: 11400000, guid: 8fad782e1b393bb4bb93a68a0b0cc744, type: 2}
+  - {fileID: 11400000, guid: 7ec5d9c840a55854db8cd76f30486736, type: 2}
   commonWeight: 60
   uncommonWeight: 25
   rareWeight: 10

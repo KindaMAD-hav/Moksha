@@ -5348,7 +5348,7 @@ Light:
   serializedVersion: 12
   m_Type: 1
   m_Color: {r: 1, g: 1, b: 1, a: 1}
-  m_Intensity: 1.79
+  m_Intensity: 0.8
   m_Range: 10
   m_SpotAngle: 30
   m_InnerSpotAngle: 21.80208
@@ -10627,7 +10627,7 @@ MonoBehaviour:
   shardContainer: {fileID: 18845538}
   backgroundImage: {fileID: 0}
   pauseKey: 27
-  shardColumns: 12
+  shardColumns: 3
   shardRows: 3
   openDuration: 0.6
   closeDuration: 0.4
