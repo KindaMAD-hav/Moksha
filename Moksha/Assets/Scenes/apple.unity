@@ -11489,6 +11489,7 @@ MonoBehaviour:
   enemyMask:
     serializedVersion: 2
     m_Bits: 128
+  autoAimEnabled: 1
   autoAimRange: 53.8
   startingWeapons:
   - {fileID: 11400000, guid: 0add1eadef1833042bc5ef31dd63a52e, type: 2}
@@ -17302,7 +17303,6 @@ MonoBehaviour:
   heightOffset: 1.3
   radialOffset: 0.45
   radialJitter: 0.15
-  useAttackerColorGlow: 1
 --- !u!1 &1500835254
 GameObject:
   m_ObjectHideFlags: 0
@@ -35056,10 +35056,7 @@ PrefabInstance:
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
-    m_AddedComponents:
-    - targetCorrespondingSourceObject: {fileID: 2098527761613926236, guid: 208a833bcef173b44ad81d44830f5033, type: 3}
-      insertIndex: -1
-      addedObject: {fileID: 0}
+    m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 208a833bcef173b44ad81d44830f5033, type: 3}
 --- !u!1 &8416272007291207550
 GameObject:
@@ -36222,6 +36219,7 @@ SceneRoots:
   - {fileID: 543450652178143600}
   - {fileID: 1151015975}
   - {fileID: 199353927}
+  - {fileID: 913657311}
   - {fileID: 561202333}
   - {fileID: 1631789563}
   - {fileID: 180558068}
@@ -36232,7 +36230,6 @@ SceneRoots:
   - {fileID: 1542832101}
   - {fileID: 70325864}
   - {fileID: 889116566}
-  - {fileID: 913657311}
   - {fileID: 199273450}
   - {fileID: 1134350137}
   - {fileID: 8414665966190574208}

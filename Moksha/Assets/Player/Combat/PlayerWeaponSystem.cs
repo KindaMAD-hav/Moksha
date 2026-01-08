@@ -20,6 +20,10 @@ public class PlayerWeaponSystem : MonoBehaviour
     [Tooltip("Layer(s) considered enemies for auto-aim.")]
     public LayerMask enemyMask;
 
+    [Header("Auto Aim")]
+    [SerializeField] private bool autoAimEnabled = true;
+
+
     [Tooltip("How far the weapon system will look for targets.")]
     public float autoAimRange = 12f;
 
@@ -49,6 +53,16 @@ public class PlayerWeaponSystem : MonoBehaviour
         }
     }
 
+    void Update()
+    {
+        if (Input.GetKeyDown(KeyCode.Space))
+        {
+            autoAimEnabled = !autoAimEnabled;
+            Debug.Log("Auto Aim: " + (autoAimEnabled ? "ON" : "OFF"));
+        }
+    }
+
+
     // LateUpdate so we read the final aimTransform rotation after PlayerController.Update.
     void LateUpdate()
     {
@@ -70,6 +84,11 @@ public class PlayerWeaponSystem : MonoBehaviour
     /// </summary>
     public bool TryAcquireTarget(out Transform target)
     {
+        if (!autoAimEnabled)
+        {
+            target = null;
+            return false;
+        }
         Collider[] hits = Physics.OverlapSphere(transform.position, autoAimRange, enemyMask, QueryTriggerInteraction.Ignore);
 
         if (hits == null || hits.Length == 0)
