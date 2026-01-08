@@ -8964,7 +8964,7 @@ Transform:
   m_GameObject: {fileID: 719319643}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: -11.210002, y: 37.6, z: -11.78}
+  m_LocalPosition: {x: -11.210002, y: 31.33, z: -11.78}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -9033,7 +9033,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!4 &721731107
 Transform:
   m_ObjectHideFlags: 0
@@ -9046,7 +9046,8 @@ Transform:
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
-  m_Children: []
+  m_Children:
+  - {fileID: 1708424887}
   m_Father: {fileID: 1542832101}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!114 &721731109
@@ -11605,7 +11606,6 @@ Transform:
   m_ConstrainProportionsScale: 1
   m_Children:
   - {fileID: 907260371}
-  - {fileID: 1708424887}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!114 &913657312
@@ -20988,7 +20988,7 @@ PrefabInstance:
   serializedVersion: 2
   m_Modification:
     serializedVersion: 3
-    m_TransformParent: {fileID: 913657311}
+    m_TransformParent: {fileID: 721731107}
     m_Modifications:
     - target: {fileID: 1318935079978438870, guid: f9466087c2075554caf9d8f0d8f201a2, type: 3}
       propertyPath: playOnAwake
@@ -21024,27 +21024,27 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 3280519133390621042, guid: f9466087c2075554caf9d8f0d8f201a2, type: 3}
       propertyPath: m_LocalScale.x
-      value: 3.8200002
+      value: 1.337
       objectReference: {fileID: 0}
     - target: {fileID: 3280519133390621042, guid: f9466087c2075554caf9d8f0d8f201a2, type: 3}
       propertyPath: m_LocalScale.y
-      value: 1.5314415
+      value: 0.5360045
       objectReference: {fileID: 0}
     - target: {fileID: 3280519133390621042, guid: f9466087c2075554caf9d8f0d8f201a2, type: 3}
       propertyPath: m_LocalScale.z
-      value: 3.8200002
+      value: 1.337
       objectReference: {fileID: 0}
     - target: {fileID: 3280519133390621042, guid: f9466087c2075554caf9d8f0d8f201a2, type: 3}
       propertyPath: m_LocalPosition.x
-      value: 0.027001586
+      value: -37.43456
       objectReference: {fileID: 0}
     - target: {fileID: 3280519133390621042, guid: f9466087c2075554caf9d8f0d8f201a2, type: 3}
       propertyPath: m_LocalPosition.y
-      value: -0.8490016
+      value: 28.901539
       objectReference: {fileID: 0}
     - target: {fileID: 3280519133390621042, guid: f9466087c2075554caf9d8f0d8f201a2, type: 3}
       propertyPath: m_LocalPosition.z
-      value: 0
+      value: -37.31956
       objectReference: {fileID: 0}
     - target: {fileID: 3280519133390621042, guid: f9466087c2075554caf9d8f0d8f201a2, type: 3}
       propertyPath: m_LocalRotation.w
@@ -21172,9 +21172,11 @@ MonoBehaviour:
   particleSystems:
   - {fileID: 1708424893}
   audioSource: {fileID: 0}
-  healSfx: {fileID: 0}
-  effectDuration: 1.5
-  loopParticles: 1
+  healSound: {fileID: 0}
+  minPitch: 0.95
+  maxPitch: 1.05
+  autoDeactivate: 0
+  duration: 2
 --- !u!1 &1711790123
 GameObject:
   m_ObjectHideFlags: 0
@@ -25913,7 +25915,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::LevelUpUI
   panel: {fileID: 237148595}
   cardContainer: {fileID: 237148596}
-  cardPrefab: {fileID: 6156764485161062343, guid: 6c2093a1d6d29e24c9c282f266e22964, type: 3}
+  cardPrefab: {fileID: 1666707899728039567, guid: e162001b5634cc047900642e28ac9adc, type: 3}
   powerUpDatabase: {fileID: 11400000, guid: a4353c2a2849f5c499fef7c71eda02d1, type: 2}
   cardsToShow: 3
   playerObject: {fileID: 0}

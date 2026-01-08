@@ -1,124 +1,94 @@
 using UnityEngine;
 
 /// <summary>
-/// Healing VFX controller - Attached to the healing particle effect GameObject.
-/// Handles playing the healing particle effect and optional audio.
+/// Handles visual + audio healing effects
+/// - GameObject stays ACTIVE permanently
+/// - Particles play on demand and stop after duration
 /// </summary>
 public class HealingVFX : MonoBehaviour
 {
-    [Header("Components")]
+    [Header("VFX")]
     [SerializeField] private ParticleSystem[] particleSystems;
-    [SerializeField] private AudioSource audioSource;
-    [SerializeField] private AudioClip healSound;
 
     [Header("Audio")]
-    [SerializeField] private float minPitch = 0.95f;
-    [SerializeField] private float maxPitch = 1.05f;
+    [SerializeField] private AudioSource audioSource;
+    [SerializeField] private AudioClip healSfx;
 
-    [Header("Auto-Deactivate")]
-    [Tooltip("If true, deactivates the GameObject after particles finish")]
-    [SerializeField] private bool autoDeactivate = false;
+    [Header("Settings")]
+    [SerializeField] private float effectDuration = 1.5f;
+    [SerializeField] private bool loopParticles = false;
 
-    [Tooltip("Duration before auto-deactivating (if autoDeactivate is true)")]
-    [SerializeField] private float duration = 2f;
-
-    // Runtime
-    private float timer;
     private bool isPlaying;
+    private float timer;
 
     private void Awake()
     {
-        // Auto-find particle systems if not assigned
+        // Auto-find particle systems (include inactive children)
         if (particleSystems == null || particleSystems.Length == 0)
         {
-            particleSystems = GetComponentsInChildren<ParticleSystem>();
+            particleSystems = GetComponentsInChildren<ParticleSystem>(true);
+            Debug.Log($"[HealingVFX] Found {particleSystems.Length} particle systems");
         }
 
-        // Auto-find audio source
         if (audioSource == null)
         {
             audioSource = GetComponent<AudioSource>();
-        }
-
-        // Start inactive if autoDeactivate is enabled
-        if (autoDeactivate)
-        {
-            gameObject.SetActive(false);
-        }
-    }
-
-    /// <summary>
-    /// Play the healing effect
-    /// </summary>
-    public void PlayEffect()
-    {
-        // Activate GameObject if it was inactive
-        if (!gameObject.activeSelf)
-        {
-            gameObject.SetActive(true);
-        }
-
-        isPlaying = true;
-        timer = 0f;
-
-        // Play all particle systems
-        for (int i = 0; i < particleSystems.Length; i++)
-        {
-            if (particleSystems[i] != null)
-            {
-                particleSystems[i].Clear();
-                particleSystems[i].Play();
-            }
-        }
-
-        // Play sound with slight pitch variation
-        if (audioSource != null && healSound != null)
-        {
-            audioSource.pitch = Random.Range(minPitch, maxPitch);
-            audioSource.PlayOneShot(healSound);
-        }
-    }
-
-    /// <summary>
-    /// Stop the healing effect
-    /// </summary>
-    public void StopEffect()
-    {
-        isPlaying = false;
-
-        // Stop all particle systems
-        for (int i = 0; i < particleSystems.Length; i++)
-        {
-            if (particleSystems[i] != null)
-            {
-                particleSystems[i].Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
-            }
-        }
-
-        if (autoDeactivate)
-        {
-            gameObject.SetActive(false);
         }
     }
 
     private void Update()
     {
-        if (!isPlaying || !autoDeactivate) return;
+        if (!isPlaying) return;
 
-        timer += Time.deltaTime;
-
-        if (timer >= duration)
+        if (!loopParticles)
         {
-            StopEffect();
+            timer += Time.deltaTime;
+            if (timer >= effectDuration)
+            {
+                StopEffect();
+            }
         }
     }
 
-    /// <summary>
-    /// Set the duration (if needed)
-    /// </summary>
-    public void SetDuration(float newDuration)
+    public void PlayEffect()
     {
-        duration = newDuration;
+        Debug.Log("[HealingVFX] PlayEffect");
+
+        // Ensure object is active (never disable it later)
+        if (!gameObject.activeSelf)
+            gameObject.SetActive(true);
+
+        timer = 0f;
+        isPlaying = true;
+
+        foreach (var ps in particleSystems)
+        {
+            if (ps == null) continue;
+
+            var main = ps.main;
+            main.loop = loopParticles;
+
+            ps.Clear();
+            ps.Play();
+        }
+
+        if (audioSource != null && healSfx != null)
+        {
+            audioSource.PlayOneShot(healSfx);
+        }
+    }
+
+    public void StopEffect()
+    {
+        Debug.Log("[HealingVFX] StopEffect");
+
+        foreach (var ps in particleSystems)
+        {
+            if (ps != null)
+                ps.Stop();
+        }
+
+        isPlaying = false;
     }
 
 #if UNITY_EDITOR
@@ -126,12 +96,6 @@ public class HealingVFX : MonoBehaviour
     private void TestPlay()
     {
         PlayEffect();
-    }
-    
-    [ContextMenu("Test Stop Effect")]
-    private void TestStop()
-    {
-        StopEffect();
     }
 #endif
 }

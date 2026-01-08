@@ -46,20 +46,34 @@ public class HealingPowerUp : PowerUp
     /// </summary>
     public override void Apply(GameObject player)
     {
-        if (player == null) return;
+        Debug.Log("[HealingPowerUp] Apply() called");
+        if (player == null)
+        {
+            Debug.LogError("[HealingPowerUp] Cannot apply - player is null!");
+            return;
+        }
 
         HealingAbility healingAbility = player.GetComponent<HealingAbility>();
+
 
         if (healingAbility == null)
         {
             // First time acquiring - add and initialize
+            Debug.Log($"[HealingPowerUp] Adding healing ability to player for the first time");
             healingAbility = player.AddComponent<HealingAbility>();
             healingAbility.Initialize(this);
             Debug.Log($"[HealingPowerUp] Added healing ability to player");
         }
         else
         {
-            // Already have it - add a stack
+            // CRITICAL FIX: Ensure the ability is properly initialized before adding stack
+            // This can happen if the component was added manually or from a prefab
+            Debug.Log($"[HealingPowerUp] Healing ability already exists - ensuring initialization");
+
+            // Ensure it has the power-up data reference
+            healingAbility.EnsureInitialized(this);
+
+            // Now add the stack
             healingAbility.AddStack();
             Debug.Log($"[HealingPowerUp] Healing ability stack increased to {healingAbility.CurrentStacks}");
         }
