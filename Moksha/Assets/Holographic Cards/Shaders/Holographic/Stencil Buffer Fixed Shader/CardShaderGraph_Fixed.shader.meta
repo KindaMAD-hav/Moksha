@@ -1,0 +1,16 @@
+fileFormatVersion: 2
+guid: cc893cf66297c364f960e1ffc9db25f6
+ShaderImporter:
+  externalObjects: {}
+  defaultTextures: []
+  nonModifiableTextures: []
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 311449
+  packageName: Card Visual Effects Suite
+  packageVersion: 1.0.1
+  assetPath: Assets/Holographic Cards/Shaders/Holographic/Stencil Buffer Fixed Shader/CardShaderGraph_Fixed.shader
+  uploadId: 832512
