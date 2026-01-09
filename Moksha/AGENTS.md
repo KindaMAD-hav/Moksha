@@ -2,7 +2,7 @@
 - Project name: Moksha
 - Unity version: Unity 6000.3.2f1
 - Active game object:
-  - Name: Map
+  - Name: Plane.022(Clone)
   - Tag: Untagged
   - Layer: Default
 <!-- UNITY CODE ASSIST INSTRUCTIONS END -->
