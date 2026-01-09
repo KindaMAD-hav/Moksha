@@ -215,26 +215,26 @@ public class DamageNumber : MonoBehaviour
 
                 transform.position = nextPos;
 
-                Bounds textBounds = GetTextWorldBounds();
+                //Bounds textBounds = GetTextWorldBounds();
 
-                Vector3 correction = Vector3.zero;
+                //Vector3 correction = Vector3.zero;
 
-                if (textBounds.min.x < area.min.x)
-                    correction.x += area.min.x - textBounds.min.x;
-                if (textBounds.max.x > area.max.x)
-                    correction.x -= textBounds.max.x - area.max.x;
+                //if (textBounds.min.x < area.min.x)
+                //    correction.x += area.min.x - textBounds.min.x;
+                //if (textBounds.max.x > area.max.x)
+                //    correction.x -= textBounds.max.x - area.max.x;
 
-                if (textBounds.min.y < area.min.y)
-                    correction.y += area.min.y - textBounds.min.y;
-                if (textBounds.max.y > area.max.y)
-                    correction.y -= textBounds.max.y - area.max.y;
+                //if (textBounds.min.y < area.min.y)
+                //    correction.y += area.min.y - textBounds.min.y;
+                //if (textBounds.max.y > area.max.y)
+                //    correction.y -= textBounds.max.y - area.max.y;
 
-                if (correction != Vector3.zero)
-                {
-                    transform.position += correction;
-                    _velocity = Vector3.Lerp(_velocity, Vector3.zero, Time.deltaTime / stopSmoothTime);
-                    _stopped = _velocity.sqrMagnitude < 0.001f;
-                }
+                //if (correction != Vector3.zero)
+                //{
+                //    transform.position += correction;
+                //    _velocity = Vector3.Lerp(_velocity, Vector3.zero, Time.deltaTime / stopSmoothTime);
+                //    _stopped = _velocity.sqrMagnitude < 0.001f;
+                //}
             }
             else
             {
@@ -281,16 +281,16 @@ public class DamageNumber : MonoBehaviour
         if (_time >= lifetime)
             Destroy(gameObject);
     }
-    Bounds GetTextWorldBounds()
-    {
-        text.ForceMeshUpdate();
-        var meshBounds = text.mesh.bounds;
+    //Bounds GetTextWorldBounds()
+    //{
+    //    //text.ForceMeshUpdate();
+    //    var meshBounds = text.mesh.bounds;
 
-        Vector3 center = transform.TransformPoint(meshBounds.center);
-        Vector3 size = Vector3.Scale(meshBounds.size, transform.lossyScale);
+    //    Vector3 center = transform.TransformPoint(meshBounds.center);
+    //    Vector3 size = Vector3.Scale(meshBounds.size, transform.lossyScale);
 
-        return new Bounds(center, size);
-    }
+    //    return new Bounds(center, size);
+    //}
 
 
     void OnDestroy()

@@ -161,7 +161,10 @@ public abstract class EnemyBase : MonoBehaviour, IDamageable
     {
         currentHealth = cachedMaxHealth;
         IsDead = false;
-        OnHealthChanged?.Invoke(currentHealth, cachedMaxHealth);
+        if (currentHealth > 0f)
+        {
+            OnHealthChanged?.Invoke(currentHealth, cachedMaxHealth);
+        }
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -188,7 +191,10 @@ public abstract class EnemyBase : MonoBehaviour, IDamageable
         }
         else
         {
-            OnHealthChanged?.Invoke(currentHealth, cachedMaxHealth);
+            if (currentHealth > 0f)
+            {
+                OnHealthChanged?.Invoke(currentHealth, cachedMaxHealth);
+            }
             OnHit();
         }
     }
