@@ -35,6 +35,12 @@ public class LightningStrikePowerUp : PowerUp
     [Tooltip("Extra targets per N stacks (0 = no extra targets)")]
     public int stacksPerExtraTarget = 3;
 
+    [Header("AOE Settings")]
+    public bool enableAOE = true;
+    public float aoeRadius = 3f;
+    public float aoeDamageMultiplier = 0.6f;
+
+
     public override void Apply(GameObject player)
     {
         // Get or add the lightning ability component

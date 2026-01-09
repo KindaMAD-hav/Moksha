@@ -2,7 +2,7 @@
 - Project name: Moksha
 - Unity version: Unity 6000.3.2f1
 - Active game object:
-  - Name: LightningStrikeManager
+  - Name: Rays
   - Tag: Untagged
-  - Layer: Default
+  - Layer: Player
 <!-- UNITY CODE ASSIST INSTRUCTIONS END -->
