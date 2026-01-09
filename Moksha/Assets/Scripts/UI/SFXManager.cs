@@ -65,6 +65,16 @@ public class SFXManager : MonoBehaviour
     // INTERNAL
     // =========================
 
+    public void PlayOneShot(AudioClip clip, float pitch)
+    {
+        if (clip == null) return;
+
+        audioSource.pitch = pitch;
+        audioSource.PlayOneShot(clip, GetPerceptualVolume());
+        audioSource.pitch = 1f; // reset immediately
+    }
+
+
     private void ApplyVolume()
     {
         // AudioSource.volume is not used for one-shots,

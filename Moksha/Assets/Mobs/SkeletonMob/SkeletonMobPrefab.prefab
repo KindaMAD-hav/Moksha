@@ -238,6 +238,8 @@ MonoBehaviour:
   flashRenderers: []
   damageFlashColor: {r: 1, g: 0.2, b: 0.2, a: 1}
   flashDuration: 0.12
+  hitSFX: {fileID: 8300000, guid: e91b4c3a95d1b6843b57eb09e7092d78, type: 3}
+  hitSFXCooldown: 0.08
 --- !u!114 &7736174032067751393
 MonoBehaviour:
   m_ObjectHideFlags: 0
