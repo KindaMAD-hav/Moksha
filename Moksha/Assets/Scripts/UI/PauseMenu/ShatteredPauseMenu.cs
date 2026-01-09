@@ -24,8 +24,7 @@ public class ShatteredPauseMenu : MonoBehaviour
     [SerializeField] private KeyCode pauseKey = KeyCode.Escape;
 
     [Header("Shard Settings")]
-    [SerializeField] private int shardColumns = 12;
-    [SerializeField] private int shardRows = 8;
+    private const int DIAMOND_SHARD_COUNT = 4;
 
     [Header("Animation Settings")]
     [SerializeField] private float openDuration = 0.6f;
@@ -115,29 +114,30 @@ public class ShatteredPauseMenu : MonoBehaviour
 
     private void InitializeShardPool()
     {
-        poolCapacity = shardColumns * shardRows;
+        poolCapacity = DIAMOND_SHARD_COUNT; // <<< THIS WAS MISSING
         shardPool = new UIGlassShard[poolCapacity];
         staggerDelays = new float[poolCapacity];
-        
+
         for (int i = 0; i < poolCapacity; i++)
         {
             GameObject shardObj = new GameObject($"Shard_{i}");
             shardObj.transform.SetParent(shardContainer, false);
-            
+
             RectTransform rt = shardObj.AddComponent<RectTransform>();
             rt.anchorMin = Vector2.zero;
             rt.anchorMax = Vector2.zero;
             rt.pivot = new Vector2(0.5f, 0.5f);
-            
+
             RawImage rawImage = shardObj.AddComponent<RawImage>();
             rawImage.raycastTarget = false;
-            
+
             UIGlassShard shard = shardObj.AddComponent<UIGlassShard>();
             shardPool[i] = shard;
-            
+
             shardObj.SetActive(false);
         }
     }
+
 
     private void CreateBackgroundImage()
     {
@@ -260,54 +260,74 @@ public class ShatteredPauseMenu : MonoBehaviour
 
     private void SetupShards()
     {
-        float canvasWidth = canvasRect.rect.width;
-        float canvasHeight = canvasRect.rect.height;
-        float shardWidth = canvasWidth / shardColumns;
-        float shardHeight = canvasHeight / shardRows;
-        Vector2 canvasCenter = new Vector2(canvasWidth * 0.5f, canvasHeight * 0.5f);
-        float maxDist = canvasCenter.magnitude;
+        float w = canvasRect.rect.width;
+        float h = canvasRect.rect.height;
 
-        activeShardCount = 0;
+        Vector2 center = new Vector2(w * 0.5f, h * 0.5f);
+        float diamondRadius = Mathf.Min(w, h) * 0.18f; // tweak this
 
-        for (int row = 0; row < shardRows; row++)
-        {
-            for (int col = 0; col < shardColumns; col++)
-            {
-                int index = row * shardColumns + col;
-                if (index >= poolCapacity) break;
+        Vector2 top = center + Vector2.up * diamondRadius;
+        Vector2 right = center + Vector2.right * diamondRadius;
+        Vector2 bottom = center + Vector2.down * diamondRadius;
+        Vector2 left = center + Vector2.left * diamondRadius;
 
-                float x = col * shardWidth + shardWidth * 0.5f;
-                float y = row * shardHeight + shardHeight * 0.5f;
-                Vector2 shardCenter = new Vector2(x, y);
+        activeShardCount = 4;
 
-                // UV rect
-                Rect uvRect = new Rect(
-                    (float)col / shardColumns,
-                    (float)row / shardRows,
-                    1f / shardColumns,
-                    1f / shardRows
-                );
+        CreateDiamondShard(0,
+            new Vector2(0, h), left, top,
+            new Vector2(-1, 1));
 
-                // Target position
-                Vector2 targetPos = CalculateTargetPosition(shardCenter, canvasWidth, canvasHeight, canvasCenter);
-                Vector2 moveOffset = targetPos - shardCenter;
+        CreateDiamondShard(1,
+            top, new Vector2(w, h), right,
+            new Vector2(1, 1));
 
-                float randomRot = UnityEngine.Random.Range(-maxRotation, maxRotation);
+        CreateDiamondShard(2,
+            left, new Vector2(0, 0), bottom,
+            new Vector2(-1, -1));
 
+        CreateDiamondShard(3,
+            bottom, right, new Vector2(w, 0),
+            new Vector2(1, -1));
 
-                UIGlassShard shard = shardPool[index];
-                shard.Configure(shardCenter, shardWidth, shardHeight, uvRect, screenshotTexture);
-                shard.Initialize(shardCenter, moveOffset, randomRot);
-                shard.gameObject.SetActive(true);
-                shard.SetOpenAmount(0f);
+        for (int i = 0; i < activeShardCount; i++)
+            staggerDelays[i] = i * staggerAmount;
 
-                // Calculate stagger delay
-                float dist = Vector2.Distance(shardCenter, canvasCenter);
-                staggerDelays[index] = (1f - dist / maxDist) * staggerAmount * poolCapacity;
+    }
 
-                activeShardCount++;
-            }
-        }
+    private void CreateDiamondShard(
+    int index,
+    Vector2 a, Vector2 b, Vector2 c,
+    Vector2 moveDir)
+    {
+        UIGlassShard shard = shardPool[index];
+
+        Vector2 center = (a + b + c) / 3f;
+
+        Rect uv = new Rect(
+            a.x / canvasRect.rect.width,
+            a.y / canvasRect.rect.height,
+            (b.x - a.x) / canvasRect.rect.width,
+            (c.y - a.y) / canvasRect.rect.height
+        );
+
+        shard.Configure(
+            center,
+            canvasRect.rect.width,
+            canvasRect.rect.height,
+            uv,
+            screenshotTexture
+        );
+
+        Vector2 scatter = moveDir.normalized * edgeOffset;
+
+        shard.Initialize(
+            center,
+            scatter,
+            UnityEngine.Random.Range(-12f, 12f)
+        );
+
+        shard.SetOpenAmount(0f);
+        shard.gameObject.SetActive(true);
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
