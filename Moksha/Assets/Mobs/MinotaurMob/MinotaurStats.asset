@@ -14,14 +14,14 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::EnemyStats
   enemyName: Minotaur
   icon: {fileID: 0}
-  maxHealth: 10
+  maxHealth: 20
   moveSpeed: 3
   rotationSpeed: 360
   stoppingDistance: 1.5
   damage: 10
   attackCooldown: 1
   attackRange: 2
-  xpReward: 10
+  xpReward: 20
   hitEffect: {fileID: 0}
   deathEffect: {fileID: 0}
   hitSound: {fileID: 0}
