@@ -16,7 +16,7 @@ MonoBehaviour:
   description: 'Justice Rains From Above
 
 '
-  icon: {fileID: 0}
+  icon: {fileID: 21300000, guid: 731d9fe861f2bfd4a9c4ed344e19e9b0, type: 3}
   rarity: 0
   canStack: 1
   maxStacks: 0
@@ -29,3 +29,6 @@ MonoBehaviour:
   rangePerStack: 2
   baseTargetCount: 1
   stacksPerExtraTarget: 3
+  enableAOE: 1
+  aoeRadius: 3
+  aoeDamageMultiplier: 0.6
