@@ -32,6 +32,8 @@ public class PlayerWeaponSystem : MonoBehaviour
 
     private PlayerController playerController;
 
+    public AttackAnimationController attackAnim;
+
     readonly List<WeaponRuntime> weapons = new();
 
     void Awake()
