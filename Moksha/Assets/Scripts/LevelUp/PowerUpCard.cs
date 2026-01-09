@@ -70,13 +70,13 @@ public class PowerUpCard : MonoBehaviour
         rectTransform = GetComponent<RectTransform>();
         normalScale = rectTransform != null ? rectTransform.localScale : Vector3.one;
 
-        // 🔊 FORCE UI audio to play while paused
-        if (audioSource != null)
-        {
-            audioSource.ignoreListenerPause = true;
-            audioSource.playOnAwake = false;
-            audioSource.spatialBlend = 0f; // force 2D
-        }
+        //// 🔊 FORCE UI audio to play while paused
+        //if (audioSource != null)
+        //{
+        //    audioSource.ignoreListenerPause = true;
+        //    audioSource.playOnAwake = false;
+        //    audioSource.spatialBlend = 0f; // force 2D
+        //}
 
         hasIcon = iconImage != null;
         hasName = nameText != null;
@@ -290,8 +290,8 @@ public class PowerUpCard : MonoBehaviour
     private void OnClick()
     {
         if (!isInteractable || isAnimating) return;
-        if (selectSfx != null && audioSource != null)
-            audioSource.PlayOneShot(selectSfx);
+        //if (selectSfx != null && audioSource != null)
+        //    audioSource.PlayOneShot(selectSfx);
 
         onSelected?.Invoke(powerUp);
     }

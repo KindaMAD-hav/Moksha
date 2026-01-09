@@ -26,6 +26,7 @@ public class LevelUpUI : MonoBehaviour
     [SerializeField] private AudioClip levelUpSound;
     [SerializeField] private AudioClip selectSound;
 
+
     // Object pool for cards
     private PowerUpCard[] cardPool;
     private int activeCardCount;
