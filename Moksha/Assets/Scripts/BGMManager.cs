@@ -5,20 +5,22 @@ public class BGMManager : MonoBehaviour
 {
     public static BGMManager Instance;
 
+    private const string VolumePrefKey = "BGM_VOLUME";
+
     [Header("Audio Source")]
     [SerializeField] private AudioSource audioSource;
 
     [Header("Main Menu")]
     [SerializeField] private AudioClip mainMenuBGM;
 
-    [Header("Gameplay BGMs (Random Pick)")]
+    [Header("Gameplay BGMs")]
     [SerializeField] private AudioClip[] gameplayBGMs;
 
     private AudioClip currentClip;
+    private float volume = 1f;
 
     private void Awake()
     {
-        // Singleton
         if (Instance != null && Instance != this)
         {
             Destroy(gameObject);
@@ -32,6 +34,10 @@ public class BGMManager : MonoBehaviour
             audioSource = GetComponent<AudioSource>();
 
         audioSource.loop = true;
+
+        // Load saved volume
+        volume = PlayerPrefs.GetFloat(VolumePrefKey, 0.6f);
+        audioSource.volume = volume;
     }
 
     private void OnEnable()
@@ -46,7 +52,6 @@ public class BGMManager : MonoBehaviour
 
     private void Start()
     {
-        // Handle first scene (Main Menu)
         HandleScene(SceneManager.GetActiveScene());
     }
 
@@ -57,15 +62,10 @@ public class BGMManager : MonoBehaviour
 
     private void HandleScene(Scene scene)
     {
-        // Main Menu assumed to be build index 0
         if (scene.buildIndex == 0)
-        {
             PlayMainMenu();
-        }
         else
-        {
             PlayGameplay();
-        }
     }
 
     private void PlayMainMenu()
@@ -73,7 +73,7 @@ public class BGMManager : MonoBehaviour
         if (currentClip == mainMenuBGM) return;
 
         currentClip = mainMenuBGM;
-        audioSource.clip = mainMenuBGM;
+        audioSource.clip = currentClip;
         audioSource.Play();
     }
 
@@ -82,13 +82,29 @@ public class BGMManager : MonoBehaviour
         if (gameplayBGMs == null || gameplayBGMs.Length == 0)
             return;
 
-        // If already playing a gameplay BGM, don't restart
         if (currentClip != null && currentClip != mainMenuBGM)
             return;
 
-        int index = Random.Range(0, gameplayBGMs.Length);
-        currentClip = gameplayBGMs[index];
+        currentClip = gameplayBGMs[Random.Range(0, gameplayBGMs.Length)];
         audioSource.clip = currentClip;
         audioSource.Play();
+    }
+
+    // =========================
+    // VOLUME API
+    // =========================
+
+    public void SetVolume(float value)
+    {
+        volume = Mathf.Clamp01(value);
+        audioSource.volume = volume;
+
+        PlayerPrefs.SetFloat(VolumePrefKey, volume);
+        PlayerPrefs.Save();
+    }
+
+    public float GetVolume()
+    {
+        return volume;
     }
 }
