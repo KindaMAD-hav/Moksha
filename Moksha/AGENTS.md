@@ -2,7 +2,7 @@
 - Project name: Moksha
 - Unity version: Unity 6000.3.2f1
 - Active game object:
-  - Name: Map
-  - Tag: Untagged
-  - Layer: Default
+  - Name: BasicMobPrefab
+  - Tag: Enemy
+  - Layer: Enemy
 <!-- UNITY CODE ASSIST INSTRUCTIONS END -->

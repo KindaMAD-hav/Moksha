@@ -231,6 +231,9 @@ MonoBehaviour:
   animator: {fileID: 1835761951097723375}
   audioSource: {fileID: 0}
   dissolveEffect: {fileID: 0}
+  flashRenderers: []
+  damageFlashColor: {r: 1, g: 0.2, b: 0.2, a: 1}
+  flashDuration: 0.12
 --- !u!114 &7736174032067751393
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -356,4 +359,4 @@ CapsuleCollider:
   m_Radius: 2.558773
   m_Height: 5.117546
   m_Direction: 1
-  m_Center: {x: 0, y: 2.112753, z: -0.2183876}
+  m_Center: {x: 0, y: 2.8, z: -0.2183876}
