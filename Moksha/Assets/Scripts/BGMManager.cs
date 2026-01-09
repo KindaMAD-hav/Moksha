@@ -97,7 +97,7 @@ public class BGMManager : MonoBehaviour
     public void SetVolume(float value)
     {
         volume = Mathf.Clamp01(value);
-        audioSource.volume = volume;
+        audioSource.volume = Mathf.Pow(volume, 2.0f);
 
         PlayerPrefs.SetFloat(VolumePrefKey, volume);
         PlayerPrefs.Save();
