@@ -30,18 +30,21 @@ public class PlayerWeaponSystem : MonoBehaviour
     [Header("Loadout")]
     public WeaponDefinition[] startingWeapons;
 
+    private PlayerController playerController;
+
     readonly List<WeaponRuntime> weapons = new();
 
     void Awake()
     {
-        // Auto-wire aimTransform from PlayerController if possible
+        playerController = GetComponent<PlayerController>();
+
         if (!aimTransform)
         {
             var pc = GetComponent<PlayerController>();
             if (pc != null && pc.aimPivot != null) aimTransform = pc.aimPivot;
         }
-        if (!aimTransform) aimTransform = transform;
 
+        if (!aimTransform) aimTransform = transform;
         if (!firePoint) firePoint = aimTransform;
 
         if (startingWeapons != null)
@@ -52,6 +55,7 @@ public class PlayerWeaponSystem : MonoBehaviour
             }
         }
     }
+
 
     void Update()
     {
@@ -66,10 +70,23 @@ public class PlayerWeaponSystem : MonoBehaviour
     // LateUpdate so we read the final aimTransform rotation after PlayerController.Update.
     void LateUpdate()
     {
+        // AUTO AIM ROTATION (only if player is NOT manually aiming)
+        if (autoAimEnabled && playerController != null && !playerController.HasManualAimInput)
+        {
+            if (TryAcquireTarget(out Transform target))
+            {
+                Vector3 dir = target.position - transform.position;
+                playerController.RotateTowardsAutoAim(dir);
+            }
+        }
+
         float dt = Time.deltaTime;
         for (int i = 0; i < weapons.Count; i++)
             weapons[i].Tick(this, dt);
     }
+
+
+
 
     public Vector3 GetFlatAimDirection()
     {

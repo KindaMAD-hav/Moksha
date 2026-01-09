@@ -25,6 +25,8 @@ public class PlayerController : MonoBehaviour
     Camera cam;
     Vector3 verticalVel;
 
+    public bool HasManualAimInput { get; private set; }
+
     void Awake()
     {
         cc = GetComponent<CharacterController>();
@@ -65,6 +67,15 @@ public class PlayerController : MonoBehaviour
         HandleMovement();
         HandleAiming();
     }
+    public void RotateTowardsAutoAim(Vector3 worldDir)
+    {
+        worldDir.y = 0f;
+        if (worldDir.sqrMagnitude < 0.001f) return;
+
+        // HARD SNAP (authoritative)
+        aimPivot.rotation = Quaternion.LookRotation(worldDir, Vector3.up);
+    }
+
 
     void HandleMovement()
     {
@@ -90,12 +101,15 @@ public class PlayerController : MonoBehaviour
 
     void HandleAiming()
     {
+        HasManualAimInput = false;
+
         Vector2 stick = aimStick?.action.ReadValue<Vector2>() ?? Vector2.zero;
         Vector3 aimDir = Vector3.zero;
 
         // ───────────────────────── STICK AIM ─────────────────────────
         if (stick.sqrMagnitude > 0.05f)
         {
+            HasManualAimInput = true;
             Vector3 camF = cam.transform.forward; camF.y = 0; camF.Normalize();
             Vector3 camR = cam.transform.right; camR.y = 0; camR.Normalize();
 
@@ -133,6 +147,7 @@ public class PlayerController : MonoBehaviour
 
                 if (flat.sqrMagnitude > 0.001f)
                 {
+                    HasManualAimInput = true;
                     aimDir = flat.normalized;
 
                     if (debugAiming)
@@ -150,7 +165,7 @@ public class PlayerController : MonoBehaviour
                 Debug.LogWarning("[AIM] ❌ Ray did NOT hit ground plane");
             }
         }
-
+        HasManualAimInput = stick.sqrMagnitude > 0.05f;
         // ───────────────────────── ROTATION ─────────────────────────
         if (aimDir != Vector3.zero)
         {
