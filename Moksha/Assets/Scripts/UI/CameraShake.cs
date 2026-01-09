@@ -38,6 +38,11 @@ public class CameraShake : MonoBehaviour
     {
         Shake(duration, intensity, defaultFrequency);
     }
+    public void ForceStop()
+    {
+        shakeTimer = 0f;
+        CurrentOffset = Vector3.zero;
+    }
 
     private void LateUpdate()
     {

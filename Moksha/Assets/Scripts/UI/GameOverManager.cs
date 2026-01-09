@@ -1,3 +1,4 @@
+using System;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
@@ -51,21 +52,29 @@ public class GameOverManager : MonoBehaviour
         if (gameOverPanel != null)
             gameOverPanel.SetActive(true);
 
-        if (pauseTimeOnGameOver)
-            Time.timeScale = 0f;
+        if (pauseTimeOnGameOver && ShatteredPauseMenu.Instance != null)
+        {
+            ShatteredPauseMenu.Instance.SilentPause();
+        }
     }
 
     public void Retry()
     {
-        Time.timeScale = 1f;
         IsGameOver = false;
+
+        if (ShatteredPauseMenu.Instance != null)
+            ShatteredPauseMenu.Instance.SilentResume();
+
         SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex);
+
     }
 
     public void GoHome()
     {
-        Time.timeScale = 1f;
         IsGameOver = false;
+
+        if (ShatteredPauseMenu.Instance != null)
+            ShatteredPauseMenu.Instance.SilentResume();
 
         if (!string.IsNullOrEmpty(homeSceneName))
             SceneManager.LoadScene(homeSceneName);

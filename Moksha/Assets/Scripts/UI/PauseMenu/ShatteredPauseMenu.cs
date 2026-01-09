@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using System.Runtime.CompilerServices;
 using UnityEngine;
@@ -45,6 +46,10 @@ public class ShatteredPauseMenu : MonoBehaviour
     [Header("Lightning Bolt Settings")]
     [SerializeField] private int zigzagSegments = 6;
     [SerializeField] private float zigzagAmplitude = 0.25f;
+
+    public static event Action OnPaused;
+    public static event Action OnResumed;
+
 
     public enum ShardMoveDirection
     {
@@ -202,6 +207,7 @@ public class ShatteredPauseMenu : MonoBehaviour
 
         Time.timeScale = 0f;
         isPaused = true;
+        OnPaused?.Invoke();
 
         yield return StartCoroutine(AnimateShardsOpen());
 
@@ -230,6 +236,8 @@ public class ShatteredPauseMenu : MonoBehaviour
 
         Time.timeScale = 1f;
         isPaused = false;
+        OnResumed?.Invoke();
+
         isAnimating = false;
     }
 
@@ -284,7 +292,8 @@ public class ShatteredPauseMenu : MonoBehaviour
                 Vector2 targetPos = CalculateTargetPosition(shardCenter, canvasWidth, canvasHeight, canvasCenter);
                 Vector2 moveOffset = targetPos - shardCenter;
 
-                float randomRot = Random.Range(-maxRotation, maxRotation);
+                float randomRot = UnityEngine.Random.Range(-maxRotation, maxRotation);
+
 
                 UIGlassShard shard = shardPool[index];
                 shard.Configure(shardCenter, shardWidth, shardHeight, uvRect, screenshotTexture);
@@ -331,7 +340,7 @@ public class ShatteredPauseMenu : MonoBehaviour
             case ShardMoveDirection.Explode:
                 Vector2 dir = (shardPos - center).normalized;
                 if (dir.sqrMagnitude < 0.01f)
-                    dir = Random.insideUnitCircle.normalized;
+                    dir = UnityEngine.Random.insideUnitCircle.normalized;
                 float distToEdge = CalculateDistanceToEdge(shardPos, dir, canvasWidth, canvasHeight);
                 return shardPos + dir * (distToEdge + edgeOffset);
 
@@ -342,6 +351,26 @@ public class ShatteredPauseMenu : MonoBehaviour
                     ? new Vector2(shardPos.x, canvasHeight + edgeOffset) 
                     : new Vector2(shardPos.x, -edgeOffset);
         }
+    }
+    public void SilentPause()
+    {
+        if (isPaused) return;
+
+        isPaused = true;
+        Time.timeScale = 0f;
+
+        // fire pause event WITHOUT opening UI
+        OnPaused?.Invoke();
+    }
+
+    public void SilentResume()
+    {
+        if (!isPaused) return;
+
+        isPaused = false;
+        Time.timeScale = 1f;
+
+        OnResumed?.Invoke();
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]

@@ -13,6 +13,8 @@ public class IsometricCameraFollow : MonoBehaviour
     private void Awake()
     {
         cameraShake = GetComponent<CameraShake>();
+        ShatteredPauseMenu.OnPaused += HandlePaused;
+        ShatteredPauseMenu.OnResumed += HandleResumed;
     }
     void LateUpdate()
     {
@@ -36,8 +38,31 @@ public class IsometricCameraFollow : MonoBehaviour
     public void ResetCameraImmediate()
     {
         vel = Vector3.zero;
-        if (target)
+
+        if (cameraShake != null)
+            cameraShake.ForceStop();
+
+        if (target != null)
             transform.position = target.position + offset;
     }
+
+    private void HandlePaused()
+    {
+        ResetCameraImmediate();
+    }
+
+    private void HandleResumed()
+    {
+        ResetCameraImmediate();
+    }
+
+  
+    private void OnDestroy()
+    {
+        ShatteredPauseMenu.OnPaused -= HandlePaused;
+        ShatteredPauseMenu.OnResumed -= HandleResumed;
+
+    }
+
 
 }
