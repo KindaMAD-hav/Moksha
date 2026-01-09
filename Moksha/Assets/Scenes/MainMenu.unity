@@ -960,7 +960,7 @@ MonoBehaviour:
       m_Calls:
       - m_Target: {fileID: 1873841543}
         m_TargetAssemblyTypeName: MainMenuUI, Assembly-CSharp
-        m_MethodName: 
+        m_MethodName: OpenSettings
         m_Mode: 1
         m_Arguments:
           m_ObjectArgument: {fileID: 0}
@@ -2279,10 +2279,10 @@ MonoBehaviour:
   audioSource: {fileID: 2113606316}
   mainMenuBGM: {fileID: 8300000, guid: 278efc0cb5b7b774c846bf52913b888b, type: 3}
   gameplayBGMs:
-  - {fileID: 0}
-  - {fileID: 0}
-  - {fileID: 0}
-  - {fileID: 0}
+  - {fileID: 8300000, guid: 06f0c0ab766046740b03e5b2b6d6b071, type: 3}
+  - {fileID: 8300000, guid: bedad800fe9ff8c4e96eb2868abda27a, type: 3}
+  - {fileID: 8300000, guid: 48bcadeb31b5f9d4785e82a1f985839f, type: 3}
+  - {fileID: 8300000, guid: ad35df819217a1d4cb97c4f6492a646a, type: 3}
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
   m_ObjectHideFlags: 0
