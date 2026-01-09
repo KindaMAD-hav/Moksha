@@ -23,6 +23,7 @@ public class PlayerWeaponSystem : MonoBehaviour
     [Header("Auto Aim")]
     [SerializeField] private bool autoAimEnabled = true;
 
+    [SerializeField] private AttackLayerController attackLayerController;
 
     [Tooltip("How far the weapon system will look for targets.")]
     public float autoAimRange = 12f;
@@ -56,6 +57,11 @@ public class PlayerWeaponSystem : MonoBehaviour
         }
     }
 
+    public void NotifyWeaponFired(float animSpeed)
+    {
+        if (attackLayerController != null)
+            attackLayerController.PlayRandomAttack(animSpeed);
+    }
 
     void Update()
     {
