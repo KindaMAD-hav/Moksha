@@ -16,7 +16,7 @@ MonoBehaviour:
   description: Periodically heals the player over time. Stacks increase healing amount
     and reduce cooldown.
   icon: {fileID: 21300000, guid: 10246637f4e6fc5409934f23a1a9b8a3, type: 3}
-  rarity: 0
+  rarity: 2
   canStack: 1
   maxStacks: 0
   baseHeartsPerTick: 1

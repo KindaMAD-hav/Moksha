@@ -14,8 +14,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::WeaponModifierPowerUp
   powerUpName: Bullets Per Spread
   description: +1 Pellet
-  icon: {fileID: 0}
-  rarity: 0
+  icon: {fileID: 21300000, guid: 188654406c6d3ca41a90a9e9b8e4d611, type: 3}
+  rarity: 2
   canStack: 1
   maxStacks: 0
   targetMode: 0

@@ -12,9 +12,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 9dbcff7ca79ee1a47b4ad63847f8c49b, type: 3}
   m_Name: FireRate
   m_EditorClassIdentifier: Assembly-CSharp::WeaponModifierPowerUp
-  powerUpName: FireRateBoost
+  powerUpName: FireRate Boost
   description: Increases Current Fire rate by 20%
-  icon: {fileID: 0}
+  icon: {fileID: 21300000, guid: cf75abf697d06cd499743fe123f0e3b9, type: 3}
   rarity: 0
   canStack: 1
   maxStacks: 0
@@ -22,5 +22,5 @@ MonoBehaviour:
   targetWeaponName: 
   targetWeapon: {fileID: 11400000, guid: 0add1eadef1833042bc5ef31dd63a52e, type: 2}
   upgradeKind: 1
-  percentValue: 10
+  percentValue: 20
   intValue: 1

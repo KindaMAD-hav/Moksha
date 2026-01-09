@@ -17,11 +17,11 @@ MonoBehaviour:
   hitMask:
     serializedVersion: 2
     m_Bits: 128
-  baseFireRate: 400
+  baseFireRate: 4
   baseDamage: 3
   projectileSpeed: 20
   lifeTime: 5
-  baseProjectiles: 1
-  spreadDegrees: 20
+  baseProjectiles: 5
+  spreadDegrees: 30
   basePierce: 0
   visualProfile: {fileID: 11400000, guid: 367bcd8f0e0b8f740b38abaec2f6ca4b, type: 2}

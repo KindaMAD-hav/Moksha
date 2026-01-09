@@ -28139,7 +28139,7 @@ MonoBehaviour:
   worldMax: {x: 84.1, y: 87.5}
   minSpawnInterval: 0.3
   spawnIntervalDecreaseRate: 0.01
-  baseEnemiesPerSpawn: 50
+  baseEnemiesPerSpawn: 3
   enemiesPerSpawnIncreaseRate: 1
   enemyTypes:
   - prefab: {fileID: 2124684102959905579, guid: cc725e9155f2ee44eb3e3fd99151b30c, type: 3}
