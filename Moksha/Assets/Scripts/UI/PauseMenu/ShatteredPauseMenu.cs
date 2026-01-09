@@ -2,6 +2,7 @@
 using System.Collections;
 using UnityEngine;
 using UnityEngine.UI;
+using UnityEngine.SceneManagement;
 
 public class ShatteredPauseMenu : MonoBehaviour
 {
@@ -242,5 +243,19 @@ public class ShatteredPauseMenu : MonoBehaviour
             if (shards[i] == null) continue;
             shardImages[i] = shards[i].GetComponentInChildren<RawImage>(true);
         }
+    }
+    public void GoToMainMenu(string sceneName)
+    {
+        if (animating) return;
+        StartCoroutine(GoToMainMenuRoutine(sceneName));
+    }
+
+    IEnumerator GoToMainMenuRoutine(string sceneName)
+    {
+        // Close pause visually
+        yield return ResumeRoutine();
+
+        Time.timeScale = 1f;
+        SceneManager.LoadScene(sceneName);
     }
 }

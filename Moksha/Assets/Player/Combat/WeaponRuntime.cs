@@ -19,7 +19,7 @@ public class WeaponRuntime
    
 
     float cooldown;
-
+    bool dropLeftExtremeNext = false;
     public WeaponRuntime(WeaponDefinition def)
     {
         this.def = def;
@@ -76,24 +76,42 @@ public class WeaponRuntime
 
         float totalSpread = baseSpread;
 
-        float step = 0f;
-        float start = 0f;
-
         float dmg = def.baseDamage * damageMult;
         float spd = def.projectileSpeed * speedMult;
         int pierce = def.basePierce + bonusPierce;
 
-        if (projectileCount > 1)
+        if (projectileCount == 1)
         {
-            step = totalSpread / (projectileCount - 1);
-            start = -totalSpread * 0.5f;
+            SpawnProjectile(firePos, dir, dmg, spd, pierce);
+            return;
         }
 
-        for (int i = 0; i < projectileCount; i++)
+        // ---- NEW: force a center (0°) shot even when count is even ----
+        bool even = (projectileCount % 2 == 0);
+        int virtualCount = even ? projectileCount + 1 : projectileCount;
+
+        float step = totalSpread / (virtualCount - 1);
+        float start = -totalSpread * 0.5f;
+
+        // If even, we will skip one extreme (leftmost or rightmost) so we still spawn projectileCount shots.
+        int skipIndex = -1;
+        if (even)
         {
-            float angle = (projectileCount == 1) ? 0f : (start + step * i);
+            skipIndex = dropLeftExtremeNext ? 0 : (virtualCount - 1);
+            dropLeftExtremeNext = !dropLeftExtremeNext;
+        }
+
+        int spawned = 0;
+        for (int i = 0; i < virtualCount; i++)
+        {
+            if (i == skipIndex) continue;
+            if (spawned >= projectileCount) break;
+
+            float angle = start + step * i;
             Vector3 shotDir = Quaternion.AngleAxis(angle, Vector3.up) * dir;
             SpawnProjectile(firePos, shotDir, dmg, spd, pierce);
+
+            spawned++;
         }
     }
 

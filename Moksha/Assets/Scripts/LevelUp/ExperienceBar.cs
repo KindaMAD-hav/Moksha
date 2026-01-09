@@ -12,6 +12,8 @@ public class ExperienceBar : MonoBehaviour
     [Header("Animation")]
     [SerializeField] private bool animate = true;
     [SerializeField] private float lerpSpeed = 8f;
+    [SerializeField] private TextMeshProUGUI xpLevelText;
+
 
     private float currentFill;
     private float targetFill;
@@ -23,6 +25,9 @@ public class ExperienceBar : MonoBehaviour
 
         xp.OnXPChanged += OnXPChanged;
         xp.OnLevelUp += OnLevelUp;
+
+        if (xpLevelText != null)
+            xpLevelText.text = $"XP : {xp.CurrentLevel}";
 
         // Initial state
         OnXPChanged(xp.CurrentXP, xp.XPToNextLevel);
@@ -54,8 +59,12 @@ public class ExperienceBar : MonoBehaviour
         fillImage.fillAmount = 0f;
 
         if (levelText != null)
-            levelText.text = $"Lv {level}";
+            levelText.text = $"Lvl {level}";
+
+        if (xpLevelText != null)
+            xpLevelText.text = $"XP : {level}";
     }
+
 
     private void OnDestroy()
     {
