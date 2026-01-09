@@ -72,9 +72,16 @@ public class PlayerController : MonoBehaviour
         worldDir.y = 0f;
         if (worldDir.sqrMagnitude < 0.001f) return;
 
-        // HARD SNAP (authoritative)
-        aimPivot.rotation = Quaternion.LookRotation(worldDir, Vector3.up);
+        Quaternion targetRot = Quaternion.LookRotation(worldDir, Vector3.up);
+
+        // Strong smoothing (locks in ~2–3 frames)
+        aimPivot.rotation = Quaternion.Slerp(
+            aimPivot.rotation,
+            targetRot,
+            20f * Time.deltaTime
+        );
     }
+
 
 
     void HandleMovement()
