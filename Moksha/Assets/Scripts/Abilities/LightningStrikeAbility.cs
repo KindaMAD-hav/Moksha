@@ -113,7 +113,12 @@ public class LightningStrikeAbility : MonoBehaviour
         
         // Reset cooldown
         cooldownTimer = 0f;
-        
+
+        if (LightningStrikeManager.Instance != null)
+        {
+            LightningStrikeManager.Instance.PlayStrikeSound();
+        }
+
         // Strike up to targetCount enemies
         int strikes = Mathf.Min(targetCount, nearbyEnemies.Count);
         
