@@ -49,6 +49,7 @@ public class EnemySpawner : MonoBehaviour
     private int[] availableIndices;
     private float[] cumulativeWeights;
     private int availableCount;
+
     
     // Cached vectors
     private Vector3 spawnPosition;
@@ -60,6 +61,9 @@ public class EnemySpawner : MonoBehaviour
 
     public int CurrentEnemyCount => currentEnemyCount;
     public float GameTime => gameTime;
+
+    private int cachedPlayerLevel = 1;
+
 
     private void Awake()
     {
@@ -92,6 +96,12 @@ public class EnemySpawner : MonoBehaviour
         }
 
         InitializePools();
+
+        if (ExperienceManager.Instance != null)
+        {
+            cachedPlayerLevel = ExperienceManager.Instance.CurrentLevel;
+            ExperienceManager.Instance.OnLevelUp += OnPlayerLevelUp;
+        }
     }
 
     private void Update()
@@ -101,12 +111,12 @@ public class EnemySpawner : MonoBehaviour
         float dt = Time.deltaTime;
         gameTime += dt;
         
-        // Update difficulty (simple math, no allocations)
-        currentSpawnInterval = spawnInterval - (spawnIntervalDecreaseRate * gameTime);
-        if (currentSpawnInterval < minSpawnInterval) 
-            currentSpawnInterval = minSpawnInterval;
+        //// Update difficulty (simple math, no allocations)
+        //currentSpawnInterval = spawnInterval - (spawnIntervalDecreaseRate * gameTime);
+        //if (currentSpawnInterval < minSpawnInterval) 
+        //    currentSpawnInterval = minSpawnInterval;
         
-        currentEnemiesPerSpawn = baseEnemiesPerSpawn + (int)(enemiesPerSpawnIncreaseRate * gameTime);
+        //currentEnemiesPerSpawn = baseEnemiesPerSpawn + (int)(enemiesPerSpawnIncreaseRate * gameTime);
 
         spawnTimer += dt;
         if (spawnTimer >= currentSpawnInterval)
@@ -214,6 +224,33 @@ public class EnemySpawner : MonoBehaviour
 
         return availableIndices[availableCount - 1];
     }
+    private void OnDestroy()
+    {
+        if (ExperienceManager.Instance != null)
+            ExperienceManager.Instance.OnLevelUp -= OnPlayerLevelUp;
+    }
+
+    private void OnPlayerLevelUp(int newLevel)
+    {
+        cachedPlayerLevel = newLevel;
+        RecalculateDifficulty();
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private void RecalculateDifficulty()
+    {
+        int level = cachedPlayerLevel;
+
+        // Spawn interval shrinks as level increases
+        currentSpawnInterval = spawnInterval - (spawnIntervalDecreaseRate * level);
+        if (currentSpawnInterval < minSpawnInterval)
+            currentSpawnInterval = minSpawnInterval;
+
+        // Enemies per wave increases with level
+        currentEnemiesPerSpawn = baseEnemiesPerSpawn +
+                                 Mathf.FloorToInt(enemiesPerSpawnIncreaseRate * level);
+    }
+
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private bool CalculateSpawnPosition()
@@ -385,6 +422,25 @@ public class EnemySpawner : MonoBehaviour
 
     }
 #endif
+
+    public struct DifficultySnapshot
+    {
+        public int level;
+        public float spawnInterval;
+        public int enemiesPerSpawn;
+        public float enemyHealthMultiplier;
+        public float enemyDamageMultiplier;
+    }
+    public DifficultySnapshot CurrentDifficulty => new DifficultySnapshot
+    {
+        level = cachedPlayerLevel,
+        spawnInterval = currentSpawnInterval,
+        enemiesPerSpawn = currentEnemiesPerSpawn,
+        enemyHealthMultiplier = 1f + cachedPlayerLevel * 0.1f, // future
+        enemyDamageMultiplier = 1f + cachedPlayerLevel * 0.05f // future
+    };
+
+
 }
 
 [System.Serializable]
