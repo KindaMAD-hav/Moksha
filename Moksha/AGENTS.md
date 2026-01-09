@@ -2,7 +2,7 @@
 - Project name: Moksha
 - Unity version: Unity 6000.3.2f1
 - Active game object:
-  - Name: DefeatCanvas
+  - Name: FirePoint
   - Tag: Untagged
-  - Layer: UI
+  - Layer: Player
 <!-- UNITY CODE ASSIST INSTRUCTIONS END -->
