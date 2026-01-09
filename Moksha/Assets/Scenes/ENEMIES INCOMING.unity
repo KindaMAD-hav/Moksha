@@ -1857,10 +1857,11 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::ExperienceBar
   fillImage: {fileID: 113541646}
-  levelText: {fileID: 0}
+  levelText: {fileID: 1888171239}
   xpText: {fileID: 0}
   animate: 1
   lerpSpeed: 8
+  xpLevelText: {fileID: 0}
 --- !u!1 &65396963
 GameObject:
   m_ObjectHideFlags: 0
@@ -21533,6 +21534,7 @@ MonoBehaviour:
   xpText: {fileID: 0}
   animate: 1
   lerpSpeed: 8
+  xpLevelText: {fileID: 0}
 --- !u!114 &689382128
 MonoBehaviour:
   m_ObjectHideFlags: 0
