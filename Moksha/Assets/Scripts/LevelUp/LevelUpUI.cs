@@ -111,6 +111,11 @@ public class LevelUpUI : MonoBehaviour
 
         // Show panel first so layout can work
         panel.SetActive(true);
+
+        var cam = Camera.main.GetComponent<IsometricCameraFollow>();
+        if (cam != null)
+            cam.ResetCameraImmediate();
+
         Time.timeScale = 0f;
 
         // Activate cards and set them up (hidden initially)
@@ -184,6 +189,10 @@ public class LevelUpUI : MonoBehaviour
     {
         HideAllCards();
         panel.SetActive(false);
+        var cam = Camera.main.GetComponent<IsometricCameraFollow>();
+        if (cam != null)
+            cam.ResetCameraImmediate();
+
         Time.timeScale = 1f;
     }
 
