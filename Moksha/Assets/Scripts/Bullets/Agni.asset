@@ -20,4 +20,4 @@ MonoBehaviour:
   trailWidth: 0.04
   minVertexDistance: 0.153
   trailMaterial: {fileID: 2100000, guid: bc0fabd50d7e3174999c3ec546f99bdb, type: 2}
-  bodyMaterialOverride: {fileID: 2100000, guid: 92c8d82b0171ae7449989f2002f5d799, type: 2}
+  bodyMaterialOverride: {fileID: 2100000, guid: 6e74fc9e236c68c4e8b68f1f662bc0c6, type: 2}

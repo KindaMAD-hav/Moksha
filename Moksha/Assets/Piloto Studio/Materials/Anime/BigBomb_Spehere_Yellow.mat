@@ -185,14 +185,14 @@ Material:
     - _DoubleSidedConstants: {r: 1, g: 1, b: 1, a: 0}
     - _EmissionColor: {r: 1, g: 1, b: 1, a: 1}
     - _FresnelColor: {r: 2, g: 0.7019353, b: 0, a: 1}
-    - _LastColor: {r: 0.2924528, g: 0.03566498, b: 0, a: 0}
+    - _LastColor: {r: 0.64308995, g: 0, b: 0, a: 0}
     - _MainAlphaChannel: {r: 0, g: 0, b: 0, a: 1}
     - _MainTextureChannel: {r: 1, g: 0, b: 0, a: 0}
     - _MainTexturePanning: {r: 0.033333335, g: -0.9, b: 0, a: 0}
-    - _MidColor: {r: 1.7207954, g: 0.176173, b: 0, a: 0}
+    - _MidColor: {r: 1.7207954, g: 0, b: 0, a: 0}
     - _Resolution: {r: 64, g: 64, b: 0, a: 0}
     - _UnlitColorMap_MipInfo: {r: 0, g: 0, b: 0, a: 0}
-    - _WhiteColor: {r: 1.7411011, g: 1.0514885, b: 0, a: 0}
+    - _WhiteColor: {r: 1.7411011, g: 0.45839134, b: 0, a: 0}
   m_BuildTextureStacks: []
   m_AllowLocking: 1
 --- !u!114 &2209737518769956261

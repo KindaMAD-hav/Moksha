@@ -191,7 +191,8 @@ public class LevelUpUI : MonoBehaviour
         panel.SetActive(false);
         var cam = Camera.main.GetComponent<IsometricCameraFollow>();
         if (cam != null)
-            cam.ResetCameraImmediate();
+            cam.MarkForReset();
+
 
         Time.timeScale = 1f;
     }

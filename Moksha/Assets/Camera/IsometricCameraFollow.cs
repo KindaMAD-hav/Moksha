@@ -7,6 +7,7 @@ public class IsometricCameraFollow : MonoBehaviour
     public float smoothTime = 0.15f;
 
     private CameraShake cameraShake;
+    private bool needsHardReset;
 
     Vector3 vel;
 
@@ -18,6 +19,16 @@ public class IsometricCameraFollow : MonoBehaviour
     }
     void LateUpdate()
     {
+        if (Time.timeScale == 0f)
+        {
+            if (needsHardReset)
+            {
+                ResetCameraImmediate();
+                needsHardReset = false;
+            }
+            return;
+        }
+
         if (!target) return;
 
         Vector3 desired = target.position + offset;
@@ -35,6 +46,11 @@ public class IsometricCameraFollow : MonoBehaviour
 
         transform.position = basePos + shakeOffset;
     }
+    public void MarkForReset()
+    {
+        needsHardReset = true;
+    }
+
     public void ResetCameraImmediate()
     {
         vel = Vector3.zero;
