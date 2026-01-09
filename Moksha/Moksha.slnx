@@ -1,8 +1,17 @@
 ﻿<Solution>
   <Project Path="MerryYellow.CodeAssist.Editor.csproj" />
+  <Project Path="FronkonGames.Retro.Noir.csproj" />
+  <Project Path="FronkonGames.Retro.Noir.Editor.csproj" />
   <Project Path="Assembly-CSharp.csproj" />
+  <Project Path="Assembly-CSharp-Editor.csproj" />
+  <Project Path="CFXRRuntime.csproj" />
+  <Project Path="CFXRDemo.csproj" />
   <Project Path="TinyGiantStudio.DevTools.csproj" />
   <Project Path="TinyGiantStudio.DevTools.DevTrails.csproj" />
-  <Project Path="Assembly-CSharp-Editor.csproj" />
+  <Project Path="CFXREditor.csproj" />
+  <Project Path="Assembly-CSharp-firstpass.csproj" />
+  <Project Path="KinoBloom.Runtime.csproj" />
+  <Project Path="CFXR.WelcomeScreen.csproj" />
   <Project Path="Wingman.csproj" />
+  <Project Path="ToonyColorsPro.Demo.Editor.csproj" />
 </Solution>
