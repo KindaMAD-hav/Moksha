@@ -306,7 +306,7 @@ MonoBehaviour:
   movementNoise: 0.5
   animator: {fileID: 2998287595109514381}
   audioSource: {fileID: 0}
-  dissolveEffect: {fileID: 0}
+  dissolveEffect: {fileID: 1289483713378788668}
   enableDamageFlash: 1
   flashRenderers: []
   damageFlashColor: {r: 1, g: 0.2, b: 0.2, a: 1}

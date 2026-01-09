@@ -272,9 +272,23 @@ public class EnemySpawner : MonoBehaviour
                 return true;
         }
 
-        // ❌ No fallback clamp — just fail
-        return false;
+        // ✅ FALLBACK (CLAMP TO WORLD BOUNDS)
+        spawnPosition.x = Mathf.Clamp(
+            playerPos.x + Random.Range(-maxSpawnDistance, maxSpawnDistance),
+            worldMin.x,
+            worldMax.x
+        );
+
+        spawnPosition.z = Mathf.Clamp(
+            playerPos.z + Random.Range(-maxSpawnDistance, maxSpawnDistance),
+            worldMin.y,
+            worldMax.y
+        );
+
+        spawnPosition.y = playerPos.y;
+        return true; // 🔥 NEVER FAIL
     }
+
 
 
 
