@@ -1856,12 +1856,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 525e11c37ae035c40874cc7728a3e588, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::ExperienceBar
-  xpSlider: {fileID: 0}
   fillImage: {fileID: 113541646}
   levelText: {fileID: 0}
   xpText: {fileID: 0}
-  animateChanges: 1
-  animationSpeed: 5
+  animate: 1
+  lerpSpeed: 8
 --- !u!1 &65396963
 GameObject:
   m_ObjectHideFlags: 0
@@ -3533,7 +3532,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: fe87c0e1cc204ed48ad3b37840f39efc, type: 3}
   m_Name: 
   m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Image
-  m_Material: {fileID: 0}
+  m_Material: {fileID: 2100000, guid: a5b7490c31dd26a449bd3d16299bdb6e, type: 2}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_RaycastTarget: 1
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
@@ -21533,12 +21532,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 525e11c37ae035c40874cc7728a3e588, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::ExperienceBar
-  xpSlider: {fileID: 689382128}
   fillImage: {fileID: 1344166244}
   levelText: {fileID: 0}
   xpText: {fileID: 0}
-  animateChanges: 1
-  animationSpeed: 5
+  animate: 1
+  lerpSpeed: 8
 --- !u!114 &689382128
 MonoBehaviour:
   m_ObjectHideFlags: 0
