@@ -10910,7 +10910,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 9ea6c812b4ac36940b71840cbe211f28, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::HealingAbility
-  healAmount: 0
+  heartsPerTick: 1
   cooldown: 0
   currentStacks: 0
   cooldownTimer: 0
@@ -11918,8 +11918,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 2f92951fbdd9e464bb156d3d2a277707, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PlayerHealth
-  maxHealth: 10000
-  currentHealth: 0
+  maxHearts: 10
+  currentHearts: 0
   invincibilityDuration: 1
   flashInterval: 0.1
   flashRenderers: []
@@ -11941,7 +11941,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 9ea6c812b4ac36940b71840cbe211f28, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::HealingAbility
-  healAmount: 0
+  heartsPerTick: 1
   cooldown: 0
   currentStacks: 0
   cooldownTimer: 0
@@ -21597,6 +21597,10 @@ PrefabInstance:
       propertyPath: m_IsActive
       value: 1
       objectReference: {fileID: 0}
+    - target: {fileID: 3280519133390621041, guid: f9466087c2075554caf9d8f0d8f201a2, type: 3}
+      propertyPath: clearBehavior
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 3280519133390621042, guid: f9466087c2075554caf9d8f0d8f201a2, type: 3}
       propertyPath: m_LocalScale.x
       value: 3.8200002
@@ -21615,7 +21619,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 3280519133390621042, guid: f9466087c2075554caf9d8f0d8f201a2, type: 3}
       propertyPath: m_LocalPosition.y
-      value: -0.44
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 3280519133390621042, guid: f9466087c2075554caf9d8f0d8f201a2, type: 3}
       propertyPath: m_LocalPosition.z
@@ -21663,7 +21667,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 3280519133430969737, guid: f9466087c2075554caf9d8f0d8f201a2, type: 3}
       propertyPath: m_Intensity
-      value: 0
+      value: 7.051945
       objectReference: {fileID: 0}
     - target: {fileID: 3280519133430969738, guid: f9466087c2075554caf9d8f0d8f201a2, type: 3}
       propertyPath: m_Layer

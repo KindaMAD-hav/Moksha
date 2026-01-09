@@ -109,18 +109,24 @@ public class HealingAbility : MonoBehaviour
 
     private void TryHeal()
     {
-        // Don't heal if already at max hearts or dead
-        if (playerHealth.IsDead || playerHealth.CurrentHearts >= playerHealth.MaxHearts)
+        if (playerHealth.IsDead)
             return;
 
         cooldownTimer = 0f;
 
-        for (int i = 0; i < heartsPerTick; i++)
-            playerHealth.HealOneHeart();
-
+        // Always show aura pulse
         if (healingVFX != null)
             healingVFX.PlayEffect();
+
+        // Only heal if missing hearts
+        if (playerHealth.CurrentHearts >= playerHealth.MaxHearts)
+            return;
+
+        for (int i = 0; i < heartsPerTick; i++)
+            playerHealth.HealOneHeart();
     }
+
+
 
     public void ForceHeal()
     {
