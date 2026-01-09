@@ -304,10 +304,6 @@ MonoBehaviour:
   animator: {fileID: 2998287595109514381}
   audioSource: {fileID: 0}
   dissolveEffect: {fileID: 0}
-  flashRenderers:
-  - {fileID: 6336760792552911196}
-  damageFlashColor: {r: 1, g: 0.2, b: 0.2, a: 1}
-  flashDuration: 0.12
 --- !u!136 &5436024573714098600
 CapsuleCollider:
   m_ObjectHideFlags: 0
@@ -385,8 +381,3 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: e3768fa555258ce469061aeb41add250, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::EnemyPurifyBridge
---- !u!137 &6336760792552911196 stripped
-SkinnedMeshRenderer:
-  m_CorrespondingSourceObject: {fileID: -4157456459163486426, guid: f8959b9b92591d74a83f34472fe92c35, type: 3}
-  m_PrefabInstance: {fileID: 1278192431947646586}
-  m_PrefabAsset: {fileID: 0}
