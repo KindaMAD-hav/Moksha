@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::BulletVisualProfile
   bodyColor: {r: 1, g: 0.94509804, b: 0.6901961, a: 1}
   emissionIntensity: 10
-  enableTrail: 1
+  enableTrail: 0
   trailColor: {r: 1, g: 0.5411765, b: 0.16470589, a: 1}
   trailTime: 0.02
   trailWidth: 0.04
