@@ -27,5 +27,5 @@ MonoBehaviour:
   hitSound: {fileID: 0}
   deathSound: {fileID: 0}
   attackSound: {fileID: 0}
-  spawnWeight: 10
+  spawnWeight: 20
   minSpawnTime: 0
