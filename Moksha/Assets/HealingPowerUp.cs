@@ -2,21 +2,18 @@ using UnityEngine;
 
 /// <summary>
 /// ScriptableObject for Healing Power-Up configuration.
-/// Defines how the healing ability scales with stacks.
+/// Heals the player in HEARTS per tick.
 /// </summary>
 [CreateAssetMenu(fileName = "New Healing PowerUp", menuName = "PowerUps/Healing PowerUp")]
 public class HealingPowerUp : PowerUp
 {
-    [Header("Healing Stats")]
-    [Tooltip("Base healing amount per tick")]
-    [SerializeField] private float baseHealAmount = 10f;
+    [Header("Heart Healing")]
+    [SerializeField] private int baseHeartsPerTick = 1;
+    [SerializeField] private int extraHeartsPerStack = 0;
 
+    [Header("Cooldown")]
     [Tooltip("Base cooldown between heals (in seconds)")]
     [SerializeField] private float baseCooldown = 3f;
-
-    [Header("Stack Scaling")]
-    [Tooltip("Heal amount added per stack")]
-    [SerializeField] private float healAmountPerStack = 5f;
 
     [Tooltip("Cooldown reduction per stack (in seconds)")]
     [SerializeField] private float cooldownReductionPerStack = 0.2f;
@@ -24,29 +21,21 @@ public class HealingPowerUp : PowerUp
     [Tooltip("Minimum cooldown (prevents cooldown from going too low)")]
     [SerializeField] private float minCooldown = 0.5f;
 
-    /// <summary>
-    /// Get the heal amount for a given stack count
-    /// </summary>
-    public float GetHealAmount(int stacks)
+    public int GetHeartsPerTick(int stacks)
     {
-        return baseHealAmount + (healAmountPerStack * (stacks - 1));
+        if (stacks < 1) stacks = 1;
+        return baseHeartsPerTick + extraHeartsPerStack * (stacks - 1);
     }
 
-    /// <summary>
-    /// Get the cooldown for a given stack count
-    /// </summary>
     public float GetCooldown(int stacks)
     {
-        float cooldown = baseCooldown - (cooldownReductionPerStack * (stacks - 1));
-        return Mathf.Max(cooldown, minCooldown);
+        if (stacks < 1) stacks = 1;
+        float cd = baseCooldown - (cooldownReductionPerStack * (stacks - 1));
+        return Mathf.Max(cd, minCooldown);
     }
 
-    /// <summary>
-    /// Apply the healing power-up to the player
-    /// </summary>
     public override void Apply(GameObject player)
     {
-        Debug.Log("[HealingPowerUp] Apply() called");
         if (player == null)
         {
             Debug.LogError("[HealingPowerUp] Cannot apply - player is null!");
@@ -55,60 +44,46 @@ public class HealingPowerUp : PowerUp
 
         HealingAbility healingAbility = player.GetComponent<HealingAbility>();
 
-
         if (healingAbility == null)
         {
-            // First time acquiring - add and initialize
-            Debug.Log($"[HealingPowerUp] Adding healing ability to player for the first time");
             healingAbility = player.AddComponent<HealingAbility>();
             healingAbility.Initialize(this);
-            Debug.Log($"[HealingPowerUp] Added healing ability to player");
         }
         else
         {
-            // CRITICAL FIX: Ensure the ability is properly initialized before adding stack
-            // This can happen if the component was added manually or from a prefab
-            Debug.Log($"[HealingPowerUp] Healing ability already exists - ensuring initialization");
-
-            // Ensure it has the power-up data reference
             healingAbility.EnsureInitialized(this);
-
-            // Now add the stack
             healingAbility.AddStack();
-            Debug.Log($"[HealingPowerUp] Healing ability stack increased to {healingAbility.CurrentStacks}");
         }
     }
 
-    /// <summary>
-    /// Get detailed description with current stack stats
-    /// </summary>
     public string GetDetailedDescription(int currentStacks = 1)
     {
-        float heal = GetHealAmount(currentStacks);
+        int hearts = GetHeartsPerTick(currentStacks);
         float cd = GetCooldown(currentStacks);
 
         return $"<b>Stack {currentStacks}:</b>\n" +
-               $"• Heal: {heal} HP\n" +
+               $"• Heal: {hearts} heart(s)\n" +
                $"• Cooldown: {cd:F1}s";
     }
 
 #if UNITY_EDITOR
     private void OnValidate()
     {
-        if (baseHealAmount < 0f) baseHealAmount = 0f;
+        if (baseHeartsPerTick < 0) baseHeartsPerTick = 0;
+        if (extraHeartsPerStack < 0) extraHeartsPerStack = 0;
+
         if (baseCooldown < 0.1f) baseCooldown = 0.1f;
-        if (healAmountPerStack < 0f) healAmountPerStack = 0f;
         if (cooldownReductionPerStack < 0f) cooldownReductionPerStack = 0f;
         if (minCooldown < 0.1f) minCooldown = 0.1f;
     }
 
     [ContextMenu("Log Stack 1 Stats")]
-    private void LogStack1() => Debug.Log($"Stack 1: {GetHealAmount(1)} HP, {GetCooldown(1):F1}s cooldown");
+    private void LogStack1() => Debug.Log($"Stack 1: {GetHeartsPerTick(1)} hearts, {GetCooldown(1):F1}s cooldown");
 
     [ContextMenu("Log Stack 5 Stats")]
-    private void LogStack5() => Debug.Log($"Stack 5: {GetHealAmount(5)} HP, {GetCooldown(5):F1}s cooldown");
+    private void LogStack5() => Debug.Log($"Stack 5: {GetHeartsPerTick(5)} hearts, {GetCooldown(5):F1}s cooldown");
 
     [ContextMenu("Log Stack 10 Stats")]
-    private void LogStack10() => Debug.Log($"Stack 10: {GetHealAmount(10)} HP, {GetCooldown(10):F1}s cooldown");
+    private void LogStack10() => Debug.Log($"Stack 10: {GetHeartsPerTick(10)} hearts, {GetCooldown(10):F1}s cooldown");
 #endif
 }
