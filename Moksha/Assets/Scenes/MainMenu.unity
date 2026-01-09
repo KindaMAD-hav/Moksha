@@ -317,6 +317,7 @@ GameObject:
   - component: {fileID: 233469578}
   - component: {fileID: 233469577}
   - component: {fileID: 233469576}
+  - component: {fileID: 233469579}
   m_Layer: 5
   m_Name: QuitButton
   m_TagString: Untagged
@@ -438,6 +439,18 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 233469574}
   m_CullTransparentMesh: 1
+--- !u!114 &233469579
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 233469574}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7de11e4c7d857f44cb99ff63a24c708f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::UIButtonSFX
 --- !u!1 &256020278
 GameObject:
   m_ObjectHideFlags: 0
@@ -612,6 +625,7 @@ GameObject:
   - component: {fileID: 398568106}
   - component: {fileID: 398568105}
   - component: {fileID: 398568104}
+  - component: {fileID: 398568107}
   m_Layer: 5
   m_Name: PlayButton
   m_TagString: Untagged
@@ -733,6 +747,18 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 398568102}
   m_CullTransparentMesh: 1
+--- !u!114 &398568107
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 398568102}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7de11e4c7d857f44cb99ff63a24c708f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::UIButtonSFX
 --- !u!1 &455371009
 GameObject:
   m_ObjectHideFlags: 0
@@ -1379,6 +1405,7 @@ GameObject:
   - component: {fileID: 1096306393}
   - component: {fileID: 1096306392}
   - component: {fileID: 1096306391}
+  - component: {fileID: 1096306394}
   m_Layer: 5
   m_Name: SettingsButton
   m_TagString: Untagged
@@ -1500,6 +1527,18 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1096306389}
   m_CullTransparentMesh: 1
+--- !u!114 &1096306394
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1096306389}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7de11e4c7d857f44cb99ff63a24c708f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::UIButtonSFX
 --- !u!1 &1257409205
 GameObject:
   m_ObjectHideFlags: 0
@@ -3094,6 +3133,7 @@ GameObject:
   m_Component:
   - component: {fileID: 1945258918}
   - component: {fileID: 1945258919}
+  - component: {fileID: 1945258920}
   m_Layer: 5
   m_Name: sfx
   m_TagString: Untagged
@@ -3174,6 +3214,19 @@ MonoBehaviour:
   m_OnValueChanged:
     m_PersistentCalls:
       m_Calls: []
+--- !u!114 &1945258920
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1945258917}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5eefb2d49c52aef4a82ddf186e6783fa, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::SFXVolumeSlider
+  slider: {fileID: 1945258919}
 --- !u!1 &1953481190
 GameObject:
   m_ObjectHideFlags: 0
@@ -3330,6 +3383,7 @@ GameObject:
   - component: {fileID: 1963377676}
   - component: {fileID: 1963377675}
   - component: {fileID: 1963377674}
+  - component: {fileID: 1963377677}
   m_Layer: 5
   m_Name: exit
   m_TagString: Untagged
@@ -3451,6 +3505,18 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1963377672}
   m_CullTransparentMesh: 1
+--- !u!114 &1963377677
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1963377672}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7de11e4c7d857f44cb99ff63a24c708f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::UIButtonSFX
 --- !u!1 &2000249161
 GameObject:
   m_ObjectHideFlags: 0
