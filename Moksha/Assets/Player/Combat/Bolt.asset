@@ -17,8 +17,8 @@ MonoBehaviour:
   hitMask:
     serializedVersion: 2
     m_Bits: 128
-  baseFireRate: 400
-  baseDamage: 3
+  baseFireRate: 0.5
+  baseDamage: 50
   projectileSpeed: 20
   lifeTime: 5
   baseProjectiles: 1

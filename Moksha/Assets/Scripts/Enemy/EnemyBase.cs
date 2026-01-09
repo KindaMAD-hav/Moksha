@@ -31,6 +31,8 @@ public abstract class EnemyBase : MonoBehaviour, IDamageable
     protected float cachedDamage;
     protected float cachedAttackCooldown;
     protected int cachedXPReward;
+    protected EnemyPurifyBridge purifyBridge;
+
 
     // Cached target position (updated by manager)
     protected Vector3 cachedTargetPosition;
@@ -74,6 +76,7 @@ public abstract class EnemyBase : MonoBehaviour, IDamageable
     protected virtual void Awake()
     {
         cachedTransform = transform;
+        purifyBridge = GetComponent<EnemyPurifyBridge>();
         CacheStats();
         InitializeHealth();
     }
@@ -237,8 +240,15 @@ public abstract class EnemyBase : MonoBehaviour, IDamageable
         IsDead = false;
         IsDissolving = false;
         hasGrantedXP = false;
+
+        // Restore collider
+        Collider col = GetComponent<Collider>();
+        if (col != null)
+            col.enabled = true;
+
         InitializeHealth();
     }
+
 
     /// <summary>
     /// Get squared distance to target (faster than Distance)

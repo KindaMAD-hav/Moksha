@@ -9,7 +9,7 @@ public class BasicEnemy : EnemyBase
 {
     [Header("Basic Enemy Settings")]
     [SerializeField] private float movementNoise = 0.5f;
-    
+
     [Header("Optional Components")]
     [SerializeField] private Animator animator;
     [SerializeField] private AudioSource audioSource;
@@ -63,7 +63,7 @@ public class BasicEnemy : EnemyBase
     protected override void Awake()
     {
         base.Awake();
-        
+
         // Cache all component references once
         animator = GetComponentInChildren<Animator>();
         audioSource = GetComponent<AudioSource>();
@@ -119,7 +119,7 @@ public class BasicEnemy : EnemyBase
     {
         FaceTargetInstant(); // 🔥 always face player
         float sqrDistance = GetSqrDistanceToTarget();
-        
+
         // Update attack cooldown
         if (attackTimer > 0f)
             attackTimer -= deltaTime;
@@ -168,7 +168,7 @@ public class BasicEnemy : EnemyBase
     private void ChaseTarget(float deltaTime)
     {
         GetNormalizedDirectionToTarget(out moveDirection);
-        
+
         // Early exit if no direction
         if (moveDirection.x == 0f & moveDirection.z == 0f) return;
 
@@ -176,7 +176,7 @@ public class BasicEnemy : EnemyBase
         const float noiseScale = 0.1f;
         float dirX = moveDirection.x + noiseX * noiseScale;
         float dirZ = moveDirection.z + noiseZ * noiseScale;
-        
+
         // Re-normalize (fast)
         float sqrMag = dirX * dirX + dirZ * dirZ;
         if (sqrMag > 0.0001f)
@@ -185,7 +185,7 @@ public class BasicEnemy : EnemyBase
             dirX *= invMag;
             dirZ *= invMag;
         }
-        
+
         moveDirection.x = dirX;
         moveDirection.z = dirZ;
 
@@ -286,17 +286,29 @@ public class BasicEnemy : EnemyBase
         if ((componentFlags & FLAG_AUDIO) != 0 && stats.deathSound != null)
             audioSource.PlayOneShot(stats.deathSound);
 
-        // Start dissolve effect but keep moving
         if ((componentFlags & FLAG_DISSOLVE) != 0)
         {
             GrantXPOnce();
             IsDissolving = true;
-            dissolveEffect.StartDissolve(OnDissolveComplete);
 
-            // Mark as dissolving - enemy keeps moving
-            IsDissolving = true;
-            
-            // Start dissolve - enemy keeps moving until this completes
+            // 🔥 STOP PHYSICS CONTACTS (this kills lag)
+            Collider col = GetComponent<Collider>();
+            if (col != null)
+                col.enabled = false;
+
+            // 🔒 PREVENT FALLING
+            if ((componentFlags & FLAG_RIGIDBODY) != 0)
+            {
+                rb.linearVelocity = Vector3.zero;
+                rb.useGravity = false;
+                rb.isKinematic = true;
+            }
+
+            if ((componentFlags & FLAG_CHAR_CONTROLLER) != 0)
+            {
+                characterController.enabled = false;
+            }
+
             dissolveEffect.StartDissolve(OnDissolveComplete);
         }
         else
@@ -305,7 +317,8 @@ public class BasicEnemy : EnemyBase
             base.Die();
         }
     }
-    
+
+
     private void OnDissolveComplete()
     {
         // Only now fully disable the enemy
@@ -314,7 +327,7 @@ public class BasicEnemy : EnemyBase
         DisableMovement();
         gameObject.SetActive(false);
     }
-    
+
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private void DisableMovement()
     {
@@ -323,7 +336,7 @@ public class BasicEnemy : EnemyBase
         if ((componentFlags & FLAG_RIGIDBODY) != 0)
             rb.isKinematic = true;
     }
-    
+
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private void EnableMovement()
     {
@@ -336,14 +349,24 @@ public class BasicEnemy : EnemyBase
     public override void ResetEnemy()
     {
         base.ResetEnemy();
-        
+
         attackTimer = 0f;
         lastAnimSpeed = -1f;
         checkedDamageable = false;
         targetDamageable = null;
-        
+        if ((componentFlags & FLAG_RIGIDBODY) != 0)
+        {
+            rb.isKinematic = false;
+            rb.useGravity = true;
+        }
+
+        if ((componentFlags & FLAG_CHAR_CONTROLLER) != 0)
+        {
+            characterController.enabled = true;
+        }
+
         EnableMovement();
-        
+
         if ((componentFlags & FLAG_DISSOLVE) != 0)
             dissolveEffect.ResetDissolve();
 
@@ -424,7 +447,7 @@ public class BasicEnemy : EnemyBase
         Gizmos.DrawWireSphere(transform.position, stats.stoppingDistance);
     }
 
-    
+
 
 
     [ContextMenu("Kill This Enemy")]
