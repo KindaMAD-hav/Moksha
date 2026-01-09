@@ -10,7 +10,7 @@ public class EnemyPurifyBridge : Purifiable
     public override void Purify(float amount)
     {
         if (enemy == null) return;
-        if (enemy.IsDead) return;
+        if (enemy.IsDead || enemy.IsDissolving) return;
 
         enemy.TakeDamage(amount);
     }

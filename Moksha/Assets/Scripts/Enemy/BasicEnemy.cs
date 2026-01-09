@@ -289,10 +289,10 @@ public class BasicEnemy : EnemyBase
         // Start dissolve effect but keep moving
         if ((componentFlags & FLAG_DISSOLVE) != 0)
         {
-            // Grant XP immediately
-            if (ExperienceManager.Instance != null)
-                ExperienceManager.Instance.AddXP(cachedXPReward);
-            
+            GrantXPOnce();
+            IsDissolving = true;
+            dissolveEffect.StartDissolve(OnDissolveComplete);
+
             // Mark as dissolving - enemy keeps moving
             IsDissolving = true;
             
