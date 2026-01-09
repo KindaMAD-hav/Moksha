@@ -43,12 +43,28 @@ public class BGMManager : MonoBehaviour
     private void OnEnable()
     {
         SceneManager.sceneLoaded += OnSceneLoaded;
+        ShatteredPauseMenu.OnPaused += HandlePause;
+        ShatteredPauseMenu.OnResumed += HandleResume;
     }
 
     private void OnDisable()
     {
         SceneManager.sceneLoaded -= OnSceneLoaded;
+        ShatteredPauseMenu.OnPaused -= HandlePause;
+        ShatteredPauseMenu.OnResumed -= HandleResume;
     }
+    private void HandlePause()
+    {
+        if (audioSource != null && audioSource.isPlaying)
+            audioSource.Pause();
+    }
+
+    private void HandleResume()
+    {
+        if (audioSource != null && audioSource.clip != null)
+            audioSource.UnPause();
+    }
+
 
     private void Start()
     {
