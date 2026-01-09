@@ -1,4 +1,4 @@
-﻿using UnityEngine;
+using UnityEngine;
 
 /// <summary>
 /// Runtime state + simple upgrade modifiers for a weapon.
@@ -82,11 +82,11 @@ public class WeaponRuntime
 
         if (projectileCount == 1)
         {
-            SpawnProjectile(owner, firePos, dir, dmg, spd, pierce);
+            SpawnProjectile(firePos, dir, dmg, spd, pierce);
             return;
         }
 
-        // ---- NEW: force a center (0°) shot even when count is even ----
+        // ---- NEW: force a center (0�) shot even when count is even ----
         bool even = (projectileCount % 2 == 0);
         int virtualCount = even ? projectileCount + 1 : projectileCount;
 
@@ -109,26 +109,15 @@ public class WeaponRuntime
 
             float angle = start + step * i;
             Vector3 shotDir = Quaternion.AngleAxis(angle, Vector3.up) * dir;
-            SpawnProjectile(owner, firePos, shotDir, dmg, spd, pierce);
+            SpawnProjectile(firePos, shotDir, dmg, spd, pierce);
 
             spawned++;
         }
     }
 
-    void SpawnProjectile(
-    PlayerWeaponSystem owner,
-    Vector3 pos,
-    Vector3 dir,
-    float damage,
-    float speed,
-    int pierce
-)
+    void SpawnProjectile(Vector3 pos, Vector3 dir, float damage, float speed, int pierce)
     {
         if (def.projectilePrefab == null) return;
-        Debug.Log("SpawnProjectile called");
-        // 🔥 ONE animation trigger per bullet
-        if (owner.attackAnim != null)
-            owner.attackAnim.PlayRandomAttack();
 
         Quaternion rot = Quaternion.LookRotation(dir, Vector3.up);
         GameObject go = Object.Instantiate(def.projectilePrefab, pos, rot);
@@ -143,8 +132,6 @@ public class WeaponRuntime
             proj.Init(dir, damage, speed, pierce, def.lifeTime, def.hitMask);
         }
     }
-
-
 
     // --------- Minimal upgrade hooks (used by blessings later) ---------
 
