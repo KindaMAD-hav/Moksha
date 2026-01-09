@@ -722,6 +722,7 @@ MonoBehaviour:
   animator: {fileID: 946904973876405661}
   audioSource: {fileID: 0}
   dissolveEffect: {fileID: 8248407237625182144}
+  enableDamageFlash: 1
   flashRenderers: []
   damageFlashColor: {r: 1, g: 0.2, b: 0.2, a: 1}
   flashDuration: 0.12

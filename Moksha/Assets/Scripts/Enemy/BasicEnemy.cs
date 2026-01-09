@@ -16,6 +16,7 @@ public class BasicEnemy : EnemyBase
     [SerializeField] private EnemyDissolve dissolveEffect;
 
     [Header("Damage Flash")]
+    [SerializeField] private bool enableDamageFlash = true;
     [SerializeField] private Renderer[] flashRenderers;
     [SerializeField] private Color damageFlashColor = new Color(1f, 0.2f, 0.2f, 1f);
     [SerializeField] private float flashDuration = 0.12f;
@@ -71,12 +72,17 @@ public class BasicEnemy : EnemyBase
         rb = GetComponent<Rigidbody>();
         dissolveEffect = GetComponent<EnemyDissolve>();
         // Auto-find renderers if not assigned
-        if (flashRenderers == null || flashRenderers.Length == 0)
+        if (!enableDamageFlash)
+        {
+            flashRenderers = null;
+        }
+        else if (flashRenderers == null || flashRenderers.Length == 0)
         {
             flashRenderers = GetComponentsInChildren<Renderer>();
         }
 
-        if (flashRenderers != null && flashRenderers.Length > 0)
+
+        if (enableDamageFlash && flashRenderers != null && flashRenderers.Length > 0)
         {
             flashBlock = new MaterialPropertyBlock();
             originalColors = new Color[flashRenderers.Length];
@@ -140,7 +146,7 @@ public class BasicEnemy : EnemyBase
             SetAnimSpeed(0f);
         }
         // Damage flash update
-        if (isFlashing)
+        if (enableDamageFlash && isFlashing)
         {
             flashTimer -= deltaTime;
             if (flashTimer <= 0f)
@@ -148,6 +154,7 @@ public class BasicEnemy : EnemyBase
                 EndFlash();
             }
         }
+
 
     }
 
@@ -390,12 +397,14 @@ public class BasicEnemy : EnemyBase
     {
         base.TakeDamage(damage);
 
-        if (!IsDead)
+        if (!IsDead && enableDamageFlash)
             StartFlash();
     }
+
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private void StartFlash()
     {
+        if (!enableDamageFlash) return;
         if (flashRenderers == null || flashRenderers.Length == 0) return;
 
         isFlashing = true;
@@ -418,6 +427,7 @@ public class BasicEnemy : EnemyBase
 
     private void EndFlash()
     {
+        if (!enableDamageFlash) return;
         isFlashing = false;
 
         for (int i = 0; i < flashRenderers.Length; i++)

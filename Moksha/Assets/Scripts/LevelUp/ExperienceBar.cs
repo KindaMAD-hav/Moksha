@@ -2,72 +2,66 @@ using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
 
-/// <summary>
-/// Displays the player's current XP progress.
-/// </summary>
 public class ExperienceBar : MonoBehaviour
 {
     [Header("UI References")]
-    [SerializeField] private Slider xpSlider;
     [SerializeField] private Image fillImage;
     [SerializeField] private TextMeshProUGUI levelText;
     [SerializeField] private TextMeshProUGUI xpText;
 
-    [Header("Settings")]
-    [SerializeField] private bool animateChanges = true;
-    [SerializeField] private float animationSpeed = 5f;
+    [Header("Animation")]
+    [SerializeField] private bool animate = true;
+    [SerializeField] private float lerpSpeed = 8f;
 
-    private float targetValue;
-    private float currentValue;
+    private float currentFill;
+    private float targetFill;
 
     private void Start()
     {
-        if (ExperienceManager.Instance != null)
-        {
-            ExperienceManager.Instance.OnXPChanged += UpdateXPDisplay;
-            ExperienceManager.Instance.OnLevelUp += UpdateLevelDisplay;
-            
-            // Initial update
-            UpdateXPDisplay(ExperienceManager.Instance.CurrentXP, ExperienceManager.Instance.XPToNextLevel);
-            UpdateLevelDisplay(ExperienceManager.Instance.CurrentLevel);
-        }
-    }
+        var xp = ExperienceManager.Instance;
+        if (xp == null) return;
 
-    private void OnDestroy()
-    {
-        if (ExperienceManager.Instance != null)
-        {
-            ExperienceManager.Instance.OnXPChanged -= UpdateXPDisplay;
-            ExperienceManager.Instance.OnLevelUp -= UpdateLevelDisplay;
-        }
+        xp.OnXPChanged += OnXPChanged;
+        xp.OnLevelUp += OnLevelUp;
+
+        // Initial state
+        OnXPChanged(xp.CurrentXP, xp.XPToNextLevel);
+        OnLevelUp(xp.CurrentLevel);
     }
 
     private void Update()
     {
-        if (animateChanges && xpSlider != null)
-        {
-            currentValue = Mathf.Lerp(currentValue, targetValue, Time.deltaTime * animationSpeed);
-            xpSlider.value = currentValue;
-        }
+        if (!animate) return;
+
+        currentFill = Mathf.Lerp(currentFill, targetFill, Time.deltaTime * lerpSpeed);
+        fillImage.fillAmount = currentFill;
     }
 
-    private void UpdateXPDisplay(int currentXP, int xpToNextLevel)
+    private void OnXPChanged(int currentXP, int xpToNextLevel)
     {
-        targetValue = (float)currentXP / xpToNextLevel;
+        targetFill = (float)currentXP / xpToNextLevel;
 
-        if (!animateChanges && xpSlider != null)
-            xpSlider.value = targetValue;
+        if (!animate)
+            fillImage.fillAmount = targetFill;
 
         if (xpText != null)
             xpText.text = $"{currentXP} / {xpToNextLevel}";
     }
 
-    private void UpdateLevelDisplay(int level)
+    private void OnLevelUp(int level)
     {
-        if (levelText != null)
-            levelText.text = $"Lv. {level}";
+        currentFill = 0f;
+        fillImage.fillAmount = 0f;
 
-        // Reset animation on level up
-        currentValue = 0f;
+        if (levelText != null)
+            levelText.text = $"Lv {level}";
+    }
+
+    private void OnDestroy()
+    {
+        if (ExperienceManager.Instance == null) return;
+
+        ExperienceManager.Instance.OnXPChanged -= OnXPChanged;
+        ExperienceManager.Instance.OnLevelUp -= OnLevelUp;
     }
 }
