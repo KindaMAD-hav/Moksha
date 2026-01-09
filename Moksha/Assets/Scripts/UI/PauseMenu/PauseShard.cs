@@ -13,8 +13,14 @@ public class PauseShard : MonoBehaviour
     [Header("Scale")]
     public float scaleAmount = 0.03f;
 
+    [Header("Lerp")]
+    [Tooltip("Higher = snappier, Lower = smoother")]
+    public float lerpSpeed = 12f;
+
     [Range(0f, 1f)]
-    public float openAmount;
+    public float openAmount;          // target (set by pause menu)
+
+    private float currentOpen;         // smoothed value
 
     private RectTransform rt;
     private Vector2 startPos;
@@ -23,6 +29,7 @@ public class PauseShard : MonoBehaviour
     {
         rt = GetComponent<RectTransform>();
         startPos = rt.anchoredPosition;
+        currentOpen = openAmount;
     }
 
 #if UNITY_EDITOR
@@ -32,35 +39,43 @@ public class PauseShard : MonoBehaviour
         {
             rt = GetComponent<RectTransform>();
             startPos = rt.anchoredPosition;
+            currentOpen = openAmount;
         }
     }
 #endif
 
     public void SetOpen(float t)
     {
-        openAmount = t;
-        Apply();
+        openAmount = Mathf.Clamp01(t);
     }
 
-    void Apply()
+    void Update()
+    {
+        float dt = Application.isPlaying
+            ? Time.unscaledDeltaTime
+            : Time.deltaTime;
+
+        // Smooth toward target
+        currentOpen = Mathf.Lerp(
+            currentOpen,
+            openAmount,
+            1f - Mathf.Exp(-lerpSpeed * dt)
+        );
+
+        Apply(currentOpen);
+    }
+
+    void Apply(float t)
     {
         if (!rt) return;
 
-        Vector2 offset = moveDirection.normalized * moveDistance * openAmount;
+        Vector2 offset = moveDirection.normalized * moveDistance * t;
         rt.anchoredPosition = startPos + offset;
 
         rt.localRotation =
-            Quaternion.Euler(0f, 0f, rotationDegrees * openAmount);
+            Quaternion.Euler(0f, 0f, rotationDegrees * t);
 
-        float scale = 1f + scaleAmount * openAmount;
+        float scale = 1f + scaleAmount * t;
         rt.localScale = new Vector3(scale, scale, 1f);
     }
-
-#if UNITY_EDITOR
-    void Update()
-    {
-        if (!Application.isPlaying)
-            Apply();
-    }
-#endif
 }
