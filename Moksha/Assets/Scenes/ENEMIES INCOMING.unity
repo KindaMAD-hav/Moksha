@@ -31050,7 +31050,19 @@ MonoBehaviour:
   m_TargetGraphic: {fileID: 947878167}
   m_OnClick:
     m_PersistentCalls:
-      m_Calls: []
+      m_Calls:
+      - m_Target: {fileID: 889116567}
+        m_TargetAssemblyTypeName: ShatteredPauseMenu, Assembly-CSharp
+        m_MethodName: GoToMainMenu
+        m_Mode: 5
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: MainMenu
+          m_BoolArgument: 0
+        m_CallState: 2
 --- !u!114 &947878167
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -60534,7 +60546,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: 'XP : 1'
+  m_text: LVL 1
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: c17b45972db2a9a4a941d4b7542c42d9, type: 2}
   m_sharedMaterial: {fileID: 4078804442284288945, guid: c17b45972db2a9a4a941d4b7542c42d9, type: 2}

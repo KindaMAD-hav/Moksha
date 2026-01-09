@@ -59,7 +59,7 @@ public class ExperienceBar : MonoBehaviour
         fillImage.fillAmount = 0f;
 
         if (levelText != null)
-            levelText.text = $"Lv {level}";
+            levelText.text = $"Lvl {level}";
 
         if (xpLevelText != null)
             xpLevelText.text = $"XP : {level}";
