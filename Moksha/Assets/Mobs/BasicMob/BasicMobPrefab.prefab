@@ -311,8 +311,9 @@ MonoBehaviour:
   flashRenderers: []
   damageFlashColor: {r: 1, g: 0.2, b: 0.2, a: 1}
   flashDuration: 0.12
-  hitSFX: {fileID: 8300000, guid: e91b4c3a95d1b6843b57eb09e7092d78, type: 3}
-  hitSFXCooldown: 0.08
+  deathSFX: {fileID: 8300000, guid: e91b4c3a95d1b6843b57eb09e7092d78, type: 3}
+  deathPitchMin: 0.7
+  deathPitchMax: 1.3
 --- !u!136 &5436024573714098600
 CapsuleCollider:
   m_ObjectHideFlags: 0
