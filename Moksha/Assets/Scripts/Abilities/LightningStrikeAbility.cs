@@ -18,7 +18,12 @@ public class LightningStrikeAbility : MonoBehaviour
     [Header("Targeting")]
     [Tooltip("Height offset to target enemy's head (added to enemy position)")]
     [SerializeField] private float headHeightOffset = 1.5f;
-    
+
+    //[Header("AOE Damage")]
+    //[SerializeField] private bool enableAOE = true;
+    //[SerializeField] private float aoeRadius = 3f;
+    //[SerializeField] private float aoeDamageMultiplier = 1f;
+
     [Tooltip("If true, tries to find a 'Head' child transform on enemy")]
     [SerializeField] private bool useHeadBone = true;
     
@@ -35,9 +40,15 @@ public class LightningStrikeAbility : MonoBehaviour
     private Transform cachedTransform;
     private List<EnemyBase> nearbyEnemies;
     private float rangeSqr;
-    
+
+    private bool enableAOE;
+    private float aoeRadius;
+    private float aoeDamageMultiplier;
+
     // Cache for head transforms (avoid repeated FindChild calls)
     private Dictionary<int, Transform> headTransformCache;
+
+
 
     public int CurrentStacks => currentStacks;
 
@@ -75,6 +86,10 @@ public class LightningStrikeAbility : MonoBehaviour
         range = powerUpData.GetRange(currentStacks);
         targetCount = powerUpData.GetTargetCount(currentStacks);
         rangeSqr = range * range;
+        enableAOE = powerUpData.enableAOE;
+        aoeRadius = powerUpData.aoeRadius;
+        aoeDamageMultiplier = powerUpData.aoeDamageMultiplier;
+
     }
 
     private void Update()
@@ -98,7 +113,12 @@ public class LightningStrikeAbility : MonoBehaviour
         
         // Reset cooldown
         cooldownTimer = 0f;
-        
+
+        if (LightningStrikeManager.Instance != null)
+        {
+            LightningStrikeManager.Instance.PlayStrikeSound();
+        }
+
         // Strike up to targetCount enemies
         int strikes = Mathf.Min(targetCount, nearbyEnemies.Count);
         
@@ -125,9 +145,45 @@ public class LightningStrikeAbility : MonoBehaviour
                     LightningStrikeManager.Instance.SpawnLightningFollowing(enemyTransform, headOffset);
                 }
             }
-            
+
             // Deal damage
-            enemy.TakeDamage(damage);
+            ApplyLightningDamage(enemy, damage);
+
+        }
+    }
+
+    private void ApplyLightningDamage(EnemyBase primaryEnemy, float baseDamage)
+    {
+        if (primaryEnemy == null || primaryEnemy.IsDead) return;
+
+        // Always damage primary target
+        primaryEnemy.TakeDamage(baseDamage);
+
+        if (!enableAOE || aoeRadius <= 0f) return;
+
+        Vector3 center = primaryEnemy.transform.position;
+        float aoeRadiusSqr = aoeRadius * aoeRadius;
+
+        // Reuse list to avoid allocations
+        nearbyEnemies.Clear();
+
+        if (EnemyManager.Instance == null) return;
+
+        EnemyManager.Instance.GetEnemiesInRadius(center, aoeRadius, nearbyEnemies);
+
+        for (int i = 0; i < nearbyEnemies.Count; i++)
+        {
+            EnemyBase enemy = nearbyEnemies[i];
+
+            // Skip primary target
+            if (enemy == primaryEnemy || enemy == null || enemy.IsDead)
+                continue;
+
+            float distSqr = GetSqrDistance(enemy.transform.position, center);
+            if (distSqr > aoeRadiusSqr)
+                continue;
+
+            enemy.TakeDamage(baseDamage * aoeDamageMultiplier);
         }
     }
 

@@ -3,23 +3,25 @@ using System.Runtime.CompilerServices;
 using UnityEngine;
 
 /// <summary>
-/// Player health system with invincibility frames and visual feedback.
-/// Optimized for performance with minimal allocations.
+/// Player heart-based health system with invincibility frames and visual feedback.
+/// - Damage is quantized: 1 heart per hit (damage value ignored by design)
+/// - Healing is quantized: 1 heart per call
+/// - Still implements IDamageable via float bridge (1 heart = 1 health unit)
 /// </summary>
 public class PlayerHealth : MonoBehaviour, IDamageable
 {
-    [Header("Health Settings")]
-    [SerializeField] private float maxHealth = 100f;
-    [SerializeField] private float currentHealth;
-    
+    [Header("Heart Health")]
+    [SerializeField] private int maxHearts = 10;
+    [SerializeField] private int currentHearts;
+
     [Header("Invincibility Frames")]
     [SerializeField] private float invincibilityDuration = 1f;
     [SerializeField] private float flashInterval = 0.1f;
-    
+
     [Header("Visual Feedback")]
     [SerializeField] private Renderer[] flashRenderers;
     [SerializeField] private Color damageFlashColor = new Color(1f, 0.3f, 0.3f, 1f);
-    
+
     [Header("Audio")]
     [SerializeField] private AudioSource audioSource;
     [SerializeField] private AudioClip hurtSound;
@@ -30,137 +32,107 @@ public class PlayerHealth : MonoBehaviour, IDamageable
     [SerializeField] private float damageShakeStrength = 0.25f;
     private CameraShake cameraShake;
 
-    // Events
+    // Events (kept float to avoid breaking existing UI/scripts)
     public event Action<float, float> OnHealthChanged;
     public event Action OnDeath;
     public event Action OnDamaged;
-    
+
     // State
     private bool isDead;
     private bool isInvincible;
     private float invincibilityTimer;
     private float flashTimer;
     private bool flashState;
-    
+
     // Cached
     private Transform cachedTransform;
     private Color[] originalColors;
     private MaterialPropertyBlock propertyBlock;
     private static readonly int ColorProperty = Shader.PropertyToID("_BaseColor");
     private static readonly int ColorPropertyAlt = Shader.PropertyToID("_Color");
-    private static readonly int EmissionColorProperty = Shader.PropertyToID("_EmissionColor");
-    
+
     // Component flags
     private byte componentFlags;
     private const byte FLAG_AUDIO = 1;
     private const byte FLAG_RENDERERS = 2;
 
-    // Properties
-    public float CurrentHealth
-    {
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        get => currentHealth;
-    }
-    
-    public float MaxHealth
-    {
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        get => maxHealth;
-    }
-    
+    // IDamageable compatibility (1 heart = 1 health unit)
+    public float CurrentHealth => currentHearts;
+    public float MaxHealth => maxHearts;
+
+    // Heart API (preferred)
+    public int CurrentHearts => currentHearts;
+    public int MaxHearts => maxHearts;
+
+    public float HealthPercent => maxHearts > 0 ? (float)currentHearts / maxHearts : 0f;
+
     public bool IsDead
     {
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         get => isDead;
     }
-    
+
     public bool IsInvincible
     {
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         get => isInvincible;
     }
-    
-    public float HealthPercent
-    {
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        get => maxHealth > 0f ? currentHealth / maxHealth : 0f;
-    }
 
     private void Awake()
     {
-        cameraShake = FindObjectOfType<CameraShake>();
         cachedTransform = transform;
         propertyBlock = new MaterialPropertyBlock();
-        
+        cameraShake = FindObjectOfType<CameraShake>();
+
         // Cache component flags
         componentFlags = 0;
         if (audioSource != null) componentFlags |= FLAG_AUDIO;
-        
+
         // Auto-find renderers if not assigned
         if (flashRenderers == null || flashRenderers.Length == 0)
         {
             flashRenderers = GetComponentsInChildren<Renderer>();
         }
-        
+
         if (flashRenderers != null && flashRenderers.Length > 0)
         {
             componentFlags |= FLAG_RENDERERS;
             CacheOriginalColors();
         }
-        
+
         InitializeHealth();
-        cameraShake = FindObjectOfType<CameraShake>();
     }
 
     private void CacheOriginalColors()
     {
         originalColors = new Color[flashRenderers.Length];
+
         for (int i = 0; i < flashRenderers.Length; i++)
         {
-            if (flashRenderers[i] == null) continue;
-            
-            // FIXED: Use MaterialPropertyBlock to safely get color
-            // This handles different shader color properties (_Color, _BaseColor, etc.)
-            try
+            if (flashRenderers[i] == null)
             {
-                flashRenderers[i].GetPropertyBlock(propertyBlock);
-                
-                // Try _BaseColor first (URP/HDRP standard)
-                if (propertyBlock.HasColor(ColorProperty))
-                {
-                    originalColors[i] = propertyBlock.GetColor(ColorProperty);
-                }
-                // Fallback to _Color (Built-in RP standard)
-                else if (propertyBlock.HasColor(ColorPropertyAlt))
-                {
-                    originalColors[i] = propertyBlock.GetColor(ColorPropertyAlt);
-                }
-                // Last resort: try to get from material directly
-                else if (flashRenderers[i].material != null)
-                {
-                    if (flashRenderers[i].material.HasProperty(ColorProperty))
-                    {
-                        originalColors[i] = flashRenderers[i].material.GetColor(ColorProperty);
-                    }
-                    else if (flashRenderers[i].material.HasProperty(ColorPropertyAlt))
-                    {
-                        originalColors[i] = flashRenderers[i].material.GetColor(ColorPropertyAlt);
-                    }
-                    else
-                    {
-                        // Default to white if no color property exists
-                        originalColors[i] = Color.white;
-                        Debug.LogWarning($"[PlayerHealth] Renderer '{flashRenderers[i].name}' has no color property. Using white.");
-                    }
-                }
-                else
-                {
-                    originalColors[i] = Color.white;
-                }
+                originalColors[i] = Color.white;
+                continue;
             }
-            catch (Exception e)
+
+            // Safely read colors for different shader setups
+            flashRenderers[i].GetPropertyBlock(propertyBlock);
+
+            if (propertyBlock.HasColor(ColorProperty))
+                originalColors[i] = propertyBlock.GetColor(ColorProperty);
+            else if (propertyBlock.HasColor(ColorPropertyAlt))
+                originalColors[i] = propertyBlock.GetColor(ColorPropertyAlt);
+            else if (flashRenderers[i].material != null)
             {
-                Debug.LogWarning($"[PlayerHealth] Could not cache color for renderer '{flashRenderers[i].name}': {e.Message}");
+                if (flashRenderers[i].material.HasProperty(ColorProperty))
+                    originalColors[i] = flashRenderers[i].material.GetColor(ColorProperty);
+                else if (flashRenderers[i].material.HasProperty(ColorPropertyAlt))
+                    originalColors[i] = flashRenderers[i].material.GetColor(ColorPropertyAlt);
+                else
+                    originalColors[i] = Color.white;
+            }
+            else
+            {
                 originalColors[i] = Color.white;
             }
         }
@@ -169,15 +141,15 @@ public class PlayerHealth : MonoBehaviour, IDamageable
     private void Update()
     {
         if (!isInvincible) return;
-        
+
         invincibilityTimer -= Time.deltaTime;
-        
+
         if (invincibilityTimer <= 0f)
         {
             EndInvincibility();
             return;
         }
-        
+
         // Flash effect
         flashTimer -= Time.deltaTime;
         if (flashTimer <= 0f)
@@ -191,80 +163,49 @@ public class PlayerHealth : MonoBehaviour, IDamageable
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public void InitializeHealth()
     {
-        currentHealth = maxHealth;
+        currentHearts = maxHearts;
         isDead = false;
         isInvincible = false;
-        OnHealthChanged?.Invoke(currentHealth, maxHealth);
+        OnHealthChanged?.Invoke(currentHearts, maxHearts);
     }
 
+    /// <summary>
+    /// Quantized damage: always removes exactly 1 heart (damage value ignored by design).
+    /// </summary>
     public void TakeDamage(float damage)
     {
-        if (isDead) return;
-        if (isInvincible) return;
-        if (damage <= 0f) return;
+        if (isDead || isInvincible) return;
 
-        currentHealth -= damage;
+        currentHearts -= 1;
         OnDamaged?.Invoke();
+
         if (cameraShake != null)
-        {
-            cameraShake?.Shake(damageShakeDuration, damageShakeStrength, 35f);
-        }
+            cameraShake.Shake(damageShakeDuration, damageShakeStrength, 35f);
 
-        // Play hurt sound
         if ((componentFlags & FLAG_AUDIO) != 0 && hurtSound != null)
-        {
             audioSource.PlayOneShot(hurtSound);
-        }
 
-        if (currentHealth <= 0f)
+        if (currentHearts <= 0)
         {
-            currentHealth = 0f;
+            currentHearts = 0;
             Die();
         }
         else
         {
-            OnHealthChanged?.Invoke(currentHealth, maxHealth);
+            OnHealthChanged?.Invoke(currentHearts, maxHearts);
             StartInvincibility();
         }
     }
 
-    public void Heal(float amount)
+    public void HealOneHeart()
     {
         if (isDead) return;
-        if (amount <= 0f) return;
+        if (currentHearts >= maxHearts) return;
 
-        currentHealth = Mathf.Min(currentHealth + amount, maxHealth);
-        OnHealthChanged?.Invoke(currentHealth, maxHealth);
-        
-        Debug.Log($"[PlayerHealth] Healed {amount} HP - Current: {currentHealth}/{maxHealth}");
-    }
+        currentHearts += 1;
+        if (currentHearts > maxHearts) currentHearts = maxHearts;
 
-    public void SetMaxHealth(float newMax, bool healToFull = false)
-    {
-        float healthPercent = maxHealth > 0f ? currentHealth / maxHealth : 1f;
-        maxHealth = newMax;
-        
-        if (healToFull)
-        {
-            currentHealth = maxHealth;
-        }
-        else
-        {
-            // Maintain health percentage
-            currentHealth = Mathf.Min(maxHealth * healthPercent, maxHealth);
-        }
-        
-        OnHealthChanged?.Invoke(currentHealth, maxHealth);
-    }
-
-    public void AddMaxHealth(float amount, bool alsoHeal = true)
-    {
-        maxHealth += amount;
-        if (alsoHeal)
-        {
-            currentHealth += amount;
-        }
-        OnHealthChanged?.Invoke(currentHealth, maxHealth);
+        OnHealthChanged?.Invoke(currentHearts, maxHearts);
     }
 
     private void StartInvincibility()
@@ -290,21 +231,17 @@ public class PlayerHealth : MonoBehaviour, IDamageable
         for (int i = 0; i < flashRenderers.Length; i++)
         {
             if (flashRenderers[i] == null) continue;
-            
+
             flashRenderers[i].GetPropertyBlock(propertyBlock);
-            
+
             Color targetColor = flashState ? damageFlashColor : originalColors[i];
-            
-            // Try both color properties for compatibility
-            if (flashRenderers[i].material.HasProperty(ColorProperty))
-            {
+
+            if (flashRenderers[i].material != null && flashRenderers[i].material.HasProperty(ColorProperty))
                 propertyBlock.SetColor(ColorProperty, targetColor);
-            }
-            if (flashRenderers[i].material.HasProperty(ColorPropertyAlt))
-            {
+
+            if (flashRenderers[i].material != null && flashRenderers[i].material.HasProperty(ColorPropertyAlt))
                 propertyBlock.SetColor(ColorPropertyAlt, targetColor);
-            }
-            
+
             flashRenderers[i].SetPropertyBlock(propertyBlock);
         }
     }
@@ -316,19 +253,15 @@ public class PlayerHealth : MonoBehaviour, IDamageable
         for (int i = 0; i < flashRenderers.Length; i++)
         {
             if (flashRenderers[i] == null) continue;
-            
+
             flashRenderers[i].GetPropertyBlock(propertyBlock);
-            
-            // Try both color properties for compatibility
-            if (flashRenderers[i].material.HasProperty(ColorProperty))
-            {
+
+            if (flashRenderers[i].material != null && flashRenderers[i].material.HasProperty(ColorProperty))
                 propertyBlock.SetColor(ColorProperty, originalColors[i]);
-            }
-            if (flashRenderers[i].material.HasProperty(ColorPropertyAlt))
-            {
+
+            if (flashRenderers[i].material != null && flashRenderers[i].material.HasProperty(ColorPropertyAlt))
                 propertyBlock.SetColor(ColorPropertyAlt, originalColors[i]);
-            }
-            
+
             flashRenderers[i].SetPropertyBlock(propertyBlock);
         }
     }
@@ -337,55 +270,20 @@ public class PlayerHealth : MonoBehaviour, IDamageable
     {
         isDead = true;
         isInvincible = false;
-        RestoreOriginalColors();
-        
-        // Play death sound
-        if ((componentFlags & FLAG_AUDIO) != 0 && deathSound != null)
-        {
-            audioSource.PlayOneShot(deathSound);
-        }
 
-        OnHealthChanged?.Invoke(0f, maxHealth);
+        OnHealthChanged?.Invoke(0f, maxHearts);
         OnDeath?.Invoke();
-        
-        // Don't destroy - let GameManager handle death state
+
         Debug.Log("Player died!");
     }
 
-    public void Revive(float healthPercent = 1f)
-    {
-        if (!isDead) return;
-        
-        isDead = false;
-        currentHealth = maxHealth * Mathf.Clamp01(healthPercent);
-        OnHealthChanged?.Invoke(currentHealth, maxHealth);
-    }
 
 #if UNITY_EDITOR
     private void OnValidate()
     {
-        if (maxHealth < 1f) maxHealth = 1f;
+        if (maxHearts < 1) maxHearts = 1;
         if (invincibilityDuration < 0f) invincibilityDuration = 0f;
         if (flashInterval < 0.01f) flashInterval = 0.01f;
-    }
-
-    [ContextMenu("Test Take 10 Damage")]
-    [ContextMenu("Test Take 10 Damage")]
-    private void TestDamage()
-    {
-        TakeDamage(10f);
-    }
-
-    [ContextMenu("Test Heal 10")]
-    private void TestHeal()
-    {
-        Heal(10f);
-    }
-
-    [ContextMenu("Test Kill Player")]
-    private void TestKill()
-    {
-        TakeDamage(maxHealth + 1f);
     }
 #endif
 }

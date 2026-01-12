@@ -15,7 +15,14 @@ public class LightningStrikeManager : MonoBehaviour
     
     [Tooltip("Initial pool size")]
     [SerializeField] private int initialPoolSize = 10;
-    
+
+    [Header("Audio")]
+    [SerializeField] private AudioSource audioSource;
+    [SerializeField] private AudioClip strikeSound;
+    [SerializeField] private float minPitch = 0.9f;
+    [SerializeField] private float maxPitch = 1.1f;
+
+
     [Tooltip("Maximum pool size (prevents runaway spawning)")]
     [SerializeField] private int maxPoolSize = 50;
 
@@ -47,6 +54,13 @@ public class LightningStrikeManager : MonoBehaviour
                 CreateNewInstance();
             }
         }
+    }
+    public void PlayStrikeSound()
+    {
+        if (audioSource == null || strikeSound == null) return;
+
+        audioSource.pitch = Random.Range(minPitch, maxPitch);
+        audioSource.PlayOneShot(strikeSound);
     }
 
     private LightningStrikeVFX CreateNewInstance()

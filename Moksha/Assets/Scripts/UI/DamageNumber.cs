@@ -14,15 +14,21 @@ public class DamageNumber : MonoBehaviour
     public Gradient damageColorGradient;
     public float maxDamageForColor = 100f;
 
-    [Header("Glow Mode")]
-    public bool useAttackerColorGlow = false;
+    //[Header("Glow Mode")]
+    //public bool useAttackerColorGlow = false;
 
     [Header("Animated Glow (Disabled if attacker glow is ON)")]
     public float minGlowCycleSpeed = 0.6f;
     public float maxGlowCycleSpeed = 3.5f;
     public float glowIntensity = 1.6f;
-    [Range(0f, 1f)] public float forbiddenHueMin = 0.10f;
-    [Range(0f, 1f)] public float forbiddenHueMax = 0.20f;
+    //[Range(0f, 1f)] public float forbiddenHueMin = 0.10f;
+    //[Range(0f, 1f)] public float forbiddenHueMax = 0.20f;
+
+    [Header("Glow Gradient (Auto-Generated if empty)")]
+    public Gradient glowGradient;
+    public float minGlowGradientSpeed = 0.6f;
+    public float maxGlowGradientSpeed = 4.5f;
+
 
     [Header("Motion")]
     public Vector2 randomSpread = new Vector2(0.35f, 0.15f);
@@ -51,6 +57,9 @@ public class DamageNumber : MonoBehaviour
     public float stackGlowBoost = 0.35f;        // temporary glow boost
 
     private Transform cameraTransform;
+    private int currentValue;
+    private float lifeTimer;
+
 
 
     float _stackPulse;
@@ -58,12 +67,14 @@ public class DamageNumber : MonoBehaviour
 
     Vector3 _velocity;
     bool _stopped;
+    bool _hasPopped;
+
 
     Vector3 _moveDir;
     float _time;
-    int _damage;
+    //int _damage;
 
-    float _glowHue;
+    //float _glowHue;
     float _glowSpeed;
     float _baseSettledScale = 1f;
 
@@ -86,58 +97,107 @@ public class DamageNumber : MonoBehaviour
             text.fontMaterial = _runtimeMat;
         }
         cameraTransform = Camera.main.transform;
+        EnsureGlowGradient();
     }
 
-    public void SetValue(int damage)
+    void EnsureGlowGradient()
     {
-        _damage = damage;
-        text.text = _damage.ToString();
+        if (glowGradient != null && glowGradient.colorKeys.Length > 0)
+            return;
+
+        glowGradient = new Gradient();
+
+        glowGradient.SetKeys(
+            new GradientColorKey[]
+            {
+            new GradientColorKey(new Color(0.6f, 0.05f, 0.05f), 0f),   // dark blood red
+            new GradientColorKey(new Color(1f, 0.25f, 0.05f), 0.45f), // hot orange-red
+            new GradientColorKey(new Color(1f, 0.65f, 0.1f), 1f),     // bright orange
+            },
+            new GradientAlphaKey[]
+            {
+            new GradientAlphaKey(1f, 0f),
+            new GradientAlphaKey(1f, 1f)
+            }
+        );
+    }
+
+
+    public void SetValue(int value)
+    {
+        currentValue = value;
+        text.text = currentValue.ToString();
+
+        _time = 0f;
+        _hasPopped = false; // allow initial pop
+
         RecalculateVisuals();
     }
 
-    public void AddDamage(int extraDamage)
-    {
-        _damage += extraDamage;
-        text.text = _damage.ToString();
 
-        _time = 0f; // still refresh lifetime
 
-        // ✨ subtle stacking response (no pop restart)
-        _stackPulse += stackScalePulse;
-        _stackGlowTimer = 0.12f;
+    //public void AddDamage(int extraDamage)
+    //{
+    //    _damage += extraDamage;
+    //    text.text = _damage.ToString();
 
-        RecalculateVisuals();
-    }
+    //    _time = 0f; // still refresh lifetime
+
+    //    // ✨ subtle stacking response (no pop restart)
+    //    _stackPulse += stackScalePulse;
+    //    _stackGlowTimer = 0.12f;
+
+    //    RecalculateVisuals();
+    //}
     private void LateUpdate()
     {
         if (cameraTransform == null) return;
 
-        Vector3 dir = transform.position - cameraTransform.position;
-        dir.y = 0f; // keep upright
-
-        if (dir.sqrMagnitude < 0.0001f) return;
-
-        transform.rotation = Quaternion.LookRotation(dir);
+        // Match camera rotation exactly (orthographic-safe)
+        transform.rotation = Quaternion.Euler(
+            0f,
+            cameraTransform.eulerAngles.y,
+            0f
+        );
     }
+    public void AddValue(int value)
+    {
+        currentValue += value;
+        text.text = currentValue.ToString();
+
+        // ❌ DO NOT reset time to 0
+        // lock time past pop so we never replay it
+        _time = Mathf.Max(_time, popDuration);
+        _hasPopped = true;
+
+        // subtle stacking feedback only
+        _stackPulse += stackScalePulse;
+        _stackPulse = Mathf.Min(_stackPulse, 0.15f);
+
+        RecalculateVisuals();
+    }
+
 
 
     void RecalculateVisuals()
     {
-        float t = Mathf.Clamp01(_damage / maxDamageForColor);
+        float t = Mathf.Clamp01(currentValue / maxDamageForColor);
 
+        // base text color (still uses existing gradient)
         _baseColor = damageColorGradient.Evaluate(t);
         _baseColor.a = 1f;
         text.color = _baseColor;
 
-        _glowSpeed = Mathf.Lerp(minGlowCycleSpeed, maxGlowCycleSpeed, t);
-        _glowHue = Random.value;
+        // glow speed scales with damage
+        _glowSpeed = Mathf.Lerp(minGlowGradientSpeed, maxGlowGradientSpeed, t);
     }
 
-    public void SetAttackerColor(Color c)
-    {
-        if (_runtimeMat == null) return;
-        _runtimeMat.SetColor("_GlowColor", c * glowIntensity);
-    }
+
+    //public void SetAttackerColor(Color c)
+    //{
+    //    if (_runtimeMat == null) return;
+    //    _runtimeMat.SetColor("_GlowColor", c * glowIntensity);
+    //}
 
     void Update()
     {
@@ -155,26 +215,26 @@ public class DamageNumber : MonoBehaviour
 
                 transform.position = nextPos;
 
-                Bounds textBounds = GetTextWorldBounds();
+                //Bounds textBounds = GetTextWorldBounds();
 
-                Vector3 correction = Vector3.zero;
+                //Vector3 correction = Vector3.zero;
 
-                if (textBounds.min.x < area.min.x)
-                    correction.x += area.min.x - textBounds.min.x;
-                if (textBounds.max.x > area.max.x)
-                    correction.x -= textBounds.max.x - area.max.x;
+                //if (textBounds.min.x < area.min.x)
+                //    correction.x += area.min.x - textBounds.min.x;
+                //if (textBounds.max.x > area.max.x)
+                //    correction.x -= textBounds.max.x - area.max.x;
 
-                if (textBounds.min.y < area.min.y)
-                    correction.y += area.min.y - textBounds.min.y;
-                if (textBounds.max.y > area.max.y)
-                    correction.y -= textBounds.max.y - area.max.y;
+                //if (textBounds.min.y < area.min.y)
+                //    correction.y += area.min.y - textBounds.min.y;
+                //if (textBounds.max.y > area.max.y)
+                //    correction.y -= textBounds.max.y - area.max.y;
 
-                if (correction != Vector3.zero)
-                {
-                    transform.position += correction;
-                    _velocity = Vector3.Lerp(_velocity, Vector3.zero, Time.deltaTime / stopSmoothTime);
-                    _stopped = _velocity.sqrMagnitude < 0.001f;
-                }
+                //if (correction != Vector3.zero)
+                //{
+                //    transform.position += correction;
+                //    _velocity = Vector3.Lerp(_velocity, Vector3.zero, Time.deltaTime / stopSmoothTime);
+                //    _stopped = _velocity.sqrMagnitude < 0.001f;
+                //}
             }
             else
             {
@@ -182,10 +242,11 @@ public class DamageNumber : MonoBehaviour
             }
         }
 
-        if (_time < popDuration)
+        if (_time < popDuration && !_hasPopped)
         {
             float t = _time / popDuration;
-            float bonus = Mathf.Min(maxBonusScale, bonusScalePerDamage * _damage);
+            float bonus = Mathf.Min(maxBonusScale, bonusScalePerDamage * currentValue);
+
 
             float s = Mathf.Lerp(startScale, peakScale + bonus, EaseOutBack(t));
             transform.localScale = Vector3.one * s;
@@ -200,16 +261,14 @@ public class DamageNumber : MonoBehaviour
         }
 
 
-        if (_runtimeMat != null && !useAttackerColorGlow)
+        if (_runtimeMat != null)
         {
-            _glowHue = (_glowHue + Time.deltaTime * _glowSpeed) % 1f;
-
-            if (_glowHue > forbiddenHueMin && _glowHue < forbiddenHueMax)
-                _glowHue = forbiddenHueMax;
-
-            Color glow = Color.HSVToRGB(_glowHue, 1f, 1f) * glowIntensity;
+            float glowT = (_time * _glowSpeed) % 1f;
+            Color glow = glowGradient.Evaluate(glowT) * glowIntensity;
             _runtimeMat.SetColor("_GlowColor", glow);
         }
+
+
 
         if (_time > lifetime - fadeOutTime)
         {
@@ -222,16 +281,16 @@ public class DamageNumber : MonoBehaviour
         if (_time >= lifetime)
             Destroy(gameObject);
     }
-    Bounds GetTextWorldBounds()
-    {
-        text.ForceMeshUpdate();
-        var meshBounds = text.mesh.bounds;
+    //Bounds GetTextWorldBounds()
+    //{
+    //    //text.ForceMeshUpdate();
+    //    var meshBounds = text.mesh.bounds;
 
-        Vector3 center = transform.TransformPoint(meshBounds.center);
-        Vector3 size = Vector3.Scale(meshBounds.size, transform.lossyScale);
+    //    Vector3 center = transform.TransformPoint(meshBounds.center);
+    //    Vector3 size = Vector3.Scale(meshBounds.size, transform.lossyScale);
 
-        return new Bounds(center, size);
-    }
+    //    return new Bounds(center, size);
+    //}
 
 
     void OnDestroy()

@@ -1,480 +1,271 @@
+﻿using System;
 using System.Collections;
-using System.Runtime.CompilerServices;
 using UnityEngine;
 using UnityEngine.UI;
+using UnityEngine.SceneManagement;
 
-/// <summary>
-/// Shattered glass pause menu effect using UI system.
-/// Takes a screenshot, shatters it into pieces, and animates them apart to reveal menu.
-/// Optimized with shard pooling and reduced allocations.
-/// </summary>
 public class ShatteredPauseMenu : MonoBehaviour
 {
-    public static ShatteredPauseMenu Instance { get; private set; }
+    public static ShatteredPauseMenu Instance;
+
+    public static event Action OnPaused;
+    public static event Action OnResumed;
 
     [Header("References")]
-    [SerializeField] private Camera mainCamera;
     [SerializeField] private Canvas menuCanvas;
     [SerializeField] private GameObject menuContent;
-    [SerializeField] private RectTransform shardContainer;
-    [SerializeField] private Image backgroundImage;
+
+    [Tooltip("Optional. If empty, will be auto-created under the canvas.")]
+    [SerializeField] private Image background;
+
+    [Tooltip("Put your 4 shard root objects here (each must have a PauseShard).")]
+    [SerializeField] private PauseShard[] shards;
 
     [Header("Input")]
     [SerializeField] private KeyCode pauseKey = KeyCode.Escape;
 
-    [Header("Shard Settings")]
-    [SerializeField] private int shardColumns = 12;
-    [SerializeField] private int shardRows = 8;
-
-    [Header("Animation Settings")]
-    [SerializeField] private float openDuration = 0.6f;
-    [SerializeField] private float closeDuration = 0.4f;
-    [SerializeField] private float staggerAmount = 0.05f;
-    [SerializeField] private AnimationCurve openCurve = AnimationCurve.EaseInOut(0, 0, 1, 1);
-    [SerializeField] private AnimationCurve closeCurve = AnimationCurve.EaseInOut(0, 0, 1, 1);
-
-    [Header("Shard Movement")]
-    [SerializeField] private float edgeOffset = 100f;
-    [SerializeField] private float maxRotation = 30f;
-    [SerializeField] private ShardMoveDirection moveDirection = ShardMoveDirection.ToEdges;
+    [Header("Timing")]
+    [SerializeField] private float openDuration = 0.35f;
+    [SerializeField] private float closeDuration = 0.25f;
 
     [Header("Background")]
-    [SerializeField] private Color backgroundColor = Color.black;
-    [SerializeField] private float backgroundFadeDuration = 0.3f;
+    [SerializeField] private Color backgroundColor = new Color(0, 0, 0, 0.75f);
 
-    [Header("Lightning Bolt Settings")]
-    [SerializeField] private int zigzagSegments = 6;
-    [SerializeField] private float zigzagAmplitude = 0.25f;
-
-    public enum ShardMoveDirection
-    {
-        ToEdges,
-        SplitHorizontal,
-        SplitVertical,
-        Explode,
-        LightningBolt
-    }
-
-    // Shard pool (pre-allocated)
-    private UIGlassShard[] shardPool;
-    private int activeShardCount;
-    private int poolCapacity;
-    
-    // Pre-allocated delays array
-    private float[] staggerDelays;
-    
-    // Runtime
-    private Texture2D screenshotTexture;
+    private Texture2D screenshot;
     private bool isPaused;
-    private bool isAnimating;
-    private Coroutine animationCoroutine;
-    
-    // Cached
-    private RectTransform canvasRect;
+    private bool animating;
+
+    // Auto-collected from shards
+    private RawImage[] shardImages;
 
     public bool IsPaused => isPaused;
 
-    private void Awake()
+    void Awake()
     {
-        if (Instance != null && Instance != this)
-        {
-            Destroy(gameObject);
-            return;
-        }
         Instance = this;
 
-        if (mainCamera == null)
-            mainCamera = Camera.main;
+        if (menuCanvas != null) menuCanvas.gameObject.SetActive(false);
+        if (menuContent != null) menuContent.SetActive(false);
 
-        if (menuCanvas != null)
+        EnsureBackground();
+        CollectShardImages();
+
+        // Put shards in closed state in case they were moved in editor
+        if (shards != null)
         {
-            menuCanvas.gameObject.SetActive(false);
-            canvasRect = menuCanvas.GetComponent<RectTransform>();
+            for (int i = 0; i < shards.Length; i++)
+                if (shards[i] != null) shards[i].SetOpen(0f);
         }
-
-        if (menuContent != null)
-            menuContent.SetActive(false);
-
-        if (backgroundImage == null && shardContainer != null)
-            CreateBackgroundImage();
-
-        if (backgroundImage != null)
-        {
-            backgroundImage.color = new Color(backgroundColor.r, backgroundColor.g, backgroundColor.b, 0f);
-            backgroundImage.gameObject.SetActive(false);
-        }
-        
-        // Pre-allocate shard pool
-        InitializeShardPool();
     }
 
-    private void InitializeShardPool()
+    void Update()
     {
-        poolCapacity = shardColumns * shardRows;
-        shardPool = new UIGlassShard[poolCapacity];
-        staggerDelays = new float[poolCapacity];
-        
-        for (int i = 0; i < poolCapacity; i++)
+        // 🚫 Absolutely block pause input during game over
+        if (GameOverManager.IsGameOver)
+            return;
+
+        if (Input.GetKeyDown(pauseKey) && !animating)
         {
-            GameObject shardObj = new GameObject($"Shard_{i}");
-            shardObj.transform.SetParent(shardContainer, false);
-            
-            RectTransform rt = shardObj.AddComponent<RectTransform>();
-            rt.anchorMin = Vector2.zero;
-            rt.anchorMax = Vector2.zero;
-            rt.pivot = new Vector2(0.5f, 0.5f);
-            
-            RawImage rawImage = shardObj.AddComponent<RawImage>();
-            rawImage.raycastTarget = false;
-            
-            UIGlassShard shard = shardObj.AddComponent<UIGlassShard>();
-            shardPool[i] = shard;
-            
-            shardObj.SetActive(false);
+            if (isPaused) Resume();
+            else Pause();
         }
     }
 
-    private void CreateBackgroundImage()
-    {
-        GameObject bgObj = new GameObject("Background");
-        bgObj.transform.SetParent(shardContainer.parent, false);
-        bgObj.transform.SetAsFirstSibling();
-        
-        RectTransform rt = bgObj.AddComponent<RectTransform>();
-        rt.anchorMin = Vector2.zero;
-        rt.anchorMax = Vector2.one;
-        rt.offsetMin = Vector2.zero;
-        rt.offsetMax = Vector2.zero;
-        
-        backgroundImage = bgObj.AddComponent<Image>();
-        backgroundImage.color = new Color(backgroundColor.r, backgroundColor.g, backgroundColor.b, 0f);
-        backgroundImage.raycastTarget = false;
-    }
 
-    private void Update()
-    {
-        if (Input.GetKeyDown(pauseKey) && !isAnimating)
-        {
-            if (isPaused)
-                Resume();
-            else
-                Pause();
-        }
-    }
 
     public void Pause()
     {
-        if (isPaused | isAnimating) return;
-
-        if (animationCoroutine != null)
-            StopCoroutine(animationCoroutine);
-
-        animationCoroutine = StartCoroutine(PauseRoutine());
+        if (isPaused || animating) return;
+        StartCoroutine(PauseRoutine());
     }
 
     public void Resume()
     {
-        if (!isPaused | isAnimating) return;
-
-        if (animationCoroutine != null)
-            StopCoroutine(animationCoroutine);
-
-        animationCoroutine = StartCoroutine(ResumeRoutine());
+        if (!isPaused || animating) return;
+        StartCoroutine(ResumeRoutine());
     }
 
-    private IEnumerator PauseRoutine()
+    public void SilentPause()
     {
-        isAnimating = true;
+        if (isPaused) return;
+
+        isPaused = true;
+        Time.timeScale = 0f;
+        OnPaused?.Invoke();
+    }
+
+    public void SilentResume()
+    {
+        if (GameOverManager.IsGameOver)
+            return;
+
+        if (!isPaused) return;
+
+        isPaused = false;
+        Time.timeScale = 1f;
+        OnResumed?.Invoke();
+    }
+
+
+    IEnumerator PauseRoutine()
+    {
+        animating = true;
+
+        // Re-collect in case you changed hierarchy while testing
+        EnsureBackground();
+        CollectShardImages();
 
         yield return new WaitForEndOfFrame();
         CaptureScreenshot();
 
-        if (menuCanvas != null)
-            menuCanvas.gameObject.SetActive(true);
-
-        if (backgroundImage != null)
+        if (shardImages == null || shardImages.Length == 0)
         {
-            backgroundImage.gameObject.SetActive(true);
-            backgroundImage.color = new Color(backgroundColor.r, backgroundColor.g, backgroundColor.b, 0f);
+            Debug.LogError("[ShatteredPauseMenu] No RawImages found under shards. Each shard needs a RawImage (usually as a child) to display the screenshot.");
+            animating = false;
+            yield break;
         }
 
-        SetupShards();
+        for (int i = 0; i < shardImages.Length; i++)
+            if (shardImages[i] != null) shardImages[i].texture = screenshot;
+
+        if (menuCanvas != null) menuCanvas.gameObject.SetActive(true);
+        if (background != null)
+        {
+            background.gameObject.SetActive(true);
+            background.color = Color.clear;
+        }
 
         Time.timeScale = 0f;
         isPaused = true;
+        OnPaused?.Invoke();
 
-        yield return StartCoroutine(AnimateShardsOpen());
+        float t = 0f;
+        while (t < 1f)
+        {
+            t += Time.unscaledDeltaTime / Mathf.Max(0.0001f, openDuration);
+            float eased = Mathf.SmoothStep(0, 1, t);
 
-        if (menuContent != null)
-            menuContent.SetActive(true);
+            if (shards != null)
+                for (int i = 0; i < shards.Length; i++)
+                    if (shards[i] != null) shards[i].SetOpen(eased);
 
-        isAnimating = false;
+            if (background != null)
+                background.color = Color.Lerp(Color.clear, backgroundColor, eased);
+
+            yield return null;
+        }
+
+        if (shards != null)
+            for (int i = 0; i < shards.Length; i++)
+                if (shards[i] != null) shards[i].SetOpen(1f);
+
+        if (background != null) background.color = backgroundColor;
+        if (menuContent != null) menuContent.SetActive(true);
+
+        animating = false;
     }
 
-    private IEnumerator ResumeRoutine()
+    IEnumerator ResumeRoutine()
     {
-        isAnimating = true;
+        animating = true;
 
-        if (menuContent != null)
-            menuContent.SetActive(false);
+        if (menuContent != null) menuContent.SetActive(false);
 
-        yield return StartCoroutine(AnimateShardsClose());
+        float t = 1f;
+        while (t > 0f)
+        {
+            t -= Time.unscaledDeltaTime / Mathf.Max(0.0001f, closeDuration);
 
-        HideShards();
+            if (shards != null)
+                for (int i = 0; i < shards.Length; i++)
+                    if (shards[i] != null) shards[i].SetOpen(t);
 
-        if (backgroundImage != null)
-            backgroundImage.gameObject.SetActive(false);
+            if (background != null)
+                background.color = Color.Lerp(Color.clear, backgroundColor, t);
 
-        if (menuCanvas != null)
-            menuCanvas.gameObject.SetActive(false);
+            yield return null;
+        }
+
+        if (shards != null)
+            for (int i = 0; i < shards.Length; i++)
+                if (shards[i] != null) shards[i].SetOpen(0f);
+
+        if (background != null) background.gameObject.SetActive(false);
+        if (menuCanvas != null) menuCanvas.gameObject.SetActive(false);
 
         Time.timeScale = 1f;
         isPaused = false;
-        isAnimating = false;
+        OnResumed?.Invoke();
+
+        animating = false;
     }
 
-    private void CaptureScreenshot()
+    void CaptureScreenshot()
     {
-        int width = Screen.width;
-        int height = Screen.height;
-
-        if (screenshotTexture == null || screenshotTexture.width != width || screenshotTexture.height != height)
+        if (screenshot == null || screenshot.width != Screen.width || screenshot.height != Screen.height)
         {
-            if (screenshotTexture != null)
-                Destroy(screenshotTexture);
-
-            screenshotTexture = new Texture2D(width, height, TextureFormat.RGB24, false);
+            screenshot = new Texture2D(Screen.width, Screen.height, TextureFormat.RGB24, false);
         }
 
-        screenshotTexture.ReadPixels(new Rect(0, 0, width, height), 0, 0);
-        screenshotTexture.Apply();
+        screenshot.ReadPixels(new Rect(0, 0, Screen.width, Screen.height), 0, 0);
+        screenshot.Apply();
     }
 
-    private void SetupShards()
+    void EnsureBackground()
     {
-        float canvasWidth = canvasRect.rect.width;
-        float canvasHeight = canvasRect.rect.height;
-        float shardWidth = canvasWidth / shardColumns;
-        float shardHeight = canvasHeight / shardRows;
-        Vector2 canvasCenter = new Vector2(canvasWidth * 0.5f, canvasHeight * 0.5f);
-        float maxDist = canvasCenter.magnitude;
+        if (background != null) return;
 
-        activeShardCount = 0;
-
-        for (int row = 0; row < shardRows; row++)
+        if (menuCanvas == null)
         {
-            for (int col = 0; col < shardColumns; col++)
-            {
-                int index = row * shardColumns + col;
-                if (index >= poolCapacity) break;
-
-                float x = col * shardWidth + shardWidth * 0.5f;
-                float y = row * shardHeight + shardHeight * 0.5f;
-                Vector2 shardCenter = new Vector2(x, y);
-
-                // UV rect
-                Rect uvRect = new Rect(
-                    (float)col / shardColumns,
-                    (float)row / shardRows,
-                    1f / shardColumns,
-                    1f / shardRows
-                );
-
-                // Target position
-                Vector2 targetPos = CalculateTargetPosition(shardCenter, canvasWidth, canvasHeight, canvasCenter);
-                Vector2 moveOffset = targetPos - shardCenter;
-
-                float randomRot = Random.Range(-maxRotation, maxRotation);
-
-                UIGlassShard shard = shardPool[index];
-                shard.Configure(shardCenter, shardWidth, shardHeight, uvRect, screenshotTexture);
-                shard.Initialize(shardCenter, moveOffset, randomRot);
-                shard.gameObject.SetActive(true);
-                shard.SetOpenAmount(0f);
-
-                // Calculate stagger delay
-                float dist = Vector2.Distance(shardCenter, canvasCenter);
-                staggerDelays[index] = (1f - dist / maxDist) * staggerAmount * poolCapacity;
-
-                activeShardCount++;
-            }
-        }
-    }
-
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private Vector2 CalculateTargetPosition(Vector2 shardPos, float canvasWidth, float canvasHeight, Vector2 center)
-    {
-        switch (moveDirection)
-        {
-            case ShardMoveDirection.SplitHorizontal:
-                return shardPos.x < center.x 
-                    ? new Vector2(-edgeOffset, shardPos.y) 
-                    : new Vector2(canvasWidth + edgeOffset, shardPos.y);
-
-            case ShardMoveDirection.SplitVertical:
-                return shardPos.y < center.y 
-                    ? new Vector2(shardPos.x, -edgeOffset) 
-                    : new Vector2(shardPos.x, canvasHeight + edgeOffset);
-
-            case ShardMoveDirection.ToEdges:
-                float distLeft = shardPos.x;
-                float distRight = canvasWidth - shardPos.x;
-                float distBottom = shardPos.y;
-                float distTop = canvasHeight - shardPos.y;
-                float minDist = Mathf.Min(distLeft, Mathf.Min(distRight, Mathf.Min(distBottom, distTop)));
-
-                if (minDist == distLeft) return new Vector2(-edgeOffset, shardPos.y);
-                if (minDist == distRight) return new Vector2(canvasWidth + edgeOffset, shardPos.y);
-                if (minDist == distBottom) return new Vector2(shardPos.x, -edgeOffset);
-                return new Vector2(shardPos.x, canvasHeight + edgeOffset);
-
-            case ShardMoveDirection.Explode:
-                Vector2 dir = (shardPos - center).normalized;
-                if (dir.sqrMagnitude < 0.01f)
-                    dir = Random.insideUnitCircle.normalized;
-                float distToEdge = CalculateDistanceToEdge(shardPos, dir, canvasWidth, canvasHeight);
-                return shardPos + dir * (distToEdge + edgeOffset);
-
-            case ShardMoveDirection.LightningBolt:
-            default:
-                bool isAbove = IsAboveLightningBolt(shardPos, canvasWidth, canvasHeight);
-                return isAbove 
-                    ? new Vector2(shardPos.x, canvasHeight + edgeOffset) 
-                    : new Vector2(shardPos.x, -edgeOffset);
-        }
-    }
-
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private bool IsAboveLightningBolt(Vector2 pos, float canvasWidth, float canvasHeight)
-    {
-        float centerY = canvasHeight * 0.5f;
-        float amplitude = canvasHeight * zigzagAmplitude;
-        float segmentWidth = canvasWidth / zigzagSegments;
-        
-        int segmentIndex = Mathf.Clamp(Mathf.FloorToInt(pos.x / segmentWidth), 0, zigzagSegments - 1);
-        float tInSegment = (pos.x - segmentIndex * segmentWidth) / segmentWidth;
-        
-        float startY, endY;
-        if ((segmentIndex & 1) == 0)
-        {
-            startY = centerY - amplitude;
-            endY = centerY + amplitude;
-        }
-        else
-        {
-            startY = centerY + amplitude;
-            endY = centerY - amplitude;
-        }
-        
-        return pos.y > Mathf.Lerp(startY, endY, tInSegment);
-    }
-
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private float CalculateDistanceToEdge(Vector2 pos, Vector2 dir, float width, float height)
-    {
-        float dist = float.MaxValue;
-
-        if (dir.x > 0) dist = Mathf.Min(dist, (width - pos.x) / dir.x);
-        else if (dir.x < 0) dist = Mathf.Min(dist, -pos.x / dir.x);
-
-        if (dir.y > 0) dist = Mathf.Min(dist, (height - pos.y) / dir.y);
-        else if (dir.y < 0) dist = Mathf.Min(dist, -pos.y / dir.y);
-
-        return Mathf.Max(0, dist);
-    }
-
-    private IEnumerator AnimateShardsOpen()
-    {
-        if (activeShardCount == 0) yield break;
-
-        float maxDelay = 0f;
-        for (int i = 0; i < activeShardCount; i++)
-            if (staggerDelays[i] > maxDelay) maxDelay = staggerDelays[i];
-
-        float totalDuration = openDuration + maxDelay;
-        float elapsed = 0f;
-
-        while (elapsed < totalDuration)
-        {
-            elapsed += Time.unscaledDeltaTime;
-
-            for (int i = 0; i < activeShardCount; i++)
-            {
-                float shardElapsed = elapsed - staggerDelays[i];
-                if (shardElapsed > 0f)
-                {
-                    float t = Mathf.Clamp01(shardElapsed / openDuration);
-                    shardPool[i].SetOpenAmount(openCurve.Evaluate(t));
-                }
-            }
-
-            if (backgroundImage != null)
-            {
-                float bgT = Mathf.Clamp01(elapsed / backgroundFadeDuration);
-                backgroundImage.color = new Color(backgroundColor.r, backgroundColor.g, backgroundColor.b, bgT * backgroundColor.a);
-            }
-
-            yield return null;
+            Debug.LogError("[ShatteredPauseMenu] MenuCanvas is not assigned.");
+            return;
         }
 
-        for (int i = 0; i < activeShardCount; i++)
-            shardPool[i].SetOpenAmount(1f);
+        // Create a background image under the canvas (behind shards/menu)
+        GameObject bg = new GameObject("PauseBackground", typeof(RectTransform), typeof(Image));
+        bg.transform.SetParent(menuCanvas.transform, false);
+        bg.transform.SetAsFirstSibling();
 
-        if (backgroundImage != null)
-            backgroundImage.color = backgroundColor;
+        RectTransform rt = bg.GetComponent<RectTransform>();
+        rt.anchorMin = Vector2.zero;
+        rt.anchorMax = Vector2.one;
+        rt.offsetMin = Vector2.zero;
+        rt.offsetMax = Vector2.zero;
+
+        background = bg.GetComponent<Image>();
+        background.raycastTarget = false;
+        background.color = Color.clear;
+        background.gameObject.SetActive(false);
     }
 
-    private IEnumerator AnimateShardsClose()
+    void CollectShardImages()
     {
-        float elapsed = 0f;
-        float startAlpha = backgroundImage != null ? backgroundImage.color.a : 0f;
-
-        while (elapsed < closeDuration)
+        if (shards == null || shards.Length == 0)
         {
-            elapsed += Time.unscaledDeltaTime;
-            float t = 1f - closeCurve.Evaluate(elapsed / closeDuration);
-
-            for (int i = 0; i < activeShardCount; i++)
-                shardPool[i].SetOpenAmount(t);
-
-            if (backgroundImage != null)
-            {
-                float bgT = 1f - Mathf.Clamp01(elapsed / closeDuration);
-                backgroundImage.color = new Color(backgroundColor.r, backgroundColor.g, backgroundColor.b, startAlpha * bgT);
-            }
-
-            yield return null;
+            shardImages = Array.Empty<RawImage>();
+            return;
         }
 
-        for (int i = 0; i < activeShardCount; i++)
-            shardPool[i].SetOpenAmount(0f);
-
-        if (backgroundImage != null)
-            backgroundImage.color = new Color(backgroundColor.r, backgroundColor.g, backgroundColor.b, 0f);
-    }
-
-    private void HideShards()
-    {
-        for (int i = 0; i < activeShardCount; i++)
+        // One RawImage per shard (usually as a child under the mask)
+        shardImages = new RawImage[shards.Length];
+        for (int i = 0; i < shards.Length; i++)
         {
-            shardPool[i].ResetShard();
-            shardPool[i].gameObject.SetActive(false);
+            if (shards[i] == null) continue;
+            shardImages[i] = shards[i].GetComponentInChildren<RawImage>(true);
         }
-        activeShardCount = 0;
+    }
+    public void GoToMainMenu(string sceneName)
+    {
+        if (animating) return;
+        StartCoroutine(GoToMainMenuRoutine(sceneName));
     }
 
-    private void OnDestroy()
+    IEnumerator GoToMainMenuRoutine(string sceneName)
     {
-        if (screenshotTexture != null)
-            Destroy(screenshotTexture);
-    }
+        // Close pause visually
+        yield return ResumeRoutine();
 
-#if UNITY_EDITOR
-    [ContextMenu("Test Pause")]
-    public void TestPause()
-    {
-        if (isPaused) Resume();
-        else Pause();
+        Time.timeScale = 1f;
+        SceneManager.LoadScene(sceneName);
     }
-#endif
 }

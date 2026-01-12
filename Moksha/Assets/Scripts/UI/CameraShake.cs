@@ -12,6 +12,8 @@ public class CameraShake : MonoBehaviour
     [SerializeField] private float defaultIntensity = 0.3f;
     [SerializeField] private float defaultFrequency = 25f;
 
+    public Vector3 CurrentOffset { get; private set; }
+
     private float shakeTimer;
     private float shakeIntensity;
     private float shakeFrequency;
@@ -36,19 +38,26 @@ public class CameraShake : MonoBehaviour
     {
         Shake(duration, intensity, defaultFrequency);
     }
+    public void ForceStop()
+    {
+        shakeTimer = 0f;
+        CurrentOffset = Vector3.zero;
+    }
 
     private void LateUpdate()
     {
-        if (shakeTimer <= 0f) return;
+        if (shakeTimer <= 0f)
+        {
+            CurrentOffset = Vector3.zero;
+            return;
+        }
 
         shakeTimer -= Time.deltaTime;
-
         noiseTime += Time.deltaTime * shakeFrequency;
 
         float x = (Mathf.PerlinNoise(noiseTime, 0f) - 0.5f) * 2f;
         float y = (Mathf.PerlinNoise(0f, noiseTime) - 0.5f) * 2f;
 
-        Vector3 offset = new Vector3(x, y, 0f) * shakeIntensity;
-        transform.position += offset;
+        CurrentOffset = new Vector3(x, y, 0f) * shakeIntensity;
     }
 }

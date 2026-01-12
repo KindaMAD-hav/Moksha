@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections;
 using UnityEngine;
 using UnityEngine.UI;
@@ -34,6 +34,10 @@ public class PowerUpCard : MonoBehaviour
     [SerializeField] private float hoverScale = 1.08f;
     [SerializeField] private float hoverDuration = 0.1f;
 
+    [Header("Audio")]
+    [SerializeField] private AudioSource audioSource;
+    [SerializeField] private AudioClip selectSfx;
+
     // Cached
     private PowerUp powerUp;
     private Action<PowerUp> onSelected;
@@ -65,6 +69,14 @@ public class PowerUpCard : MonoBehaviour
     {
         rectTransform = GetComponent<RectTransform>();
         normalScale = rectTransform != null ? rectTransform.localScale : Vector3.one;
+
+        //// 🔊 FORCE UI audio to play while paused
+        //if (audioSource != null)
+        //{
+        //    audioSource.ignoreListenerPause = true;
+        //    audioSource.playOnAwake = false;
+        //    audioSource.spatialBlend = 0f; // force 2D
+        //}
 
         hasIcon = iconImage != null;
         hasName = nameText != null;
@@ -278,6 +290,9 @@ public class PowerUpCard : MonoBehaviour
     private void OnClick()
     {
         if (!isInteractable || isAnimating) return;
+        //if (selectSfx != null && audioSource != null)
+        //    audioSource.PlayOneShot(selectSfx);
+
         onSelected?.Invoke(powerUp);
     }
 

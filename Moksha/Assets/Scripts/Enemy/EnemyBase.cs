@@ -10,17 +10,17 @@ public abstract class EnemyBase : MonoBehaviour, IDamageable
 {
     [Header("Stats (Override with EnemyStats SO)")]
     [SerializeField] protected EnemyStats stats;
-    
+
     [Header("Runtime State")]
     [SerializeField] protected float currentHealth;
-    
+
     [Header("References")]
     [SerializeField] protected Transform targetTransform;
-    
+
     // Events
     public event Action<EnemyBase> OnDeath;
     public event Action<float, float> OnHealthChanged;
-    
+
     // Cached values for performance
     protected Transform cachedTransform;
     protected float cachedMaxHealth;
@@ -31,46 +31,52 @@ public abstract class EnemyBase : MonoBehaviour, IDamageable
     protected float cachedDamage;
     protected float cachedAttackCooldown;
     protected int cachedXPReward;
-    
+    protected EnemyPurifyBridge purifyBridge;
+
+
     // Cached target position (updated by manager)
     protected Vector3 cachedTargetPosition;
-    
+
     // Track if managed by EnemyManager
     protected bool isManagedByManager;
-    
+    // XP guard (prevents multi-awards during dissolve / repeated hits)
+    protected bool hasGrantedXP;
+
+
     // Properties
     public EnemyStats Stats
     {
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         get => stats;
     }
-    
+
     public float CurrentHealth
     {
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         get => currentHealth;
     }
-    
+
     public float MaxHealth
     {
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         get => cachedMaxHealth;
     }
-    
+
     public bool IsDead { get; protected set; }
     public bool IsDissolving { get; protected set; }
-    
+
     public Transform Target
     {
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         get => targetTransform;
     }
-    
+
     public int Index { get; set; } = -1;
 
     protected virtual void Awake()
     {
         cachedTransform = transform;
+        purifyBridge = GetComponent<EnemyPurifyBridge>();
         CacheStats();
         InitializeHealth();
     }
@@ -84,7 +90,7 @@ public abstract class EnemyBase : MonoBehaviour, IDamageable
             if (player != null)
                 targetTransform = player.transform;
         }
-        
+
         // Check if EnemyManager exists
         isManagedByManager = EnemyManager.Instance != null;
     }
@@ -96,10 +102,10 @@ public abstract class EnemyBase : MonoBehaviour, IDamageable
     {
         // Skip if managed by EnemyManager (it calls Tick instead)
         if (isManagedByManager | targetTransform == null) return;
-        
+
         // Allow movement while dissolving, only stop when fully dead
         if (IsDead & !IsDissolving) return;
-        
+
         cachedTargetPosition = targetTransform.position;
         UpdateBehavior(Time.deltaTime);
     }
@@ -111,7 +117,7 @@ public abstract class EnemyBase : MonoBehaviour, IDamageable
     protected virtual void CacheStats()
     {
         if (stats == null) return;
-        
+
         cachedMaxHealth = stats.maxHealth;
         cachedMoveSpeed = stats.moveSpeed;
         cachedRotationSpeed = stats.rotationSpeed;
@@ -131,7 +137,7 @@ public abstract class EnemyBase : MonoBehaviour, IDamageable
         // Allow movement while dissolving, only stop when fully dead
         // Use bitwise OR for branchless check
         if (IsDead & !IsDissolving) return;
-        
+
         cachedTargetPosition = targetPos;
         UpdateBehavior(deltaTime);
     }
@@ -155,7 +161,10 @@ public abstract class EnemyBase : MonoBehaviour, IDamageable
     {
         currentHealth = cachedMaxHealth;
         IsDead = false;
-        OnHealthChanged?.Invoke(currentHealth, cachedMaxHealth);
+        if (currentHealth > 0f)
+        {
+            OnHealthChanged?.Invoke(currentHealth, cachedMaxHealth);
+        }
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -182,7 +191,10 @@ public abstract class EnemyBase : MonoBehaviour, IDamageable
         }
         else
         {
-            OnHealthChanged?.Invoke(currentHealth, cachedMaxHealth);
+            if (currentHealth > 0f)
+            {
+                OnHealthChanged?.Invoke(currentHealth, cachedMaxHealth);
+            }
             OnHit();
         }
     }
@@ -195,20 +207,30 @@ public abstract class EnemyBase : MonoBehaviour, IDamageable
 
     protected virtual void Die()
     {
+        if (IsDead) return;
+
         IsDead = true;
-        
-        // Grant XP
-        if (ExperienceManager.Instance != null)
-            ExperienceManager.Instance.AddXP(cachedXPReward);
+        GrantXPOnce();
 
         OnDeath?.Invoke(this);
         gameObject.SetActive(false);
     }
 
+
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public void SetTarget(Transform target)
     {
         targetTransform = target;
+    }
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    protected void GrantXPOnce()
+    {
+        if (hasGrantedXP) return;
+
+        hasGrantedXP = true;
+
+        if (ExperienceManager.Instance != null)
+            ExperienceManager.Instance.AddXP(cachedXPReward);
     }
 
     public virtual void Initialize(EnemyStats enemyStats, Transform target)
@@ -223,8 +245,16 @@ public abstract class EnemyBase : MonoBehaviour, IDamageable
     {
         IsDead = false;
         IsDissolving = false;
+        hasGrantedXP = false;
+
+        // Restore collider
+        Collider col = GetComponent<Collider>();
+        if (col != null)
+            col.enabled = true;
+
         InitializeHealth();
     }
+
 
     /// <summary>
     /// Get squared distance to target (faster than Distance)
@@ -258,7 +288,7 @@ public abstract class EnemyBase : MonoBehaviour, IDamageable
         direction.x = cachedTargetPosition.x - pos.x;
         direction.y = 0f;
         direction.z = cachedTargetPosition.z - pos.z;
-        
+
         float sqrMag = direction.x * direction.x + direction.z * direction.z;
         if (sqrMag > 0.0001f)
         {

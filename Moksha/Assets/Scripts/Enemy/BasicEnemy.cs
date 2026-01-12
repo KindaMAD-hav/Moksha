@@ -9,16 +9,22 @@ public class BasicEnemy : EnemyBase
 {
     [Header("Basic Enemy Settings")]
     [SerializeField] private float movementNoise = 0.5f;
-    
+
     [Header("Optional Components")]
     [SerializeField] private Animator animator;
     [SerializeField] private AudioSource audioSource;
     [SerializeField] private EnemyDissolve dissolveEffect;
 
     [Header("Damage Flash")]
+    [SerializeField] private bool enableDamageFlash = true;
     [SerializeField] private Renderer[] flashRenderers;
     [SerializeField] private Color damageFlashColor = new Color(1f, 0.2f, 0.2f, 1f);
     [SerializeField] private float flashDuration = 0.12f;
+
+    [Header("Death SFX")]
+    [SerializeField] private AudioClip deathSFX;
+    [SerializeField] private float deathPitchMin = 0.7f;
+    [SerializeField] private float deathPitchMax = 1.3f;
 
 
     // Animator parameter hashes (static for all instances)
@@ -46,6 +52,7 @@ public class BasicEnemy : EnemyBase
     private const byte FLAG_RIGIDBODY = 4;
     private const byte FLAG_AUDIO = 8;
     private const byte FLAG_DISSOLVE = 16;
+    //private float hitSFXTimer;
 
     // State
     private float attackTimer;
@@ -63,7 +70,7 @@ public class BasicEnemy : EnemyBase
     protected override void Awake()
     {
         base.Awake();
-        
+
         // Cache all component references once
         animator = GetComponentInChildren<Animator>();
         audioSource = GetComponent<AudioSource>();
@@ -71,12 +78,17 @@ public class BasicEnemy : EnemyBase
         rb = GetComponent<Rigidbody>();
         dissolveEffect = GetComponent<EnemyDissolve>();
         // Auto-find renderers if not assigned
-        if (flashRenderers == null || flashRenderers.Length == 0)
+        if (!enableDamageFlash)
+        {
+            flashRenderers = null;
+        }
+        else if (flashRenderers == null || flashRenderers.Length == 0)
         {
             flashRenderers = GetComponentsInChildren<Renderer>();
         }
 
-        if (flashRenderers != null && flashRenderers.Length > 0)
+
+        if (enableDamageFlash && flashRenderers != null && flashRenderers.Length > 0)
         {
             flashBlock = new MaterialPropertyBlock();
             originalColors = new Color[flashRenderers.Length];
@@ -117,9 +129,11 @@ public class BasicEnemy : EnemyBase
 
     protected override void UpdateBehavior(float deltaTime)
     {
+        //if (hitSFXTimer > 0f)
+        //    hitSFXTimer -= deltaTime;
         FaceTargetInstant(); // 🔥 always face player
         float sqrDistance = GetSqrDistanceToTarget();
-        
+
         // Update attack cooldown
         if (attackTimer > 0f)
             attackTimer -= deltaTime;
@@ -140,7 +154,7 @@ public class BasicEnemy : EnemyBase
             SetAnimSpeed(0f);
         }
         // Damage flash update
-        if (isFlashing)
+        if (enableDamageFlash && isFlashing)
         {
             flashTimer -= deltaTime;
             if (flashTimer <= 0f)
@@ -148,6 +162,7 @@ public class BasicEnemy : EnemyBase
                 EndFlash();
             }
         }
+
 
     }
 
@@ -168,7 +183,7 @@ public class BasicEnemy : EnemyBase
     private void ChaseTarget(float deltaTime)
     {
         GetNormalizedDirectionToTarget(out moveDirection);
-        
+
         // Early exit if no direction
         if (moveDirection.x == 0f & moveDirection.z == 0f) return;
 
@@ -176,7 +191,7 @@ public class BasicEnemy : EnemyBase
         const float noiseScale = 0.1f;
         float dirX = moveDirection.x + noiseX * noiseScale;
         float dirZ = moveDirection.z + noiseZ * noiseScale;
-        
+
         // Re-normalize (fast)
         float sqrMag = dirX * dirX + dirZ * dirZ;
         if (sqrMag > 0.0001f)
@@ -185,7 +200,7 @@ public class BasicEnemy : EnemyBase
             dirX *= invMag;
             dirZ *= invMag;
         }
-        
+
         moveDirection.x = dirX;
         moveDirection.z = dirZ;
 
@@ -283,20 +298,33 @@ public class BasicEnemy : EnemyBase
 
     protected override void Die()
     {
-        if ((componentFlags & FLAG_AUDIO) != 0 && stats.deathSound != null)
-            audioSource.PlayOneShot(stats.deathSound);
+        //if ((componentFlags & FLAG_AUDIO) != 0 && stats.deathSound != null)
+        //    audioSource.PlayOneShot(stats.deathSound);
+        TryPlayDeathSFX();
 
-        // Start dissolve effect but keep moving
         if ((componentFlags & FLAG_DISSOLVE) != 0)
         {
-            // Grant XP immediately
-            if (ExperienceManager.Instance != null)
-                ExperienceManager.Instance.AddXP(cachedXPReward);
-            
-            // Mark as dissolving - enemy keeps moving
+            GrantXPOnce();
             IsDissolving = true;
-            
-            // Start dissolve - enemy keeps moving until this completes
+
+            // 🔥 STOP PHYSICS CONTACTS (this kills lag)
+            Collider col = GetComponent<Collider>();
+            if (col != null)
+                col.enabled = false;
+
+            // 🔒 PREVENT FALLING
+            if ((componentFlags & FLAG_RIGIDBODY) != 0)
+            {
+                rb.linearVelocity = Vector3.zero;
+                rb.useGravity = false;
+                rb.isKinematic = true;
+            }
+
+            if ((componentFlags & FLAG_CHAR_CONTROLLER) != 0)
+            {
+                characterController.enabled = false;
+            }
+
             dissolveEffect.StartDissolve(OnDissolveComplete);
         }
         else
@@ -305,7 +333,8 @@ public class BasicEnemy : EnemyBase
             base.Die();
         }
     }
-    
+
+
     private void OnDissolveComplete()
     {
         // Only now fully disable the enemy
@@ -314,7 +343,7 @@ public class BasicEnemy : EnemyBase
         DisableMovement();
         gameObject.SetActive(false);
     }
-    
+
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private void DisableMovement()
     {
@@ -323,7 +352,7 @@ public class BasicEnemy : EnemyBase
         if ((componentFlags & FLAG_RIGIDBODY) != 0)
             rb.isKinematic = true;
     }
-    
+
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private void EnableMovement()
     {
@@ -332,18 +361,37 @@ public class BasicEnemy : EnemyBase
         if ((componentFlags & FLAG_RIGIDBODY) != 0)
             rb.isKinematic = false;
     }
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private void TryPlayDeathSFX()
+    {
+        if (deathSFX == null) return;
+        if (SFXManager.Instance == null) return;
+
+        float pitch = Random.Range(deathPitchMin, deathPitchMax);
+        SFXManager.Instance.PlayOneShot(deathSFX, pitch);
+    }
 
     public override void ResetEnemy()
     {
         base.ResetEnemy();
-        
+
         attackTimer = 0f;
         lastAnimSpeed = -1f;
         checkedDamageable = false;
         targetDamageable = null;
-        
+        if ((componentFlags & FLAG_RIGIDBODY) != 0)
+        {
+            rb.isKinematic = false;
+            rb.useGravity = true;
+        }
+
+        if ((componentFlags & FLAG_CHAR_CONTROLLER) != 0)
+        {
+            characterController.enabled = true;
+        }
+
         EnableMovement();
-        
+
         if ((componentFlags & FLAG_DISSOLVE) != 0)
             dissolveEffect.ResetDissolve();
 
@@ -367,12 +415,34 @@ public class BasicEnemy : EnemyBase
     {
         base.TakeDamage(damage);
 
-        if (!IsDead)
+        if (IsDead) return;
+
+        if (enableDamageFlash)
             StartFlash();
     }
+
+
+    //[MethodImpl(MethodImplOptions.AggressiveInlining)]
+    //private void TryPlayHitSFX()
+    //{
+    //    if (hitSFX == null) return;
+    //    if (hitSFXTimer > 0f) return;
+
+    //    if (SFXManager.Instance != null)
+    //    {
+    //        float pitch = Random.Range(hitPitchMin, hitPitchMax);
+    //        SFXManager.Instance.PlayOneShot(hitSFX, pitch);
+    //        hitSFXTimer = hitSFXCooldown;
+    //    }
+    //}
+
+
+
+
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private void StartFlash()
     {
+        if (!enableDamageFlash) return;
         if (flashRenderers == null || flashRenderers.Length == 0) return;
 
         isFlashing = true;
@@ -395,6 +465,7 @@ public class BasicEnemy : EnemyBase
 
     private void EndFlash()
     {
+        if (!enableDamageFlash) return;
         isFlashing = false;
 
         for (int i = 0; i < flashRenderers.Length; i++)
@@ -424,7 +495,7 @@ public class BasicEnemy : EnemyBase
         Gizmos.DrawWireSphere(transform.position, stats.stoppingDistance);
     }
 
-    
+
 
 
     [ContextMenu("Kill This Enemy")]

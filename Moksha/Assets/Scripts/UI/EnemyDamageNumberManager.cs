@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 using UnityEngine;
 
@@ -14,14 +14,18 @@ public class EnemyDamageNumberManager : MonoBehaviour
     [SerializeField] private float radialOffset = 0.45f;     // around enemy
     [SerializeField] private float radialJitter = 0.15f;     // tiny randomness
 
-    [Header("Glow")]
-    [SerializeField] private bool useAttackerColorGlow = true;
+    //[Header("Glow")]
+    //[SerializeField] private bool useAttackerColorGlow = true;
 
     // Per-enemy counter so repeated hits "orbit" around them (prevents overlap)
     private readonly Dictionary<int, int> _spawnSerialByEnemy = new Dictionary<int, int>(256);
 
     private const float TWO_PI = 6.28318530718f;
     private const float GOLDEN_ANGLE = 2.399963229728653f; // ~137.5 degrees in radians
+
+    private readonly Dictionary<int, DamageNumber> activeNumbers =
+    new Dictionary<int, DamageNumber>(256);
+
 
     private void Awake()
     {
@@ -36,15 +40,41 @@ public class EnemyDamageNumberManager : MonoBehaviour
     {
         if (damageNumberPrefab == null || enemy == null) return;
 
-        Vector3 pos = enemy.position + GetNonOverlappingOffset(enemy);
-        var dmg = Instantiate(damageNumberPrefab, pos, Quaternion.identity);
+        int id = enemy.GetInstanceID();
 
-        dmg.useAttackerColorGlow = useAttackerColorGlow;
+        DamageNumber dmg;
+
+        // ✅ STACK if already exists
+        if (activeNumbers.TryGetValue(id, out dmg) && dmg != null)
+        {
+            dmg.AddValue(damage);
+            return;
+        }
+
+        // ❌ otherwise spawn new
+        Vector3 pos = enemy.position + GetNonOverlappingOffset(enemy);
+        dmg = Instantiate(damageNumberPrefab, pos, Quaternion.identity);
+
         dmg.SetValue(damage);
 
-        if (useAttackerColorGlow)
-            dmg.SetAttackerColor(attackerColor);
+        activeNumbers[id] = dmg;
+
+        // cleanup when destroyed
+        StartCoroutine(RemoveWhenDestroyed(enemy, dmg));
     }
+
+    private System.Collections.IEnumerator RemoveWhenDestroyed(
+    Transform enemy,
+    DamageNumber dmg)
+    {
+        int id = enemy.GetInstanceID();
+
+        while (dmg != null)
+            yield return null;
+
+        activeNumbers.Remove(id);
+    }
+
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private Vector3 GetNonOverlappingOffset(Transform enemy)

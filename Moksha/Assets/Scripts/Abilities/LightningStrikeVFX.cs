@@ -23,9 +23,9 @@ public class LightningStrikeVFX : MonoBehaviour
     [SerializeField] private AudioSource audioSource;
     [SerializeField] private AudioClip strikeSound;
     
-    [Header("Audio")]
-    [SerializeField] private float minPitch = 0.9f;
-    [SerializeField] private float maxPitch = 1.1f;
+    //[Header("Audio")]
+    //[SerializeField] private float minPitch = 0.9f;
+    //[SerializeField] private float maxPitch = 1.1f;
 
     [Header("Camera Shake")]
     [SerializeField] private float shakeDuration = 0.25f;
@@ -111,12 +111,12 @@ public class LightningStrikeVFX : MonoBehaviour
             }
         }
         
-        // Play sound with slight pitch variation
-        if (audioSource != null && strikeSound != null)
-        {
-            audioSource.pitch = Random.Range(minPitch, maxPitch);
-            audioSource.PlayOneShot(strikeSound);
-        }
+        //// Play sound with slight pitch variation
+        //if (audioSource != null && strikeSound != null)
+        //{
+        //    audioSource.pitch = Random.Range(minPitch, maxPitch);
+        //    audioSource.PlayOneShot(strikeSound);
+        //}
         if (cameraShake != null)
         {
             cameraShake.Shake(shakeDuration, shakeStrength);

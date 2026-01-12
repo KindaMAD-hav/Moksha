@@ -13,8 +13,8 @@ MonoBehaviour:
   m_Name: DamageBoost
   m_EditorClassIdentifier: Assembly-CSharp::WeaponModifierPowerUp
   powerUpName: Damage Boost
-  description: Increases the Damage by 10%
-  icon: {fileID: 0}
+  description: Increases the Damage by 20%
+  icon: {fileID: 21300000, guid: 5a302d5017f40b34a918bd29a5cea29b, type: 3}
   rarity: 0
   canStack: 1
   maxStacks: 0
@@ -22,5 +22,5 @@ MonoBehaviour:
   targetWeaponName: 
   targetWeapon: {fileID: 11400000, guid: 0add1eadef1833042bc5ef31dd63a52e, type: 2}
   upgradeKind: 0
-  percentValue: 10
+  percentValue: 20
   intValue: 1
