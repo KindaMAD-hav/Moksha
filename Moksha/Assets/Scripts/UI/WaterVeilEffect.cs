@@ -15,8 +15,8 @@ public class WaterVeilEffect : MonoBehaviour
     private float slowMultiplier;
     private float damagePerSecond;
 
-    private Dictionary<EnemyBase, SlowData> affectedEnemies = new Dictionary<EnemyBase, SlowData>();
-    private float damageTickRate = 0.5f; // Apply damage every 0.5 seconds
+    private Dictionary<BasicEnemy, SlowData> affectedEnemies = new Dictionary<BasicEnemy, SlowData>();
+    private float damageTickRate = 0.5f;
 
     public bool IsActive { get; private set; }
 
@@ -24,13 +24,13 @@ public class WaterVeilEffect : MonoBehaviour
     {
         public float originalSpeed;
         public float nextDamageTime;
+        public EnemySlowModifier modifier;
     }
 
     private void Awake()
     {
         waterParticles = GetComponent<ParticleSystem>();
 
-        // Create or get sphere collider for detection
         veilCollider = GetComponent<SphereCollider>();
         if (veilCollider == null)
         {
@@ -38,8 +38,6 @@ public class WaterVeilEffect : MonoBehaviour
         }
 
         veilCollider.isTrigger = true;
-
-        // Start inactive
         waterParticles.Stop();
         veilCollider.enabled = false;
         IsActive = false;
@@ -51,15 +49,12 @@ public class WaterVeilEffect : MonoBehaviour
         slowMultiplier = speedMultiplier;
         damagePerSecond = dps;
 
-        // Set collider radius
         veilCollider.radius = radius;
         veilCollider.enabled = true;
 
-        // Configure particle system size to match radius
         var shape = waterParticles.shape;
         shape.radius = radius;
 
-        // Start particle effect
         waterParticles.Play();
         IsActive = true;
     }
@@ -80,8 +75,6 @@ public class WaterVeilEffect : MonoBehaviour
         waterParticles.Stop();
         veilCollider.enabled = false;
         IsActive = false;
-
-        // Restore all affected enemies
         RestoreAllEnemies();
     }
 
@@ -89,9 +82,8 @@ public class WaterVeilEffect : MonoBehaviour
     {
         if (!IsActive) return;
 
-        // Check if it's an enemy
-        EnemyBase enemy = other.GetComponent<EnemyBase>();
-        if (enemy != null)
+        BasicEnemy enemy = other.GetComponent<BasicEnemy>();
+        if (enemy != null && !enemy.IsDead)
         {
             ApplySlowEffect(enemy);
         }
@@ -99,7 +91,7 @@ public class WaterVeilEffect : MonoBehaviour
 
     private void OnTriggerExit(Collider other)
     {
-        EnemyBase enemy = other.GetComponent<EnemyBase>();
+        BasicEnemy enemy = other.GetComponent<BasicEnemy>();
         if (enemy != null)
         {
             RemoveSlowEffect(enemy);
@@ -110,15 +102,14 @@ public class WaterVeilEffect : MonoBehaviour
     {
         if (!IsActive) return;
 
-        // Apply damage over time to enemies in range
         if (damagePerSecond > 0)
         {
             float currentTime = Time.time;
-            List<EnemyBase> enemiesToDamage = new List<EnemyBase>();
+            List<BasicEnemy> enemiesToDamage = new List<BasicEnemy>();
 
             foreach (var kvp in affectedEnemies)
             {
-                if (kvp.Value.nextDamageTime <= currentTime)
+                if (kvp.Key != null && kvp.Value.nextDamageTime <= currentTime)
                 {
                     enemiesToDamage.Add(kvp.Key);
                     kvp.Value.nextDamageTime = currentTime + damageTickRate;
@@ -127,18 +118,28 @@ public class WaterVeilEffect : MonoBehaviour
 
             foreach (var enemy in enemiesToDamage)
             {
-                DealDamage(enemy);
+                if (enemy != null && !enemy.IsDead)
+                {
+                    DealDamage(enemy);
+                }
             }
         }
     }
 
-    private void ApplySlowEffect(EnemyBase enemy)
+    private void ApplySlowEffect(BasicEnemy enemy)
     {
         if (enemy == null || affectedEnemies.ContainsKey(enemy))
             return;
 
-        // Access the moveSpeed field using reflection (since it's protected in EnemyBase)
-        var speedField = typeof(EnemyBase).GetField("moveSpeed",
+        // Get or add the slow modifier component
+        EnemySlowModifier modifier = enemy.GetComponent<EnemySlowModifier>();
+        if (modifier == null)
+        {
+            modifier = enemy.gameObject.AddComponent<EnemySlowModifier>();
+        }
+
+        // Get the cachedMoveSpeed field
+        var speedField = typeof(EnemyBase).GetField("cachedMoveSpeed",
             System.Reflection.BindingFlags.NonPublic |
             System.Reflection.BindingFlags.Public |
             System.Reflection.BindingFlags.Instance);
@@ -150,30 +151,31 @@ public class WaterVeilEffect : MonoBehaviour
             SlowData data = new SlowData
             {
                 originalSpeed = originalSpeed,
-                nextDamageTime = Time.time + damageTickRate
+                nextDamageTime = Time.time + damageTickRate,
+                modifier = modifier
             };
 
             affectedEnemies.Add(enemy, data);
-            speedField.SetValue(enemy, originalSpeed * slowMultiplier);
 
-            // Start slow duration timer
+            // Apply the slow through the modifier
+            modifier.ApplySlow(speedField, enemy, slowMultiplier);
+
+            Debug.Log($"Water Veil: Slowing {enemy.name} - Original: {originalSpeed}, New: {originalSpeed * slowMultiplier}");
+
             StartCoroutine(RemoveSlowAfterDuration(enemy));
         }
     }
 
-    private void RemoveSlowEffect(EnemyBase enemy)
+    private void RemoveSlowEffect(BasicEnemy enemy)
     {
         if (enemy == null || !affectedEnemies.ContainsKey(enemy))
             return;
 
-        var speedField = typeof(EnemyBase).GetField("moveSpeed",
-            System.Reflection.BindingFlags.NonPublic |
-            System.Reflection.BindingFlags.Public |
-            System.Reflection.BindingFlags.Instance);
+        SlowData data = affectedEnemies[enemy];
 
-        if (speedField != null)
+        if (data.modifier != null)
         {
-            speedField.SetValue(enemy, affectedEnemies[enemy].originalSpeed);
+            data.modifier.RemoveSlow(data.originalSpeed);
         }
 
         affectedEnemies.Remove(enemy);
@@ -181,7 +183,7 @@ public class WaterVeilEffect : MonoBehaviour
 
     private void RestoreAllEnemies()
     {
-        List<EnemyBase> enemies = new List<EnemyBase>(affectedEnemies.Keys);
+        List<BasicEnemy> enemies = new List<BasicEnemy>(affectedEnemies.Keys);
         foreach (var enemy in enemies)
         {
             RemoveSlowEffect(enemy);
@@ -189,20 +191,19 @@ public class WaterVeilEffect : MonoBehaviour
         affectedEnemies.Clear();
     }
 
-    private void DealDamage(EnemyBase enemy)
+    private void DealDamage(BasicEnemy enemy)
     {
-        if (enemy != null)
+        if (enemy != null && !enemy.IsDead)
         {
             float damageAmount = damagePerSecond * damageTickRate;
             enemy.TakeDamage(damageAmount);
         }
     }
 
-    private System.Collections.IEnumerator RemoveSlowAfterDuration(EnemyBase enemy)
+    private System.Collections.IEnumerator RemoveSlowAfterDuration(BasicEnemy enemy)
     {
         yield return new WaitForSeconds(slowDuration);
 
-        // Only remove if enemy is no longer in trigger
         if (enemy != null && !veilCollider.bounds.Contains(enemy.transform.position))
         {
             RemoveSlowEffect(enemy);
@@ -212,5 +213,51 @@ public class WaterVeilEffect : MonoBehaviour
     private void OnDestroy()
     {
         RestoreAllEnemies();
+    }
+}
+
+/// <summary>
+/// Helper component that continuously applies speed reduction to enemies.
+/// Automatically added to enemies when they enter the water veil.
+/// </summary>
+public class EnemySlowModifier : MonoBehaviour
+{
+    private System.Reflection.FieldInfo speedField;
+    private EnemyBase enemy;
+    private float slowMultiplier;
+    private bool isSlowed;
+
+    public void ApplySlow(System.Reflection.FieldInfo field, EnemyBase targetEnemy, float multiplier)
+    {
+        speedField = field;
+        enemy = targetEnemy;
+        slowMultiplier = multiplier;
+        isSlowed = true;
+    }
+
+    public void RemoveSlow(float originalSpeed)
+    {
+        if (enemy != null && speedField != null)
+        {
+            speedField.SetValue(enemy, originalSpeed);
+        }
+        isSlowed = false;
+        Destroy(this);
+    }
+
+    private void LateUpdate()
+    {
+        // Continuously reapply the slow to counteract the cached value
+        if (isSlowed && enemy != null && speedField != null && !enemy.IsDead)
+        {
+            float currentSpeed = (float)speedField.GetValue(enemy);
+            float targetSpeed = currentSpeed;
+
+            // If speed got reset to original, reapply the multiplier
+            if (currentSpeed > 0.1f) // Avoid recalculating if already slowed
+            {
+                speedField.SetValue(enemy, currentSpeed * slowMultiplier);
+            }
+        }
     }
 }
