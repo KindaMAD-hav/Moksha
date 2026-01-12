@@ -19,6 +19,6 @@ MonoBehaviour:
   canStack: 1
   maxStacks: 0
   slowDuration: 3
-  slowMultiplier: 0.497
-  veilRadius: 3
+  slowMultiplier: 0.5
+  veilRadius: 10
   damagePerSecond: 0
