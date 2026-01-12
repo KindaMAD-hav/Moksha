@@ -15,7 +15,7 @@ public class WaterVeilEffect : MonoBehaviour
     private float slowMultiplier;
     private float damagePerSecond;
 
-    private Dictionary<GameObject, SlowData> affectedEnemies = new Dictionary<GameObject, SlowData>();
+    private Dictionary<EnemyBase, SlowData> affectedEnemies = new Dictionary<EnemyBase, SlowData>();
     private float damageTickRate = 0.5f; // Apply damage every 0.5 seconds
 
     public bool IsActive { get; private set; }
@@ -89,18 +89,20 @@ public class WaterVeilEffect : MonoBehaviour
     {
         if (!IsActive) return;
 
-        // Check if it's an enemy (adjust tag/layer as needed)
-        if (other.CompareTag("Enemy"))
+        // Check if it's an enemy
+        EnemyBase enemy = other.GetComponent<EnemyBase>();
+        if (enemy != null)
         {
-            ApplySlowEffect(other.gameObject);
+            ApplySlowEffect(enemy);
         }
     }
 
     private void OnTriggerExit(Collider other)
     {
-        if (other.CompareTag("Enemy"))
+        EnemyBase enemy = other.GetComponent<EnemyBase>();
+        if (enemy != null)
         {
-            RemoveSlowEffect(other.gameObject);
+            RemoveSlowEffect(enemy);
         }
     }
 
@@ -112,7 +114,7 @@ public class WaterVeilEffect : MonoBehaviour
         if (damagePerSecond > 0)
         {
             float currentTime = Time.time;
-            List<GameObject> enemiesToDamage = new List<GameObject>();
+            List<EnemyBase> enemiesToDamage = new List<EnemyBase>();
 
             foreach (var kvp in affectedEnemies)
             {
@@ -130,38 +132,48 @@ public class WaterVeilEffect : MonoBehaviour
         }
     }
 
-    private void ApplySlowEffect(GameObject enemy)
+    private void ApplySlowEffect(EnemyBase enemy)
     {
-        if (affectedEnemies.ContainsKey(enemy))
+        if (enemy == null || affectedEnemies.ContainsKey(enemy))
             return;
 
-        // Try to get enemy movement component (adjust to your enemy system)
-        var enemyMovement = enemy.GetComponent<EnemyMovement>();
-        if (enemyMovement != null)
+        // Access the moveSpeed field using reflection (since it's protected in EnemyBase)
+        var speedField = typeof(EnemyBase).GetField("moveSpeed",
+            System.Reflection.BindingFlags.NonPublic |
+            System.Reflection.BindingFlags.Public |
+            System.Reflection.BindingFlags.Instance);
+
+        if (speedField != null)
         {
+            float originalSpeed = (float)speedField.GetValue(enemy);
+
             SlowData data = new SlowData
             {
-                originalSpeed = enemyMovement.moveSpeed,
+                originalSpeed = originalSpeed,
                 nextDamageTime = Time.time + damageTickRate
             };
 
             affectedEnemies.Add(enemy, data);
-            enemyMovement.moveSpeed *= slowMultiplier;
+            speedField.SetValue(enemy, originalSpeed * slowMultiplier);
 
-            // Optional: Start slow duration timer
+            // Start slow duration timer
             StartCoroutine(RemoveSlowAfterDuration(enemy));
         }
     }
 
-    private void RemoveSlowEffect(GameObject enemy)
+    private void RemoveSlowEffect(EnemyBase enemy)
     {
-        if (!affectedEnemies.ContainsKey(enemy))
+        if (enemy == null || !affectedEnemies.ContainsKey(enemy))
             return;
 
-        var enemyMovement = enemy.GetComponent<EnemyMovement>();
-        if (enemyMovement != null)
+        var speedField = typeof(EnemyBase).GetField("moveSpeed",
+            System.Reflection.BindingFlags.NonPublic |
+            System.Reflection.BindingFlags.Public |
+            System.Reflection.BindingFlags.Instance);
+
+        if (speedField != null)
         {
-            enemyMovement.moveSpeed = affectedEnemies[enemy].originalSpeed;
+            speedField.SetValue(enemy, affectedEnemies[enemy].originalSpeed);
         }
 
         affectedEnemies.Remove(enemy);
@@ -169,7 +181,7 @@ public class WaterVeilEffect : MonoBehaviour
 
     private void RestoreAllEnemies()
     {
-        List<GameObject> enemies = new List<GameObject>(affectedEnemies.Keys);
+        List<EnemyBase> enemies = new List<EnemyBase>(affectedEnemies.Keys);
         foreach (var enemy in enemies)
         {
             RemoveSlowEffect(enemy);
@@ -177,22 +189,21 @@ public class WaterVeilEffect : MonoBehaviour
         affectedEnemies.Clear();
     }
 
-    private void DealDamage(GameObject enemy)
+    private void DealDamage(EnemyBase enemy)
     {
-        var health = enemy.GetComponent<EnemyHealth>();
-        if (health != null)
+        if (enemy != null)
         {
             float damageAmount = damagePerSecond * damageTickRate;
-            health.TakeDamage(damageAmount);
+            enemy.TakeDamage(damageAmount);
         }
     }
 
-    private System.Collections.IEnumerator RemoveSlowAfterDuration(GameObject enemy)
+    private System.Collections.IEnumerator RemoveSlowAfterDuration(EnemyBase enemy)
     {
         yield return new WaitForSeconds(slowDuration);
 
         // Only remove if enemy is no longer in trigger
-        if (!veilCollider.bounds.Contains(enemy.transform.position))
+        if (enemy != null && !veilCollider.bounds.Contains(enemy.transform.position))
         {
             RemoveSlowEffect(enemy);
         }

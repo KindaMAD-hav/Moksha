@@ -43,7 +43,7 @@ public class WaterVeilPowerUp : PowerUp
         }
     }
 
-    public override string GetDescription(int currentStacks)
+    public string GetDescription(int currentStacks)
     {
         if (currentStacks == 0)
         {
