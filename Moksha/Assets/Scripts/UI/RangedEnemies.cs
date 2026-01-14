@@ -2,72 +2,50 @@ using System.Runtime.CompilerServices;
 using UnityEngine;
 
 /// <summary>
-/// Ranged enemy that shoots projectiles at the player.
-/// Optimized for high enemy counts with object pooling.
+/// Ranged enemy implementation. 
+/// Maintains distance and fires projectiles at the target.
 /// </summary>
 public class RangedEnemy : EnemyBase
 {
-    [Header("Ranged Enemy Settings")]
+    [Header("Ranged Settings")]
+    [SerializeField] private EnemyProjectile projectilePrefab;
+    [SerializeField] private Transform projectileOrigin; // Where the bullet spawns (e.g., wand tip)
     [SerializeField] private float projectileSpeed = 10f;
-    [SerializeField] private GameObject projectilePrefab;
-    [SerializeField] private Transform firePoint; // Where projectile spawns
-    [SerializeField] private float projectileLifetime = 5f;
+    [SerializeField] private float aimPrediction = 0f; // 0 = direct shot, 1 = predict movement
 
-    [Header("Behavior")]
-    [SerializeField] private float preferredDistance = 8f; // Keep distance from player
-    [SerializeField] private float retreatDistance = 5f; // Start backing away if closer
-    [SerializeField] private float attackWindupTime = 0.5f; // Animation time before shot
+    [Header("Movement Behavior")]
+    [SerializeField] private bool fleeIfTooClose = true;
+    [SerializeField] private float fleeDistance = 3f;
 
     [Header("Optional Components")]
     [SerializeField] private Animator animator;
     [SerializeField] private AudioSource audioSource;
     [SerializeField] private EnemyDissolve dissolveEffect;
 
-    [Header("Damage Flash")]
-    [SerializeField] private bool enableDamageFlash = true;
+    [Header("Visuals")]
     [SerializeField] private Renderer[] flashRenderers;
     [SerializeField] private Color damageFlashColor = new Color(1f, 0.2f, 0.2f, 1f);
-    [SerializeField] private float flashDuration = 0.12f;
 
-    [Header("Audio")]
-    [SerializeField] private AudioClip shootSFX;
-    [SerializeField] private float shootPitchMin = 0.9f;
-    [SerializeField] private float shootPitchMax = 1.1f;
-
-    // Animator hashes
-    private static readonly int SpeedHash = Animator.StringToHash("Speed");
-    private static readonly int AttackHash = Animator.StringToHash("Attack");
-    private static readonly int DieHash = Animator.StringToHash("Die");
-    private static readonly int ColorProperty = Shader.PropertyToID("_BaseColor");
-    private static readonly int ColorPropertyAlt = Shader.PropertyToID("_Color");
-
-    // Cached components
+    // Cached Component Flags (Optimization)
     private CharacterController characterController;
     private Rigidbody rb;
     private byte componentFlags;
-    private MaterialPropertyBlock flashBlock;
-    private Color[] originalColors;
-    private float flashTimer;
-    private bool isFlashing;
-
-    // Component flags
     private const byte FLAG_ANIMATOR = 1;
     private const byte FLAG_CHAR_CONTROLLER = 2;
     private const byte FLAG_RIGIDBODY = 4;
     private const byte FLAG_AUDIO = 8;
     private const byte FLAG_DISSOLVE = 16;
 
+    // Animation Hashes
+    private static readonly int SpeedHash = Animator.StringToHash("Speed");
+    private static readonly int AttackHash = Animator.StringToHash("Attack");
+
     // State
     private float attackTimer;
-    private float windupTimer;
-    private bool isPreparingShot;
-    private float lastAnimSpeed;
-
-    // Cached distances
-    private float preferredDistanceSqr;
-    private float retreatDistanceSqr;
-
-    // Cached vectors
+    private MaterialPropertyBlock flashBlock;
+    private Color[] originalColors;
+    private float flashTimer;
+    private bool isFlashing;
     private Vector3 moveDirection;
     private Vector3 movement;
 
@@ -75,49 +53,14 @@ public class RangedEnemy : EnemyBase
     {
         base.Awake();
 
-        // Auto-create fire point if not assigned
-        if (firePoint == null)
-        {
-            GameObject fp = new GameObject("FirePoint");
-            fp.transform.SetParent(transform);
-            fp.transform.localPosition = new Vector3(0, 1f, 0.5f); // Front of enemy
-            firePoint = fp.transform;
-        }
-
-        // Cache components
+        // 1. Cache Components
         animator = GetComponentInChildren<Animator>();
         audioSource = GetComponent<AudioSource>();
         characterController = GetComponent<CharacterController>();
         rb = GetComponent<Rigidbody>();
         dissolveEffect = GetComponent<EnemyDissolve>();
 
-        // Setup damage flash
-        if (!enableDamageFlash)
-        {
-            flashRenderers = null;
-        }
-        else if (flashRenderers == null || flashRenderers.Length == 0)
-        {
-            flashRenderers = GetComponentsInChildren<Renderer>();
-        }
-
-        if (enableDamageFlash && flashRenderers != null && flashRenderers.Length > 0)
-        {
-            flashBlock = new MaterialPropertyBlock();
-            originalColors = new Color[flashRenderers.Length];
-
-            for (int i = 0; i < flashRenderers.Length; i++)
-            {
-                if (flashRenderers[i] == null) continue;
-                flashRenderers[i].GetPropertyBlock(flashBlock);
-                if (flashBlock.HasColor(ColorProperty))
-                    originalColors[i] = flashBlock.GetColor(ColorProperty);
-                else
-                    originalColors[i] = Color.white;
-            }
-        }
-
-        // Set component flags
+        // 2. Set Flags
         componentFlags = 0;
         if (animator != null) componentFlags |= FLAG_ANIMATOR;
         if (characterController != null) componentFlags |= FLAG_CHAR_CONTROLLER;
@@ -125,361 +68,178 @@ public class RangedEnemy : EnemyBase
         if (audioSource != null) componentFlags |= FLAG_AUDIO;
         if (dissolveEffect != null) componentFlags |= FLAG_DISSOLVE;
 
-        // Cache squared distances
-        preferredDistanceSqr = preferredDistance * preferredDistance;
-        retreatDistanceSqr = retreatDistance * retreatDistance;
+        // 3. Setup Flash Renderers
+        if (flashRenderers == null || flashRenderers.Length == 0)
+            flashRenderers = GetComponentsInChildren<Renderer>();
+
+        if (flashRenderers.Length > 0)
+        {
+            flashBlock = new MaterialPropertyBlock();
+            originalColors = new Color[flashRenderers.Length];
+            for (int i = 0; i < flashRenderers.Length; i++)
+            {
+                if (flashRenderers[i] == null) continue;
+                flashRenderers[i].GetPropertyBlock(flashBlock);
+                originalColors[i] = flashRenderers[i].sharedMaterial.HasProperty("_BaseColor")
+                    ? flashRenderers[i].sharedMaterial.GetColor("_BaseColor")
+                    : Color.white;
+            }
+        }
+
+        // Use center of object if no origin assigned
+        if (projectileOrigin == null) projectileOrigin = transform;
     }
 
     protected override void UpdateBehavior(float deltaTime)
     {
-        FaceTarget(deltaTime);
+        FaceTargetInstant();
         float sqrDistance = GetSqrDistanceToTarget();
+        float fleeDistSqr = fleeDistance * fleeDistance;
 
-        // Update timers
-        if (attackTimer > 0f)
-            attackTimer -= deltaTime;
+        // Update Cooldowns
+        if (attackTimer > 0f) attackTimer -= deltaTime;
+        if (isFlashing) UpdateFlash(deltaTime);
 
-        if (isPreparingShot)
+        // --- BEHAVIOR LOGIC ---
+
+        // 1. Too Close? Flee (Optional)
+        if (fleeIfTooClose && sqrDistance < fleeDistSqr)
         {
-            windupTimer -= deltaTime;
-            if (windupTimer <= 0f)
-            {
-                ShootProjectile();
-                isPreparingShot = false;
-            }
+            Move(deltaTime, -1f); // Move backwards
         }
-
-        // Behavior based on distance
-        if (sqrDistance <= cachedAttackRangeSqr && attackTimer <= 0f && !isPreparingShot)
+        // 2. In Attack Range? Stop and Shoot
+        else if (sqrDistance <= cachedAttackRangeSqr)
         {
-            // In attack range - shoot
-            PrepareShot();
             SetAnimSpeed(0f);
+            TryAttack();
         }
-        else if (sqrDistance < retreatDistanceSqr)
-        {
-            // Too close - retreat
-            RetreatFromTarget(deltaTime);
-            SetAnimSpeed(cachedMoveSpeed);
-        }
-        else if (sqrDistance > preferredDistanceSqr)
-        {
-            // Too far - approach
-            ApproachTarget(deltaTime);
-            SetAnimSpeed(cachedMoveSpeed);
-        }
+        // 3. Too Far? Chase
         else
         {
-            // At good distance - strafe/idle
-            StrafeAroundTarget(deltaTime);
-            SetAnimSpeed(cachedMoveSpeed * 0.5f);
-        }
-
-        // Damage flash update
-        if (enableDamageFlash && isFlashing)
-        {
-            flashTimer -= deltaTime;
-            if (flashTimer <= 0f)
-            {
-                EndFlash();
-            }
+            Move(deltaTime, 1f); // Move forwards
         }
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private void FaceTarget(float deltaTime)
+    private void Move(float deltaTime, float directionMultiplier)
     {
-        if (targetTransform == null) return;
-
-        Vector3 dir = targetTransform.position - cachedTransform.position;
-        dir.y = 0f;
-
-        if (dir.sqrMagnitude < 0.0001f) return;
-
-        Quaternion targetRotation = Quaternion.LookRotation(dir);
-        cachedTransform.rotation = Quaternion.RotateTowards(
-            cachedTransform.rotation,
-            targetRotation,
-            cachedRotationSpeed * deltaTime
-        );
-    }
-
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private void ApproachTarget(float deltaTime)
-    {
+        // Calculate direction
         GetNormalizedDirectionToTarget(out moveDirection);
-        MoveInDirection(moveDirection, deltaTime);
-    }
 
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private void RetreatFromTarget(float deltaTime)
-    {
-        GetNormalizedDirectionToTarget(out moveDirection);
-        // Move in opposite direction
-        moveDirection.x = -moveDirection.x;
-        moveDirection.z = -moveDirection.z;
-        MoveInDirection(moveDirection, deltaTime);
-    }
+        // Apply Multiplier (1 for chase, -1 for flee)
+        moveDirection *= directionMultiplier;
 
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private void StrafeAroundTarget(float deltaTime)
-    {
-        GetNormalizedDirectionToTarget(out moveDirection);
-        // Strafe perpendicular to target direction
-        float temp = moveDirection.x;
-        moveDirection.x = -moveDirection.z;
-        moveDirection.z = temp;
-        MoveInDirection(moveDirection, deltaTime);
-    }
-
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private void MoveInDirection(Vector3 direction, float deltaTime)
-    {
-        if (direction.x == 0f & direction.z == 0f) return;
-
-        float moveAmount = cachedMoveSpeed * deltaTime;
-        movement.x = direction.x * moveAmount;
-        movement.z = direction.z * moveAmount;
-
-        // Apply movement
+        // Apply Movement
         if ((componentFlags & FLAG_CHAR_CONTROLLER) != 0)
         {
-            movement.y = -2f * deltaTime; // Gravity
+            movement.x = moveDirection.x * cachedMoveSpeed * deltaTime;
+            movement.z = moveDirection.z * cachedMoveSpeed * deltaTime;
+            movement.y = -9.81f * deltaTime; // Simple gravity
             characterController.Move(movement);
         }
         else if ((componentFlags & FLAG_RIGIDBODY) != 0)
         {
             Vector3 vel = rb.linearVelocity;
-            vel.x = direction.x * cachedMoveSpeed;
-            vel.z = direction.z * cachedMoveSpeed;
+            vel.x = moveDirection.x * cachedMoveSpeed;
+            vel.z = moveDirection.z * cachedMoveSpeed;
             rb.linearVelocity = vel;
         }
         else
         {
-            movement.y = 0f;
-            cachedTransform.position += movement;
+            // Fallback translation
+            cachedTransform.position += moveDirection * (cachedMoveSpeed * deltaTime);
         }
+
+        SetAnimSpeed(cachedMoveSpeed * (directionMultiplier > 0 ? 1 : -1));
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private void PrepareShot()
+    private void TryAttack()
     {
-        isPreparingShot = true;
-        windupTimer = attackWindupTime;
+        if (attackTimer > 0f) return;
+
         attackTimer = cachedAttackCooldown;
 
+        // Visuals
         if ((componentFlags & FLAG_ANIMATOR) != 0)
             animator.SetTrigger(AttackHash);
+
+        if ((componentFlags & FLAG_AUDIO) != 0 && stats.attackSound != null)
+            audioSource.PlayOneShot(stats.attackSound);
+
+        // Logic (Spawn Projectile)
+        ShootProjectile();
     }
 
     private void ShootProjectile()
     {
-        if (targetTransform == null || projectilePrefab == null) return;
+        if (projectilePrefab == null) return;
 
-        // Calculate direction to target
-        Vector3 direction = (targetTransform.position - firePoint.position).normalized;
+        // Calculate direction
+        Vector3 fireDir = (cachedTargetPosition - projectileOrigin.position).normalized;
+        fireDir.y = 0; // Keep flat plane for top-down games, remove if 3D FPS
 
-        // Try to get from pool first
-        EnemyProjectile projectile = null;
+        // Instantiate (Or use PoolManager here)
+        var proj = Instantiate(projectilePrefab, projectileOrigin.position, Quaternion.LookRotation(fireDir));
+        proj.Initialize(cachedDamage, projectileSpeed, fireDir);
+    }
 
-        if (EnemyProjectilePool.Instance != null)
-        {
-            projectile = EnemyProjectilePool.Instance.GetProjectile();
-        }
-        else
-        {
-            // Fallback: Instantiate if no pool
-            GameObject projObj = Instantiate(projectilePrefab, firePoint.position, Quaternion.identity);
-            projectile = projObj.GetComponent<EnemyProjectile>();
-        }
-
-        if (projectile != null)
-        {
-            projectile.Initialize(firePoint.position, direction, projectileSpeed, cachedDamage, projectileLifetime);
-        }
-
-        // Play sound
-        if (shootSFX != null)
-        {
-            if (SFXManager.Instance != null)
-            {
-                float pitch = Random.Range(shootPitchMin, shootPitchMax);
-                SFXManager.Instance.PlayOneShot(shootSFX, pitch);
-            }
-            else if ((componentFlags & FLAG_AUDIO) != 0)
-            {
-                audioSource.pitch = Random.Range(shootPitchMin, shootPitchMax);
-                audioSource.PlayOneShot(shootSFX);
-            }
-        }
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private void FaceTargetInstant()
+    {
+        if (targetTransform == null) return;
+        Vector3 dir = cachedTargetPosition - cachedTransform.position;
+        dir.y = 0f;
+        if (dir.sqrMagnitude > 0.001f)
+            cachedTransform.rotation = Quaternion.LookRotation(dir);
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private void SetAnimSpeed(float speed)
     {
-        if ((componentFlags & FLAG_ANIMATOR) != 0 && speed != lastAnimSpeed)
-        {
-            animator.SetFloat(SpeedHash, speed);
-            lastAnimSpeed = speed;
-        }
+        if ((componentFlags & FLAG_ANIMATOR) != 0)
+            animator.SetFloat(SpeedHash, Mathf.Abs(speed)); // Use Abs so fleeing plays walk anim
     }
 
-    protected override void Die()
-    {
-        if ((componentFlags & FLAG_DISSOLVE) != 0)
-        {
-            GrantXPOnce();
-            IsDissolving = true;
-
-            Collider col = GetComponent<Collider>();
-            if (col != null)
-                col.enabled = false;
-
-            if ((componentFlags & FLAG_RIGIDBODY) != 0)
-            {
-                rb.linearVelocity = Vector3.zero;
-                rb.useGravity = false;
-                rb.isKinematic = true;
-            }
-
-            if ((componentFlags & FLAG_CHAR_CONTROLLER) != 0)
-            {
-                characterController.enabled = false;
-            }
-
-            dissolveEffect.StartDissolve(OnDissolveComplete);
-        }
-        else
-        {
-            DisableMovement();
-            base.Die();
-        }
-    }
-
-    private void OnDissolveComplete()
-    {
-        IsDissolving = false;
-        IsDead = true;
-        DisableMovement();
-        gameObject.SetActive(false);
-    }
-
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private void DisableMovement()
-    {
-        if ((componentFlags & FLAG_CHAR_CONTROLLER) != 0)
-            characterController.enabled = false;
-        if ((componentFlags & FLAG_RIGIDBODY) != 0)
-            rb.isKinematic = true;
-    }
-
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private void EnableMovement()
-    {
-        if ((componentFlags & FLAG_CHAR_CONTROLLER) != 0)
-            characterController.enabled = true;
-        if ((componentFlags & FLAG_RIGIDBODY) != 0)
-            rb.isKinematic = false;
-    }
-
-    public override void ResetEnemy()
-    {
-        base.ResetEnemy();
-
-        attackTimer = 0f;
-        windupTimer = 0f;
-        isPreparingShot = false;
-        lastAnimSpeed = -1f;
-
-        if ((componentFlags & FLAG_RIGIDBODY) != 0)
-        {
-            rb.isKinematic = false;
-            rb.useGravity = true;
-        }
-
-        if ((componentFlags & FLAG_CHAR_CONTROLLER) != 0)
-        {
-            characterController.enabled = true;
-        }
-
-        EnableMovement();
-
-        if ((componentFlags & FLAG_DISSOLVE) != 0)
-            dissolveEffect.ResetDissolve();
-    }
-
+    // --- DAMAGE FLASH LOGIC (Copied & Simplified from BasicEnemy) ---
     public override void TakeDamage(float damage)
     {
         base.TakeDamage(damage);
-
-        if (IsDead) return;
-
-        if (enableDamageFlash)
-            StartFlash();
+        if (!IsDead) StartFlash();
     }
 
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private void StartFlash()
     {
-        if (!enableDamageFlash || flashRenderers == null || flashRenderers.Length == 0) return;
-
         isFlashing = true;
-        flashTimer = flashDuration;
-
-        for (int i = 0; i < flashRenderers.Length; i++)
-        {
-            if (flashRenderers[i] == null) continue;
-
-            flashRenderers[i].GetPropertyBlock(flashBlock);
-
-            if (flashRenderers[i].material.HasProperty("_BaseColor"))
-                flashBlock.SetColor("_BaseColor", damageFlashColor);
-            if (flashRenderers[i].material.HasProperty("_Color"))
-                flashBlock.SetColor("_Color", damageFlashColor);
-
-            flashRenderers[i].SetPropertyBlock(flashBlock);
-        }
+        flashTimer = 0.15f;
+        ApplyFlashColor(damageFlashColor);
     }
 
-    private void EndFlash()
+    private void UpdateFlash(float dt)
     {
-        if (!enableDamageFlash) return;
-        isFlashing = false;
-
-        for (int i = 0; i < flashRenderers.Length; i++)
+        flashTimer -= dt;
+        if (flashTimer <= 0f)
         {
-            if (flashRenderers[i] == null) continue;
-
-            flashRenderers[i].GetPropertyBlock(flashBlock);
-
-            if (flashRenderers[i].material.HasProperty("_BaseColor"))
+            isFlashing = false;
+            // Restore originals
+            for (int i = 0; i < flashRenderers.Length; i++)
+            {
+                if (flashRenderers[i] == null) continue;
+                flashRenderers[i].GetPropertyBlock(flashBlock);
                 flashBlock.SetColor("_BaseColor", originalColors[i]);
-            if (flashRenderers[i].material.HasProperty("_Color"))
-                flashBlock.SetColor("_Color", originalColors[i]);
+                flashRenderers[i].SetPropertyBlock(flashBlock);
+            }
+        }
+    }
 
+    private void ApplyFlashColor(Color col)
+    {
+        for (int i = 0; i < flashRenderers.Length; i++)
+        {
+            if (flashRenderers[i] == null) continue;
+            flashRenderers[i].GetPropertyBlock(flashBlock);
+            flashBlock.SetColor("_BaseColor", col);
             flashRenderers[i].SetPropertyBlock(flashBlock);
         }
     }
-
-    // Animation event callback (optional)
-    public void OnShootAnimationEvent()
-    {
-        if (isPreparingShot)
-        {
-            ShootProjectile();
-            isPreparingShot = false;
-        }
-    }
-
-#if UNITY_EDITOR
-    private void OnDrawGizmosSelected()
-    {
-        Gizmos.color = Color.red;
-        Gizmos.DrawWireSphere(transform.position, Mathf.Sqrt(cachedAttackRangeSqr));
-        Gizmos.color = Color.yellow;
-        Gizmos.DrawWireSphere(transform.position, preferredDistance);
-        Gizmos.color = Color.blue;
-        Gizmos.DrawWireSphere(transform.position, retreatDistance);
-    }
-#endif
 }

@@ -1,128 +1,52 @@
 using UnityEngine;
 
 /// <summary>
-/// Projectile fired by ranged enemies.
-/// Designed to work with object pooling for performance.
+/// Simple projectile logic. 
+/// NOTE: For a roguelike with many enemies, integrate this with an ObjectPool system.
 /// </summary>
-[RequireComponent(typeof(Rigidbody))]
 public class EnemyProjectile : MonoBehaviour
 {
-    [Header("Visual")]
-    [SerializeField] private TrailRenderer trail;
-    [SerializeField] private ParticleSystem hitEffect;
-
-    [Header("Audio")]
-    [SerializeField] private AudioClip hitSFX;
-
-    private Rigidbody rb;
     private float damage;
-    private float lifetime;
-    private float spawnTime;
-    private bool isActive;
+    private float speed;
+    private float lifeTime = 5f;
+    private Vector3 direction;
+    private bool isInitialized = false;
 
-    private void Awake()
+    public void Initialize(float damageAmount, float projSpeed, Vector3 moveDir)
     {
-        rb = GetComponent<Rigidbody>();
-        rb.useGravity = false;
-        rb.collisionDetectionMode = CollisionDetectionMode.Continuous;
-    }
+        damage = damageAmount;
+        speed = projSpeed;
+        direction = moveDir.normalized;
+        isInitialized = true;
 
-    public void Initialize(Vector3 position, Vector3 direction, float speed, float projectileDamage, float projectileLifetime)
-    {
-        transform.position = position;
-        transform.rotation = Quaternion.LookRotation(direction);
-
-        damage = projectileDamage;
-        lifetime = projectileLifetime;
-        spawnTime = Time.time;
-        isActive = true;
-
-        // Set velocity
-        rb.linearVelocity = direction * speed;
-
-        // Enable trail if exists
-        if (trail != null)
-        {
-            trail.Clear();
-            trail.enabled = true;
-        }
-
-        gameObject.SetActive(true);
+        // Auto-destroy if it hits nothing
+        Destroy(gameObject, lifeTime);
     }
 
     private void Update()
     {
-        if (!isActive) return;
+        if (!isInitialized) return;
 
-        // Check lifetime
-        if (Time.time - spawnTime >= lifetime)
-        {
-            ReturnToPool();
-        }
+        // Move forward relative to world space based on direction
+        transform.position += direction * (speed * Time.deltaTime);
     }
 
     private void OnTriggerEnter(Collider other)
     {
-        if (!isActive) return;
+        // Don't hit the enemy that shot this
+        if (other.CompareTag("Enemy")) return;
 
-        // Check if hit player
-        if (other.CompareTag("Player"))
+        // Check for player/damageable
+        IDamageable target = other.GetComponent<IDamageable>();
+        if (target != null)
         {
-            IDamageable damageable = other.GetComponent<IDamageable>();
-            if (damageable != null)
-            {
-                damageable.TakeDamage(damage);
-            }
-
-            OnHit(other.transform.position);
+            target.TakeDamage(damage);
+            Destroy(gameObject); // Return to pool here if using pooling
         }
-        // Hit environment/obstacles
-        else if (!other.CompareTag("Enemy"))
+        else if (other.gameObject.layer == LayerMask.NameToLayer("Ground") || other.gameObject.layer == LayerMask.NameToLayer("Obstacle"))
         {
-            OnHit(other.ClosestPoint(transform.position));
-        }
-    }
-
-    private void OnHit(Vector3 hitPosition)
-    {
-        // Spawn hit effect
-        if (hitEffect != null)
-        {
-            ParticleSystem effect = Instantiate(hitEffect, hitPosition, Quaternion.identity);
-            Destroy(effect.gameObject, effect.main.duration);
-        }
-
-        // Play hit sound
-        if (hitSFX != null && SFXManager.Instance != null)
-        {
-            SFXManager.Instance.PlayOneShot(hitSFX);
-        }
-
-        ReturnToPool();
-    }
-
-    private void ReturnToPool()
-    {
-        isActive = false;
-        rb.linearVelocity = Vector3.zero;
-
-        if (trail != null)
-        {
-            trail.enabled = false;
-        }
-
-        if (EnemyProjectilePool.Instance != null)
-        {
-            EnemyProjectilePool.Instance.ReturnProjectile(this);
-        }
-        else
-        {
+            // Destroy on wall hit
             Destroy(gameObject);
         }
-    }
-
-    private void OnDisable()
-    {
-        isActive = false;
     }
 }
