@@ -224,6 +224,7 @@ public class EnemySlowModifier : MonoBehaviour
 {
     private System.Reflection.FieldInfo speedField;
     private EnemyBase enemy;
+    private float originalSpeed;
     private float slowMultiplier;
     private bool isSlowed;
 
@@ -231,15 +232,19 @@ public class EnemySlowModifier : MonoBehaviour
     {
         speedField = field;
         enemy = targetEnemy;
+        originalSpeed = (float)field.GetValue(targetEnemy);
         slowMultiplier = multiplier;
         isSlowed = true;
+
+        // Apply initial slow
+        speedField.SetValue(enemy, originalSpeed * slowMultiplier);
     }
 
-    public void RemoveSlow(float originalSpeed)
+    public void RemoveSlow(float restoreSpeed)
     {
         if (enemy != null && speedField != null)
         {
-            speedField.SetValue(enemy, originalSpeed);
+            speedField.SetValue(enemy, restoreSpeed);
         }
         isSlowed = false;
         Destroy(this);
@@ -247,17 +252,11 @@ public class EnemySlowModifier : MonoBehaviour
 
     private void LateUpdate()
     {
-        // Continuously reapply the slow to counteract the cached value
+        // Continuously reapply the slow in case it gets overwritten
         if (isSlowed && enemy != null && speedField != null && !enemy.IsDead)
         {
-            float currentSpeed = (float)speedField.GetValue(enemy);
-            float targetSpeed = currentSpeed;
-
-            // If speed got reset to original, reapply the multiplier
-            if (currentSpeed > 0.1f) // Avoid recalculating if already slowed
-            {
-                speedField.SetValue(enemy, currentSpeed * slowMultiplier);
-            }
+            float targetSlowedSpeed = originalSpeed * slowMultiplier;
+            speedField.SetValue(enemy, targetSlowedSpeed);
         }
     }
 }

@@ -3,7 +3,7 @@ using System.Runtime.CompilerServices;
 using UnityEngine;
 
 /// <summary>
-/// Optimized roguelite-style enemy spawner with level-based enemy type unlocking.
+/// Optimized roguelite-style enemy spawner with level-based enemy unlocks.
 /// Uses object pooling, avoids LINQ, minimizes allocations.
 /// </summary>
 public class EnemySpawner : MonoBehaviour
@@ -28,7 +28,6 @@ public class EnemySpawner : MonoBehaviour
     [SerializeField] private float enemiesPerSpawnIncreaseRate = 0.1f;
 
     [Header("Enemy Types")]
-    [Tooltip("Each enemy type has its own unlock level setting")]
     [SerializeField] private EnemySpawnEntry[] enemyTypes;
 
     [Header("Runtime Info")]
@@ -47,16 +46,16 @@ public class EnemySpawner : MonoBehaviour
     private Queue<EnemyBase>[] enemyPools;
     private int[] prefabInstanceIds;
 
-    // Pre-allocated for spawn selection (avoid allocations)
-    private int[] availableIndices;
-    private float[] cumulativeWeights;
-    private int availableCount;
-
     // Cached calculations
     private float currentSpawnInterval;
     private int currentEnemiesPerSpawn;
     private float spawnTimer;
     private bool isSpawning = true;
+
+    // Pre-allocated for spawn selection (avoid allocations)
+    private int[] availableIndices;
+    private float[] cumulativeWeights;
+    private int availableCount;
 
     // Cached vectors
     private Vector3 spawnPosition;
@@ -172,7 +171,6 @@ public class EnemySpawner : MonoBehaviour
     {
         if (currentEnemyCount >= maxEnemies) return;
 
-        // Select from all unlocked enemy types using weighted random
         int entryIndex = SelectEnemyTypeIndex();
         if (entryIndex < 0) return;
 
@@ -190,7 +188,7 @@ public class EnemySpawner : MonoBehaviour
         Transform enemyTransform = enemy.transform;
         enemyTransform.position = spawnPosition;
 
-        // Calculate rotation to face player
+        // Calculate rotation to face player (inline)
         float lookX = playerPos.x - spawnPosition.x;
         float lookZ = playerPos.z - spawnPosition.z;
         if (lookX * lookX + lookZ * lookZ > 0.001f)
@@ -217,22 +215,21 @@ public class EnemySpawner : MonoBehaviour
         currentEnemyCount++;
     }
 
-    /// <summary>
-    /// Selects an enemy type from all unlocked types using weighted random selection.
-    /// Only considers enemies whose unlock level is less than or equal to current player level.
-    /// </summary>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private int SelectEnemyTypeIndex()
     {
-        // Build available list without allocations
+        // Build available list based on player level
         availableCount = 0;
         float totalWeight = 0f;
 
         for (int i = 0; i < enemyTypes.Length; i++)
         {
             EnemySpawnEntry entry = enemyTypes[i];
-            // Check if enemy is unlocked (player level >= unlock level)
-            if (entry.stats != null && cachedPlayerLevel >= entry.unlockLevel)
+
+            // Check if enemy is unlocked based on player level
+            if (entry.stats != null &&
+                cachedPlayerLevel >= entry.unlockAtLevel &&
+                gameTime >= entry.stats.minSpawnTime)
             {
                 availableIndices[availableCount] = i;
                 totalWeight += entry.stats.spawnWeight;
@@ -266,14 +263,14 @@ public class EnemySpawner : MonoBehaviour
         RecalculateDifficulty();
 
 #if UNITY_EDITOR
-        // Log which enemies are now available
-        int unlockedCount = 0;
+        // Log newly unlocked enemies
         for (int i = 0; i < enemyTypes.Length; i++)
         {
-            if (enemyTypes[i].unlockLevel <= newLevel)
-                unlockedCount++;
+            if (enemyTypes[i].unlockAtLevel == newLevel && enemyTypes[i].prefab != null)
+            {
+                Debug.Log($"[EnemySpawner] Unlocked new enemy type: {enemyTypes[i].prefab.name} at level {newLevel}");
+            }
         }
-        Debug.Log($"[EnemySpawner] Level {newLevel} - {unlockedCount} enemy types unlocked");
 #endif
     }
 
@@ -441,7 +438,22 @@ public class EnemySpawner : MonoBehaviour
         spawnTimer = 0f;
         currentSpawnInterval = spawnInterval;
         currentEnemiesPerSpawn = baseEnemiesPerSpawn;
-        cachedPlayerLevel = 1;
+    }
+
+    /// <summary>
+    /// Get list of enemy types available at current player level
+    /// </summary>
+    public List<string> GetUnlockedEnemyTypes()
+    {
+        List<string> unlocked = new List<string>();
+        for (int i = 0; i < enemyTypes.Length; i++)
+        {
+            if (enemyTypes[i].prefab != null && cachedPlayerLevel >= enemyTypes[i].unlockAtLevel)
+            {
+                unlocked.Add(enemyTypes[i].prefab.name);
+            }
+        }
+        return unlocked;
     }
 
 #if UNITY_EDITOR
@@ -450,6 +462,13 @@ public class EnemySpawner : MonoBehaviour
 
     [ContextMenu("Spawn Wave")]
     public void DebugSpawnWave() => SpawnWave();
+
+    [ContextMenu("Show Unlocked Enemies")]
+    public void ShowUnlockedEnemies()
+    {
+        var unlocked = GetUnlockedEnemyTypes();
+        Debug.Log($"[EnemySpawner] Level {cachedPlayerLevel} - Unlocked enemies: {string.Join(", ", unlocked)}");
+    }
 
     private void OnDrawGizmosSelected()
     {
@@ -487,11 +506,11 @@ public class EnemySpawner : MonoBehaviour
     {
         get
         {
-            int unlocked = 0;
+            int unlockedCount = 0;
             for (int i = 0; i < enemyTypes.Length; i++)
             {
-                if (enemyTypes[i].unlockLevel <= cachedPlayerLevel)
-                    unlocked++;
+                if (enemyTypes[i].prefab != null && cachedPlayerLevel >= enemyTypes[i].unlockAtLevel)
+                    unlockedCount++;
             }
 
             return new DifficultySnapshot
@@ -501,7 +520,7 @@ public class EnemySpawner : MonoBehaviour
                 enemiesPerSpawn = currentEnemiesPerSpawn,
                 enemyHealthMultiplier = 1f + cachedPlayerLevel * 0.1f,
                 enemyDamageMultiplier = 1f + cachedPlayerLevel * 0.05f,
-                unlockedEnemyTypes = unlocked
+                unlockedEnemyTypes = unlockedCount
             };
         }
     }
@@ -510,15 +529,15 @@ public class EnemySpawner : MonoBehaviour
 [System.Serializable]
 public class EnemySpawnEntry
 {
-    [Tooltip("The enemy prefab to spawn")]
+    [Tooltip("Enemy prefab to spawn")]
     public GameObject prefab;
 
-    [Tooltip("Stats for this enemy type")]
+    [Tooltip("Enemy stats configuration")]
     public EnemyStats stats;
 
-    [Tooltip("Pool size for object pooling")]
+    [Tooltip("Number of enemies to pre-create in the pool")]
     public int poolSize = 20;
 
     [Tooltip("Player level required to unlock this enemy type")]
-    public int unlockLevel = 1;
+    public int unlockAtLevel = 1;
 }

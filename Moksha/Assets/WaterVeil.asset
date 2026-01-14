@@ -15,10 +15,10 @@ MonoBehaviour:
   powerUpName: WaterVeil
   description: '"Lets Turn the Tide"'
   icon: {fileID: 0}
-  rarity: 0
+  rarity: 2
   canStack: 1
-  maxStacks: 0
+  maxStacks: 1
   slowDuration: 3
   slowMultiplier: 0.5
-  veilRadius: 10
+  veilRadius: 3
   damagePerSecond: 0
