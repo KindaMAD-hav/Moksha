@@ -304,7 +304,7 @@ MonoBehaviour:
   currentHealth: 0
   targetTransform: {fileID: 0}
   projectileSpeed: 10
-  projectilePrefab: {fileID: 0}
+  projectilePrefab: {fileID: 9059609539505162581, guid: 8d08ef81d9e7f6844bbd7d191544b82a, type: 3}
   firePoint: {fileID: 0}
   projectileLifetime: 5
   preferredDistance: 8
