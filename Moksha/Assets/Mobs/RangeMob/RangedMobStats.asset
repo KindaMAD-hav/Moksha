@@ -21,6 +21,8 @@ MonoBehaviour:
   damage: 15
   attackCooldown: 1
   attackRange: 10
+  projectileSpeed: 15
+  projectileLifetime: 2
   xpReward: 10
   hitEffect: {fileID: 0}
   deathEffect: {fileID: 0}

@@ -1,9 +1,5 @@
 using UnityEngine;
 
-/// <summary>
-/// ScriptableObject containing all stats for an enemy type.
-/// Create different assets for different enemy variants.
-/// </summary>
 [CreateAssetMenu(fileName = "NewEnemyStats", menuName = "Enemies/Enemy Stats")]
 public class EnemyStats : ScriptableObject
 {
@@ -18,13 +14,21 @@ public class EnemyStats : ScriptableObject
     public float moveSpeed = 3f;
     public float rotationSpeed = 360f;
     [Tooltip("How close before stopping to attack")]
-    public float stoppingDistance = 1.5f;
+    public float stoppingDistance = 15f;
 
-    [Header("Combat")]
+    [Header("Combat (Fire Rate)")]
     public float damage = 10f;
+    [Tooltip("Time between shots (Lower = Faster Fire Rate)")]
     public float attackCooldown = 1f;
-    [Tooltip("Range at which enemy can attack")]
-    public float attackRange = 2f;
+    [Tooltip("Range at which enemy starts attacking")]
+    public float attackRange = 20f;
+
+    // --- NEW SECTION ---
+    [Header("Projectile Settings")]
+    [Tooltip("How fast the bullet travels")]
+    public float projectileSpeed = 15f;
+    [Tooltip("How long the bullet exists before destroying (if it hits nothing)")]
+    public float projectileLifetime = 5f;
 
     [Header("Rewards")]
     public int xpReward = 10;
@@ -39,8 +43,6 @@ public class EnemyStats : ScriptableObject
     public AudioClip attackSound;
 
     [Header("Spawning")]
-    [Tooltip("Base weight for spawn probability (higher = more common)")]
     public float spawnWeight = 10f;
-    [Tooltip("Minimum game time before this enemy can spawn")]
     public float minSpawnTime = 0f;
 }
