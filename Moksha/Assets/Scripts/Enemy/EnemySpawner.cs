@@ -3,7 +3,7 @@ using System.Runtime.CompilerServices;
 using UnityEngine;
 
 /// <summary>
-/// Optimized roguelite-style enemy spawner.
+/// Optimized roguelite-style enemy spawner with level-based enemy type unlocking.
 /// Uses object pooling, avoids LINQ, minimizes allocations.
 /// </summary>
 public class EnemySpawner : MonoBehaviour
@@ -21,19 +21,24 @@ public class EnemySpawner : MonoBehaviour
     [SerializeField] private Vector2 worldMin; // bottom-left (X,Z)
     [SerializeField] private Vector2 worldMax; // top-right (X,Z)
 
-
     [Header("Difficulty Scaling")]
     [SerializeField] private float minSpawnInterval = 0.3f;
     [SerializeField] private float spawnIntervalDecreaseRate = 0.01f;
     [SerializeField] private int baseEnemiesPerSpawn = 1;
     [SerializeField] private float enemiesPerSpawnIncreaseRate = 0.1f;
 
-    [Header("Enemy Types")]
+    [Header("Enemy Types (Order matters!)")]
+    [Tooltip("Enemies should be ordered by unlock level. First enemy unlocks at level 1.")]
     [SerializeField] private EnemySpawnEntry[] enemyTypes;
+
+    [Header("Level Unlock Settings")]
+    [Tooltip("Level interval for unlocking new enemy types (e.g., 4 = unlock at levels 1, 5, 9, 13...)")]
+    [SerializeField] private int levelUnlockInterval = 4;
 
     [Header("Runtime Info")]
     [SerializeField] private int currentEnemyCount;
     [SerializeField] private float gameTime;
+    [SerializeField] private int currentEnemyTypeIndex = 0; // Which enemy type is active
 
     [Header("Stall Recovery (Safety Net)")]
     [SerializeField] private bool enableStallRecovery = true;
@@ -43,23 +48,16 @@ public class EnemySpawner : MonoBehaviour
 
     private float lastSuccessfulSpawnUnscaledTime;
 
-
     // Object pools - array-based for cache efficiency
     private Queue<EnemyBase>[] enemyPools;
     private int[] prefabInstanceIds;
-    
+
     // Cached calculations
     private float currentSpawnInterval;
     private int currentEnemiesPerSpawn;
     private float spawnTimer;
     private bool isSpawning = true;
-    
-    // Pre-allocated for spawn selection (avoid allocations)
-    private int[] availableIndices;
-    private float[] cumulativeWeights;
-    private int availableCount;
 
-    
     // Cached vectors
     private Vector3 spawnPosition;
     private Vector3 playerPos;
@@ -70,9 +68,9 @@ public class EnemySpawner : MonoBehaviour
 
     public int CurrentEnemyCount => currentEnemyCount;
     public float GameTime => gameTime;
+    public int CurrentEnemyTypeIndex => currentEnemyTypeIndex;
 
     private int cachedPlayerLevel = 1;
-
 
     private void Awake()
     {
@@ -86,18 +84,15 @@ public class EnemySpawner : MonoBehaviour
         currentSpawnInterval = spawnInterval;
         currentEnemiesPerSpawn = baseEnemiesPerSpawn;
         spawnDistanceRange = maxSpawnDistance - minSpawnDistance;
-        
+
         // Pre-allocate collections
         int typeCount = enemyTypes != null ? enemyTypes.Length : 0;
         enemyPools = new Queue<EnemyBase>[typeCount];
         prefabInstanceIds = new int[typeCount];
-        availableIndices = new int[typeCount];
-        cumulativeWeights = new float[typeCount];
     }
 
     private void Start()
     {
-        
         if (playerTransform == null)
         {
             var player = GameObject.FindGameObjectWithTag("Player");
@@ -110,6 +105,7 @@ public class EnemySpawner : MonoBehaviour
         if (ExperienceManager.Instance != null)
         {
             cachedPlayerLevel = ExperienceManager.Instance.CurrentLevel;
+            UpdateCurrentEnemyType();
             ExperienceManager.Instance.OnLevelUp += OnPlayerLevelUp;
         }
         lastSuccessfulSpawnUnscaledTime = Time.unscaledTime;
@@ -121,13 +117,6 @@ public class EnemySpawner : MonoBehaviour
 
         float dt = Time.deltaTime;
         gameTime += dt;
-        
-        //// Update difficulty (simple math, no allocations)
-        //currentSpawnInterval = spawnInterval - (spawnIntervalDecreaseRate * gameTime);
-        //if (currentSpawnInterval < minSpawnInterval) 
-        //    currentSpawnInterval = minSpawnInterval;
-        
-        //currentEnemiesPerSpawn = baseEnemiesPerSpawn + (int)(enemiesPerSpawnIncreaseRate * gameTime);
 
         spawnTimer += dt;
         if (spawnTimer >= currentSpawnInterval)
@@ -135,32 +124,29 @@ public class EnemySpawner : MonoBehaviour
             spawnTimer = 0f;
             SpawnWave();
         }
+
         // --- Stall Recovery Watchdog ---
         if (enableStallRecovery && Time.timeScale > 0f && playerTransform != null)
         {
-            // If we have room to spawn but haven't successfully spawned in a while, recover.
             if (currentEnemyCount < maxEnemies &&
                 (Time.unscaledTime - lastSuccessfulSpawnUnscaledTime) > stallSeconds)
             {
-                // In case something turned spawning off and forgot to turn it back on
                 isSpawning = true;
 
-                // Force a few spawns to "kick" the system back to life (uses current scaling)
                 int burst = Mathf.Min(recoveryBurst, maxEnemies - currentEnemyCount);
                 for (int i = 0; i < burst; i++)
-                    SpawnEnemy(); // uses currentEnemiesPerSpawn/currentSpawnInterval logic
+                    SpawnEnemy();
 
 #if UNITY_EDITOR
                 if (logRecoveryInEditor)
                     Debug.Log($"[EnemySpawner] Stall recovery triggered. Burst={burst}, Level={cachedPlayerLevel}, Count={currentEnemyCount}");
 #endif
 
-                // Reset timer so we don't spam recovery every frame
                 lastSuccessfulSpawnUnscaledTime = Time.unscaledTime;
             }
         }
-
     }
+
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private bool IsInsideBounds(Vector3 pos)
     {
@@ -186,14 +172,16 @@ public class EnemySpawner : MonoBehaviour
     {
         if (currentEnemyCount >= maxEnemies) return;
 
-        int entryIndex = SelectEnemyTypeIndex();
-        if (entryIndex < 0) return;
-        
+        // Always spawn the current enemy type based on player level
+        int entryIndex = currentEnemyTypeIndex;
+
+        if (entryIndex < 0 || entryIndex >= enemyTypes.Length) return;
+
         EnemySpawnEntry entry = enemyTypes[entryIndex];
         if (entry.prefab == null) return;
 
         if (!CalculateSpawnPosition())
-            return; // skip spawning this enemy
+            return;
 
         // Get from pool
         EnemyBase enemy = GetFromPool(entryIndex, entry);
@@ -202,18 +190,19 @@ public class EnemySpawner : MonoBehaviour
         // Setup enemy
         Transform enemyTransform = enemy.transform;
         enemyTransform.position = spawnPosition;
-        
-        // Calculate rotation to face player (inline)
+
+        // Calculate rotation to face player
         float lookX = playerPos.x - spawnPosition.x;
         float lookZ = playerPos.z - spawnPosition.z;
         if (lookX * lookX + lookZ * lookZ > 0.001f)
         {
             enemyTransform.rotation = Quaternion.LookRotation(new Vector3(lookX, 0f, lookZ));
         }
-        
+
         enemy.Initialize(entry.stats, playerTransform);
         enemy.gameObject.SetActive(true);
         lastSuccessfulSpawnUnscaledTime = Time.unscaledTime;
+
         // Register with manager
         if (EnemyManager.Instance != null)
         {
@@ -224,42 +213,32 @@ public class EnemySpawner : MonoBehaviour
         {
             enemy.SetManagedByManager(false);
         }
-            
+
         enemy.OnDeath += OnEnemyDeath;
         currentEnemyCount++;
     }
 
+    /// <summary>
+    /// Updates which enemy type should spawn based on player level.
+    /// Formula: enemyTypeIndex = (level - 1) / levelUnlockInterval
+    /// Level 1-4: index 0, Level 5-8: index 1, Level 9-12: index 2, etc.
+    /// </summary>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private int SelectEnemyTypeIndex()
+    private void UpdateCurrentEnemyType()
     {
-        // Build available list without allocations
-        availableCount = 0;
-        float totalWeight = 0f;
+        if (enemyTypes == null || enemyTypes.Length == 0) return;
 
-        for (int i = 0; i < enemyTypes.Length; i++)
-        {
-            EnemySpawnEntry entry = enemyTypes[i];
-            if (entry.stats != null && gameTime >= entry.stats.minSpawnTime)
-            {
-                availableIndices[availableCount] = i;
-                totalWeight += entry.stats.spawnWeight;
-                cumulativeWeights[availableCount] = totalWeight;
-                availableCount++;
-            }
-        }
+        // Calculate which enemy type should be active
+        int calculatedIndex = (cachedPlayerLevel - 1) / levelUnlockInterval;
 
-        if (availableCount == 0) return -1;
+        // Clamp to available enemy types
+        currentEnemyTypeIndex = Mathf.Clamp(calculatedIndex, 0, enemyTypes.Length - 1);
 
-        // Weighted random selection
-        float random = Random.value * totalWeight;
-        for (int i = 0; i < availableCount; i++)
-        {
-            if (random <= cumulativeWeights[i])
-                return availableIndices[i];
-        }
-
-        return availableIndices[availableCount - 1];
+#if UNITY_EDITOR
+        Debug.Log($"[EnemySpawner] Level {cachedPlayerLevel} -> Spawning Enemy Type {currentEnemyTypeIndex} ({enemyTypes[currentEnemyTypeIndex].prefab.name})");
+#endif
     }
+
     private void OnDestroy()
     {
         if (ExperienceManager.Instance != null)
@@ -268,8 +247,22 @@ public class EnemySpawner : MonoBehaviour
 
     private void OnPlayerLevelUp(int newLevel)
     {
+        int previousEnemyType = currentEnemyTypeIndex;
         cachedPlayerLevel = newLevel;
+
+        UpdateCurrentEnemyType();
         RecalculateDifficulty();
+
+        // If enemy type changed, optionally clear old enemies
+        if (previousEnemyType != currentEnemyTypeIndex)
+        {
+#if UNITY_EDITOR
+            Debug.Log($"[EnemySpawner] Enemy type changed from {previousEnemyType} to {currentEnemyTypeIndex}!");
+#endif
+            // Optional: Kill all old enemy types when new type unlocks
+            // Uncomment the line below if you want this behavior
+            // KillAllEnemies();
+        }
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -286,7 +279,6 @@ public class EnemySpawner : MonoBehaviour
         currentEnemiesPerSpawn = baseEnemiesPerSpawn +
                                  Mathf.FloorToInt(enemiesPerSpawnIncreaseRate * level);
     }
-
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private bool CalculateSpawnPosition()
@@ -308,7 +300,7 @@ public class EnemySpawner : MonoBehaviour
                 return true;
         }
 
-        // ✅ FALLBACK (CLAMP TO WORLD BOUNDS)
+        // Fallback (clamp to world bounds)
         spawnPosition.x = Mathf.Clamp(
             playerPos.x + Random.Range(-maxSpawnDistance, maxSpawnDistance),
             worldMin.x,
@@ -322,11 +314,8 @@ public class EnemySpawner : MonoBehaviour
         );
 
         spawnPosition.y = playerPos.y;
-        return true; // 🔥 NEVER FAIL
+        return true;
     }
-
-
-
 
     private void InitializePools()
     {
@@ -338,9 +327,9 @@ public class EnemySpawner : MonoBehaviour
             if (entry.prefab == null) continue;
 
             prefabInstanceIds[i] = entry.prefab.GetInstanceID();
-            
+
             Queue<EnemyBase> pool = new Queue<EnemyBase>(entry.poolSize);
-            
+
             // Pre-warm pool
             for (int j = 0; j < entry.poolSize; j++)
             {
@@ -349,7 +338,7 @@ public class EnemySpawner : MonoBehaviour
                 obj.SetActive(false);
                 pool.Enqueue(enemy);
             }
-            
+
             enemyPools[i] = pool;
         }
     }
@@ -358,7 +347,7 @@ public class EnemySpawner : MonoBehaviour
     private EnemyBase GetFromPool(int index, EnemySpawnEntry entry)
     {
         Queue<EnemyBase> pool = enemyPools[index];
-        
+
         EnemyBase enemy;
         if (pool.Count > 0)
         {
@@ -373,6 +362,7 @@ public class EnemySpawner : MonoBehaviour
 
         return enemy;
     }
+
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private bool IsValidSpawnPosition(Vector3 pos)
     {
@@ -388,12 +378,11 @@ public class EnemySpawner : MonoBehaviour
                pos.z <= worldMax.y;
     }
 
-
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private void ReturnToPool(EnemyBase enemy, int index)
     {
         enemy.OnDeath -= OnEnemyDeath;
-        
+
         if (EnemyManager.Instance != null)
             EnemyManager.Instance.UnregisterEnemy(enemy);
 
@@ -404,7 +393,7 @@ public class EnemySpawner : MonoBehaviour
     private void OnEnemyDeath(EnemyBase enemy)
     {
         currentEnemyCount--;
-        
+
         // Find pool index by stats reference
         for (int i = 0; i < enemyTypes.Length; i++)
         {
@@ -423,10 +412,9 @@ public class EnemySpawner : MonoBehaviour
     {
         if (EnemyManager.Instance != null)
         {
-            // Use stack-allocated list for small counts, otherwise heap
             List<EnemyBase> tempList = new List<EnemyBase>(currentEnemyCount);
             EnemyManager.Instance.GetActiveEnemies(tempList);
-            
+
             for (int i = tempList.Count - 1; i >= 0; i--)
             {
                 tempList[i].TakeDamage(float.MaxValue);
@@ -441,6 +429,9 @@ public class EnemySpawner : MonoBehaviour
         spawnTimer = 0f;
         currentSpawnInterval = spawnInterval;
         currentEnemiesPerSpawn = baseEnemiesPerSpawn;
+        cachedPlayerLevel = 1;
+        currentEnemyTypeIndex = 0;
+        UpdateCurrentEnemyType();
     }
 
 #if UNITY_EDITOR
@@ -469,7 +460,6 @@ public class EnemySpawner : MonoBehaviour
             worldMax.y - worldMin.y
         );
         Gizmos.DrawWireCube(center1, size);
-
     }
 #endif
 
@@ -480,17 +470,18 @@ public class EnemySpawner : MonoBehaviour
         public int enemiesPerSpawn;
         public float enemyHealthMultiplier;
         public float enemyDamageMultiplier;
+        public int currentEnemyType;
     }
+
     public DifficultySnapshot CurrentDifficulty => new DifficultySnapshot
     {
         level = cachedPlayerLevel,
         spawnInterval = currentSpawnInterval,
         enemiesPerSpawn = currentEnemiesPerSpawn,
-        enemyHealthMultiplier = 1f + cachedPlayerLevel * 0.1f, // future
-        enemyDamageMultiplier = 1f + cachedPlayerLevel * 0.05f // future
+        enemyHealthMultiplier = 1f + cachedPlayerLevel * 0.1f,
+        enemyDamageMultiplier = 1f + cachedPlayerLevel * 0.05f,
+        currentEnemyType = currentEnemyTypeIndex
     };
-
-
 }
 
 [System.Serializable]
