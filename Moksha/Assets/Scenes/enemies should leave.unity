@@ -30959,7 +30959,7 @@ MonoBehaviour:
   baseEnemiesPerSpawn: 2
   enemiesPerSpawnIncreaseRate: 1
   enemyTypes:
-  - prefab: {fileID: 1036842401912313784, guid: c63c78dceac93844dbe6e90efb22083b, type: 3}
+  - prefab: {fileID: 8658893934564567433, guid: 1c7610aac519f4042a61e5c715b3994f, type: 3}
     stats: {fileID: 11400000, guid: 9649fe68c029244428e13481cdaf11e5, type: 2}
     poolSize: 20
     unlockAtLevel: 1
@@ -32539,8 +32539,6 @@ MonoBehaviour:
   aimStick: {fileID: 1636591908}
   pointerPosition: {fileID: 1950441513}
   aimPivot: {fileID: 907260371}
-  debugAiming: 0
-  debugMovement: 0
 --- !u!143 &913657308
 CharacterController:
   m_ObjectHideFlags: 0

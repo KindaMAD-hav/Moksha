@@ -10,24 +10,22 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: df216b44e432a664f9f59aa94c2bc0b2, type: 3}
-  m_Name: RangedMobStats
+  m_Name: MinotaurStats
   m_EditorClassIdentifier: Assembly-CSharp::EnemyStats
-  enemyName: RangedMob
+  enemyName: Minotaur
   icon: {fileID: 0}
-  maxHealth: 3
+  maxHealth: 20
   moveSpeed: 3
   rotationSpeed: 360
   stoppingDistance: 1.5
-  damage: 15
-  attackCooldown: 3
-  attackRange: 10
-  projectileSpeed: 15
-  projectileLifetime: 2
-  xpReward: 10
+  damage: 10
+  attackCooldown: 1
+  attackRange: 2
+  xpReward: 50
   hitEffect: {fileID: 0}
   deathEffect: {fileID: 0}
   hitSound: {fileID: 0}
   deathSound: {fileID: 0}
   attackSound: {fileID: 0}
-  spawnWeight: 30
+  spawnWeight: 20
   minSpawnTime: 0
