@@ -23,6 +23,7 @@ public abstract class EnemyBase : MonoBehaviour, IDamageable
 
     // Cached values for performance
     protected Transform cachedTransform;
+    protected Collider cachedCollider;
     protected float cachedMaxHealth;
     protected float cachedMoveSpeed;
     protected float cachedRotationSpeed;
@@ -87,6 +88,7 @@ public abstract class EnemyBase : MonoBehaviour, IDamageable
     protected virtual void Awake()
     {
         cachedTransform = transform;
+        cachedCollider = GetComponent<Collider>();
         purifyBridge = GetComponent<EnemyPurifyBridge>();
         CacheStats();
         InitializeHealth();
@@ -258,10 +260,9 @@ public abstract class EnemyBase : MonoBehaviour, IDamageable
         IsDissolving = false;
         hasGrantedXP = false;
 
-        // Restore collider
-        Collider col = GetComponent<Collider>();
-        if (col != null)
-            col.enabled = true;
+        // Restore collider using cached reference
+        if (cachedCollider != null)
+            cachedCollider.enabled = true;
 
         InitializeHealth();
     }
