@@ -257,8 +257,8 @@ MonoBehaviour:
   slowPercentage: 0.5
   slowDuration: 2
   aoeIndicatorPrefab: {fileID: 0}
-  aoeColor: {r: 1, g: 0.2, b: 0.2, a: 0.5}
-  indicatorHeightOffset: 0.05
+  aoeColor: {r: 1, g: 0.2, b: 0.2, a: 0.21176471}
+  indicatorHeightOffset: 0.01
   impactEffectPrefab: {fileID: 0}
   trailRenderer: {fileID: 0}
   launchSound: {fileID: 0}
