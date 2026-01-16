@@ -7,6 +7,9 @@ Shader "Moksha/FloorRadialDissolveURP"
         _EdgeColor ("Edge Color", Color) = (1,0.5,0,1)
 
         _DissolveWidth ("Dissolve Width", Float) = 1.5
+
+        // Driven at runtime by FloorDecayController (Shader.SetGlobalFloat("_CollapseHeight", ...)).
+        _CollapseHeight ("Collapse Cylinder Height", Float) = 3
     }
 
     SubShader
@@ -54,6 +57,7 @@ Shader "Moksha/FloorRadialDissolveURP"
 
             float3 _CollapseCenter;
             float _CollapseRadius;
+            float _CollapseHeight;
             float _DissolveWidth;
 
             Varyings vert (Attributes v)
@@ -67,29 +71,31 @@ Shader "Moksha/FloorRadialDissolveURP"
 
             half4 frag (Varyings i) : SV_Target
             {
-                // Base color
                 half4 baseCol = tex2D(_BaseMap, i.uv);
 
-                // World-space radial distance (XZ only)
+                // Cylindrical falloff: radial in XZ, but limited to a vertical band in Y.
+                float halfH = max(0.0001, _CollapseHeight * 0.5);
+                float yDiff = abs(i.worldPos.y - _CollapseCenter.y);
+
+                // Outside the cylinder height: no dissolve (render normally)
+                if (yDiff > halfH)
+                    return baseCol;
+
+                // Radial distance in XZ
                 float2 worldXZ = i.worldPos.xz;
                 float2 centerXZ = _CollapseCenter.xz;
-
                 float dist = distance(worldXZ, centerXZ);
 
-                // Dissolve mask
                 float dissolve = (dist - _CollapseRadius) / _DissolveWidth;
                 dissolve = saturate(dissolve);
 
-                // Noise
                 float2 noiseUV = worldXZ * 0.25;
                 float noise = tex2D(_NoiseTex, noiseUV).r;
                 dissolve += (noise - 0.5) * 0.5;
                 dissolve = saturate(dissolve);
 
-                // Alpha clip
                 clip(dissolve - 0.01);
 
-                // Edge glow
                 float edge = 1.0 - dissolve;
                 baseCol.rgb += _EdgeColor.rgb * edge;
 

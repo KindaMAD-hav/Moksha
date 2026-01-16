@@ -10,6 +10,10 @@ public class FloorDecayController : MonoBehaviour
     [Header("Collapse Settings")]
     [SerializeField] private float collapseSpeed = 12f;
 
+    [Tooltip("Vertical height of the collapse effect cylinder (world units).\n" +
+             "Only fragments within this Y band around the collapse center will dissolve.")]
+    [SerializeField] private float collapseCylinderHeight = 3f;
+
     private readonly List<FloorTileDecay> tiles = new();
 
     private bool collapseTriggered;
@@ -28,6 +32,7 @@ public class FloorDecayController : MonoBehaviour
     public float CollapseRadius => collapseRadius;
     public Vector3 CollapseCenter => collapseCenter;
     public bool IsCollapsing => isCollapsing;
+    public float CollapseCylinderHeight => collapseCylinderHeight;
 
     /* -------------------- REGISTRATION -------------------- */
 
@@ -116,7 +121,7 @@ public class FloorDecayController : MonoBehaviour
         isCollapsing = true;
 
         collapseCenter = tile.transform.position;
-        collapseRadius = 0f; // 🔥 always start from zero
+        collapseRadius = 0f; // always start from zero
 
         BeginCollapse();
     }
@@ -156,12 +161,14 @@ public class FloorDecayController : MonoBehaviour
 
         Shader.SetGlobalVector("_CollapseCenter", collapseCenter);
         Shader.SetGlobalFloat("_CollapseRadius", collapseRadius);
+        Shader.SetGlobalFloat("_CollapseHeight", collapseCylinderHeight);
     }
 
     private void OnDisable()
     {
         Shader.SetGlobalFloat("_CollapseRadius", -9999f);
         Shader.SetGlobalVector("_CollapseCenter", Vector3.zero);
+        Shader.SetGlobalFloat("_CollapseHeight", 0f);
     }
 
 #if UNITY_EDITOR
@@ -170,7 +177,32 @@ public class FloorDecayController : MonoBehaviour
         if (!isCollapsing) return;
 
         Gizmos.color = Color.red;
-        Gizmos.DrawWireSphere(collapseCenter, collapseRadius);
+
+        // Draw a quick cylinder-ish gizmo (approx): two circles + vertical lines.
+        const int steps = 32;
+        float halfH = Mathf.Max(0.01f, collapseCylinderHeight * 0.5f);
+        Vector3 top = collapseCenter + Vector3.up * halfH;
+        Vector3 bottom = collapseCenter - Vector3.up * halfH;
+
+        Vector3 prevTop = top + new Vector3(collapseRadius, 0f, 0f);
+        Vector3 prevBottom = bottom + new Vector3(collapseRadius, 0f, 0f);
+
+        for (int s = 1; s <= steps; s++)
+        {
+            float a = (s / (float)steps) * Mathf.PI * 2f;
+            Vector3 off = new Vector3(Mathf.Cos(a) * collapseRadius, 0f, Mathf.Sin(a) * collapseRadius);
+            Vector3 curTop = top + off;
+            Vector3 curBottom = bottom + off;
+            Gizmos.DrawLine(prevTop, curTop);
+            Gizmos.DrawLine(prevBottom, curBottom);
+
+            // 4 vertical lines to hint height
+            if (s % (steps / 4) == 0)
+                Gizmos.DrawLine(curTop, curBottom);
+
+            prevTop = curTop;
+            prevBottom = curBottom;
+        }
     }
 #endif
 }
