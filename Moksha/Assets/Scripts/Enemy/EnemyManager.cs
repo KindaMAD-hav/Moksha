@@ -4,7 +4,7 @@ using UnityEngine;
 
 /// <summary>
 /// Centralized enemy manager that handles all enemy updates in batches.
-/// Optimized with parallel arrays to eliminate extern calls during lookups.
+/// Optimized for cache efficiency and minimal overhead.
 /// </summary>
 public class EnemyManager : MonoBehaviour
 {
@@ -18,11 +18,6 @@ public class EnemyManager : MonoBehaviour
 
     // Dense array for cache-friendly iteration (no holes)
     private EnemyBase[] enemies;
-
-    // OPTIMIZATION: Parallel array to cache positions. 
-    // Removes the need to call transform.position (Slow C++ Interop) during distance checks.
-    private Vector3[] cachedPositions;
-
     private int enemyCount;
     private int capacity;
 
@@ -39,10 +34,9 @@ public class EnemyManager : MonoBehaviour
         }
         Instance = this;
 
-        // Pre-allocate arrays
+        // Pre-allocate array
         capacity = 512;
         enemies = new EnemyBase[capacity];
-        cachedPositions = new Vector3[capacity];
         enemyCount = 0;
     }
 
@@ -64,19 +58,12 @@ public class EnemyManager : MonoBehaviour
         deltaTime = Time.deltaTime;
         playerPosition = playerTransform.position;
 
-        // Local caching of count for loop speed
+        // Process all enemies - dense array means no null checks needed
         int count = enemyCount;
-
-        // OPTIMIZATION: Single loop to Tick logic AND update cached positions
-        for (int i = 0; i < count; i++)
-        {
-            // 1. Run Logic
-            enemies[i].Tick(deltaTime, playerPosition);
-
-            // 2. Cache Position for querying (e.g., by Projectiles)
-            // This is safer than updating in Tick because we own the memory here
-            cachedPositions[i] = enemies[i].transform.position;
-        }
+        //for (int i = 0; i < count; i++)
+        //{
+        //    enemies[i].Tick(deltaTime, playerPosition);
+        //}
 
         activeEnemyCount = count;
     }
@@ -87,19 +74,15 @@ public class EnemyManager : MonoBehaviour
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public void RegisterEnemy(EnemyBase enemy)
     {
-        // Grow arrays if needed
+        // Grow array if needed
         if (enemyCount >= capacity)
         {
             capacity *= 2;
             System.Array.Resize(ref enemies, capacity);
-            System.Array.Resize(ref cachedPositions, capacity);
         }
 
         enemy.Index = enemyCount;
         enemies[enemyCount] = enemy;
-        // Position will be valid next frame, or we can set it now to be safe
-        cachedPositions[enemyCount] = enemy.transform.position;
-
         enemyCount++;
     }
 
@@ -114,84 +97,78 @@ public class EnemyManager : MonoBehaviour
 
         int lastIndex = enemyCount - 1;
 
-        // Swap with last element (if not already last) to keep array dense
+        // Swap with last element (if not already last)
         if (index < lastIndex)
         {
             EnemyBase lastEnemy = enemies[lastIndex];
-
-            // Swap Object Reference
             enemies[index] = lastEnemy;
-
-            // Swap Cached Position (to keep data aligned)
-            cachedPositions[index] = cachedPositions[lastIndex];
-
-            // Update Index
             lastEnemy.Index = index;
         }
 
-        // Clear last slot
         enemies[lastIndex] = null;
         enemy.Index = -1;
         enemyCount--;
     }
 
+    /// <summary>
+    /// Get current player position (cached, updated once per frame)
+    /// </summary>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public Vector3 GetPlayerPosition() => playerPosition;
 
+    /// <summary>
+    /// Set the player transform reference
+    /// </summary>
     public void SetPlayer(Transform player)
     {
         playerTransform = player;
     }
 
+    /// <summary>
+    /// Get all active enemies (for special abilities, etc.)
+    /// </summary>
     public void GetActiveEnemies(List<EnemyBase> result)
     {
         result.Clear();
         if (result.Capacity < enemyCount)
             result.Capacity = enemyCount;
-
+            
         for (int i = 0; i < enemyCount; i++)
         {
             EnemyBase enemy = enemies[i];
-            // Bitwise check is faster than bool logic
-            if (!enemy.IsDead | enemy.IsDissolving)
+            if (!enemy.IsDead || enemy.IsDissolving)
                 result.Add(enemy);
         }
     }
 
     /// <summary>
-    /// Find enemies within radius (squared distance for performance).
-    /// OPTIMIZED: Uses cached float array instead of Transform access.
+    /// Find enemies within radius (squared distance for performance)
     /// </summary>
     public void GetEnemiesInRadius(Vector3 center, float radius, List<EnemyBase> result)
     {
         result.Clear();
         float radiusSqr = radius * radius;
-        int count = enemyCount;
 
-        // Cache vector components to stack variables
-        float cx = center.x;
-        float cy = center.y;
-        float cz = center.z;
-
-        for (int i = 0; i < count; i++)
+        for (int i = 0; i < enemyCount; i++)
         {
-            // Check flags before distance (faster fail)
             EnemyBase enemy = enemies[i];
             if (enemy.IsDead && !enemy.IsDissolving) continue;
-
-            // OPTIMIZATION: Read from C# array, NO External Call to transform.position
-            Vector3 pos = cachedPositions[i];
-
-            float dx = pos.x - cx;
-            float dy = pos.y - cy;
-            float dz = pos.z - cz;
-
-            if ((dx * dx + dy * dy + dz * dz) <= radiusSqr)
+            
+            // Manual squared distance (faster than Vector3.Distance)
+            Vector3 pos = enemy.transform.position;
+            float dx = pos.x - center.x;
+            float dy = pos.y - center.y;
+            float dz = pos.z - center.z;
+            
+            if (dx * dx + dy * dy + dz * dz <= radiusSqr)
             {
                 result.Add(enemy);
             }
         }
     }
 
+    /// <summary>
+    /// Get enemy count
+    /// </summary>
     public int EnemyCount => enemyCount;
 }
