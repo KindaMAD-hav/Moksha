@@ -9,6 +9,8 @@ public class FloorDecayController : MonoBehaviour
 
     private readonly List<FloorTileDecay> tiles = new();
     private bool collapseTriggered;
+    public float FloorY => transform.position.y;
+
 
     public void RegisterTile(FloorTileDecay tile)
     {
@@ -23,10 +25,15 @@ public class FloorDecayController : MonoBehaviour
     }
     [SerializeField] private bool isCollapsing;
     [SerializeField] private Vector3 collapseCenter;
+    [SerializeField] private Collider[] tileColliders;
 
     public bool IsCollapsing => isCollapsing;
     public Vector3 CollapseCenter => collapseCenter;
 
+    private void CacheTileColliders()
+    {
+        tileColliders = GetComponentsInChildren<Collider>();
+    }
 
     /// <summary>
     /// Called when an enemy dies on this floor
@@ -63,6 +70,8 @@ public class FloorDecayController : MonoBehaviour
     }
     private void BeginCollapse()
     {
+        DisableTileColliders();
+
         // Stop further decay pulses on this floor
         collapseTriggered = true;
 
@@ -73,6 +82,16 @@ public class FloorDecayController : MonoBehaviour
         if (FloorManager.Instance != null)
         {
             FloorManager.Instance.OnFloorCollapseStarted(this);
+        }
+    }
+    private void DisableTileColliders()
+    {
+        if (tileColliders == null) return;
+
+        foreach (var col in tileColliders)
+        {
+            if (col != null)
+                col.enabled = false;
         }
     }
 

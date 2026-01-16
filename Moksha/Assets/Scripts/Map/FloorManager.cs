@@ -1,4 +1,6 @@
 using UnityEngine;
+using System.Collections;
+
 
 public class FloorManager : MonoBehaviour
 {
@@ -8,6 +10,8 @@ public class FloorManager : MonoBehaviour
     [SerializeField] private float floorHeightOffset = -10f;
 
     private FloorTileGenerator currentFloor;
+    private float landingY;
+
 
     private void Awake()
     {
@@ -28,8 +32,29 @@ public class FloorManager : MonoBehaviour
     {
         Debug.Log("[FloorManager] Floor collapse started");
 
-        // 1. Generate the next floor below
+        // 1. Generate the next floor below first (sets landingY)
         GenerateNextFloorBelow(collapsingFloor.transform);
+
+        // 2. Now schedule falls safely
+        var enemies = EnemyManager.Instance.GetActiveEnemiesUnsafe();
+        for (int i = 0; i < enemies.Length; i++)
+        {
+            EnemyBase enemy = enemies[i];
+            if (enemy == null) continue;
+
+            float delay = Vector3.Distance(
+                enemy.transform.position,
+                collapsingFloor.CollapseCenter
+            ) / 10f;
+
+            StartCoroutine(DelayedFall(enemy, delay));
+        }
+    }
+    private IEnumerator DelayedFall(EnemyBase enemy, float delay)
+    {
+        yield return new WaitForSeconds(delay);
+        if (enemy != null)
+            enemy.ForceFall(landingY);
     }
 
     private void GenerateNextFloorBelow(Transform collapsingFloor)
@@ -55,6 +80,7 @@ public class FloorManager : MonoBehaviour
 
         FloorDecayController newDecay =
             newFloorGO.GetComponent<FloorDecayController>();
+        landingY = newDecay.FloorY;
 
         // Register new floor
         currentFloor = newGenerator;

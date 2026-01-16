@@ -117,6 +117,7 @@ public class FloorTileGenerator : MonoBehaviour
                     FloorManager.Instance.RegisterCurrentFloor(this);
                 }
 
+                decayController.SendMessage("CacheTileColliders");
 
             }
         }
