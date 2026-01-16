@@ -1,7 +1,7 @@
 ﻿using UnityEngine;
 using System.Collections.Generic;
 
-[RequireComponent(typeof(BoxCollider))]
+//[RequireComponent(typeof(BoxCollider))]
 public class FloorTileGenerator : MonoBehaviour
 {
     [Header("Floor Prefabs")]
@@ -111,6 +111,10 @@ public class FloorTileGenerator : MonoBehaviour
                 if (decay != null)
                 {
                     decayController.RegisterTile(decay);
+                }
+                if (FloorManager.Instance != null)
+                {
+                    FloorManager.Instance.RegisterCurrentFloor(this);
                 }
 
 

@@ -21,6 +21,12 @@ public class FloorDecayController : MonoBehaviour
         tile.OnCriticalDecayReached -= HandleCriticalTile;
         tiles.Remove(tile);
     }
+    [SerializeField] private bool isCollapsing;
+    [SerializeField] private Vector3 collapseCenter;
+
+    public bool IsCollapsing => isCollapsing;
+    public Vector3 CollapseCenter => collapseCenter;
+
 
     /// <summary>
     /// Called when an enemy dies on this floor
@@ -48,11 +54,26 @@ public class FloorDecayController : MonoBehaviour
 
     private void HandleCriticalTile(FloorTileDecay tile)
     {
-        if (collapseTriggered) return;
+        if (isCollapsing) return;
 
+        isCollapsing = true;
+        collapseCenter = tile.transform.position;
+
+        BeginCollapse();
+    }
+    private void BeginCollapse()
+    {
+        // Stop further decay pulses on this floor
         collapseTriggered = true;
 
-        // For now, just log – collapse controller comes next
-        Debug.Log($"[FloorDecayController] Collapse requested by {tile.name}");
+        Debug.Log($"[FloorDecayController] Collapse started at {collapseCenter}");
+
+        // Notify a higher-level system (FloorManager / MapManager)
+        // We keep this loose so the controller does not own generation logic
+        if (FloorManager.Instance != null)
+        {
+            FloorManager.Instance.OnFloorCollapseStarted(this);
+        }
     }
+
 }
