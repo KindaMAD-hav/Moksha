@@ -128,14 +128,22 @@ public class BossEnemy : EnemyBase
         if (IsDissolving) return;
 
         // Clean up dead minions from tracking list
+        int beforeCount = activeMinions.Count;
         activeMinions.RemoveAll(m => m == null || m.IsDead);
+        if (activeMinions.Count != beforeCount)
+        {
+            Debug.Log($"[BossEnemy] Cleaned up {beforeCount - activeMinions.Count} dead minions. Active: {activeMinions.Count}");
+        }
 
         FaceTargetInstant();
         float sqrDistance = GetSqrDistanceToTarget();
 
         // Update timers
         if (attackTimer > 0f) attackTimer -= deltaTime;
-        if (spawnTimer > 0f) spawnTimer -= deltaTime;
+        if (spawnTimer > 0f) 
+        {
+            spawnTimer -= deltaTime;
+        }
         if (isFlashing) UpdateFlash(deltaTime);
 
         // --- AI LOGIC ---
@@ -143,6 +151,7 @@ public class BossEnemy : EnemyBase
         // Try to spawn minions periodically
         if (spawnTimer <= 0f && activeMinions.Count < maxActiveMinions)
         {
+            Debug.Log($"[BossEnemy] Attempting spawn. Timer: {spawnTimer:F2}, Active minions: {activeMinions.Count}/{maxActiveMinions}");
             TrySpawnMinions();
         }
 
@@ -225,9 +234,14 @@ public class BossEnemy : EnemyBase
 
     private void TrySpawnMinions()
     {
-        if (minionPrefabs == null || minionPrefabs.Length == 0) return;
+        if (minionPrefabs == null || minionPrefabs.Length == 0)
+        {
+            Debug.LogWarning("[BossEnemy] No minion prefabs assigned!");
+            return;
+        }
 
         spawnTimer = spawnCooldown;
+        Debug.Log($"[BossEnemy] TrySpawnMinions called! Reset timer to {spawnCooldown}s");
 
         // Trigger spawn animation
         if ((componentFlags & FLAG_ANIMATOR) != 0)
@@ -246,6 +260,8 @@ public class BossEnemy : EnemyBase
 
         // Spawn minions
         int toSpawn = Mathf.Min(minionsPerSpawn, maxActiveMinions - activeMinions.Count);
+        Debug.Log($"[BossEnemy] Spawning {toSpawn} minions (requested: {minionsPerSpawn}, space available: {maxActiveMinions - activeMinions.Count})");
+        
         for (int i = 0; i < toSpawn; i++)
         {
             SpawnMinion();
@@ -262,11 +278,26 @@ public class BossEnemy : EnemyBase
 
         if (prefab == null) return;
 
-        // Calculate spawn position around boss
+        // Calculate spawn position around boss with proper ground detection
         float angle = Random.Range(0f, 360f) * Mathf.Deg2Rad;
         float distance = Random.Range(spawnRadius * 0.5f, spawnRadius);
         Vector3 offset = new Vector3(Mathf.Cos(angle) * distance, 0f, Mathf.Sin(angle) * distance);
+        
+        // Start from boss position but ensure proper Y
         Vector3 spawnPos = cachedTransform.position + offset;
+        
+        // Raycast down to find ground
+        if (Physics.Raycast(spawnPos + Vector3.up * 10f, Vector3.down, out RaycastHit hit, 50f, LayerMask.GetMask("Ground", "Default", "Terrain")))
+        {
+            spawnPos.y = hit.point.y + 0.1f; // Slightly above ground
+        }
+        else
+        {
+            // Fallback: use player's Y position or 0
+            spawnPos.y = targetTransform != null ? targetTransform.position.y : 0f;
+        }
+
+        Debug.Log($"[BossEnemy] Spawning minion at position: {spawnPos} (Ground Y: {spawnPos.y})");
 
         // Instantiate minion - ensure it's active from the start
         GameObject minionObj = Instantiate(prefab, spawnPos, Quaternion.identity);
@@ -282,6 +313,23 @@ public class BossEnemy : EnemyBase
             Debug.LogError($"[BossEnemy] Minion prefab {prefab.name} is missing EnemyBase component!");
             Destroy(minionObj);
             return;
+        }
+
+        // CRITICAL: Ensure movement components are enabled before initialization
+        CharacterController cc = minionObj.GetComponent<CharacterController>();
+        if (cc != null && !cc.enabled)
+        {
+            cc.enabled = true;
+            Debug.Log($"[BossEnemy] Enabled CharacterController on minion");
+        }
+
+        Rigidbody rb = minionObj.GetComponent<Rigidbody>();
+        if (rb != null)
+        {
+            rb.isKinematic = false;
+            rb.useGravity = true;
+            rb.linearVelocity = Vector3.zero;
+            Debug.Log($"[BossEnemy] Reset Rigidbody on minion");
         }
 
         // Initialize with stats
@@ -408,7 +456,7 @@ public class BossEnemy : EnemyBase
     {
         base.ResetEnemy();
         attackTimer = 0f;
-        spawnTimer = 0f;
+        spawnTimer = 0f; // Start ready to spawn
         isFlashing = false;
         checkedDamageable = false;
         targetDamageable = null;
@@ -425,6 +473,8 @@ public class BossEnemy : EnemyBase
 
         if ((componentFlags & FLAG_DISSOLVE) != 0)
             dissolveEffect.ResetDissolve();
+            
+        Debug.Log("[BossEnemy] Boss reset - ready to spawn minions!");
     }
 
     // --- Flash Logic ---
