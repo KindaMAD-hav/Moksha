@@ -14975,7 +14975,7 @@ Light:
   serializedVersion: 12
   m_Type: 1
   m_Color: {r: 1, g: 1, b: 1, a: 1}
-  m_Intensity: 3.5
+  m_Intensity: 1.76
   m_Range: 10
   m_SpotAngle: 30
   m_InnerSpotAngle: 21.80208
@@ -31071,7 +31071,11 @@ MonoBehaviour:
   spawnIntervalDecreaseRate: 0.01
   baseEnemiesPerSpawn: 2
   enemiesPerSpawnIncreaseRate: 1
-  enemyTypes: []
+  enemyTypes:
+  - prefab: {fileID: 7099823018105256717, guid: 77359318e3c18c644abd2dbabd110e97, type: 3}
+    stats: {fileID: 11400000, guid: 9649fe68c029244428e13481cdaf11e5, type: 2}
+    poolSize: 0
+    unlockAtLevel: 0
   bossEntry:
     bossPrefab: {fileID: 5169375071532846370, guid: 00b2591315906d1418319d33e806ca9f, type: 3}
     stats: {fileID: 11400000, guid: ed6f5fac4e08a9944804f5edf25f3d97, type: 2}
