@@ -55,10 +55,27 @@ public class FloorDecayController : MonoBehaviour
         tileColliders = GetComponentsInChildren<Collider>();
     }
 
+    [Header("Global Collapse Cooldown")]
+    [SerializeField] private float globalCollapseCooldown = 3f;
+
+    // Shared across ALL floors
+    private static float lastGlobalCollapseTime = -999f;
+
     /* -------------------- DECAY -------------------- */
+
+    [Header("Decay Cooldown")]
+    [SerializeField] private float decayCooldown = 0.25f;
+
+    private float lastDecayTime = -999f;
 
     public void ApplyDecayPulse(Vector3 worldPosition)
     {
+        // 🔒 GLOBAL COOLDOWN
+        if (Time.time - lastDecayTime < decayCooldown)
+            return;
+
+        lastDecayTime = Time.time;
+
         if (collapseTriggered)
             return;
 
@@ -102,6 +119,7 @@ public class FloorDecayController : MonoBehaviour
         }
     }
 
+
     /* -------------------- CRITICAL TRACKING -------------------- */
 
     private void OnTileCritical(FloorTileDecay tile)
@@ -119,6 +137,12 @@ public class FloorDecayController : MonoBehaviour
         if (isCollapsing)
             return;
 
+        // 🔒 GLOBAL COLLAPSE COOLDOWN
+        if (Time.time - lastGlobalCollapseTime < globalCollapseCooldown)
+            return;
+
+        lastGlobalCollapseTime = Time.time;
+
         collapseTriggered = true;
         isCollapsing = true;
 
@@ -127,6 +151,7 @@ public class FloorDecayController : MonoBehaviour
 
         BeginCollapse();
     }
+
     private System.Collections.IEnumerator DestroyFloorAfterDelay()
     {
         yield return new WaitForSeconds(destroyFloorAfterSeconds);
