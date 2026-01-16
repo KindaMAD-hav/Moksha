@@ -43,10 +43,8 @@ public class BossEnemy : EnemyBase
     [SerializeField] private EnemyDissolve dissolveEffect;
 
     // Animator Hashes
-    private static readonly int SpeedHash = Animator.StringToHash("Speed");
     private static readonly int AttackHash = Animator.StringToHash("Attack");
     private static readonly int SpawnHash = Animator.StringToHash("Spawn");
-    private static readonly int DieHash = Animator.StringToHash("Die");
 
     // Component Caching
     private CharacterController characterController;
@@ -151,10 +149,9 @@ public class BossEnemy : EnemyBase
         // Melee attack if in range
         if (sqrDistance <= cachedMeleeRangeSqr)
         {
-            SetAnimSpeed(0f);
             TryAttack();
         }
-        // Chase if too far
+        // Chase if too far - movement happens but animation stays in default run state
         else
         {
             Move(deltaTime);
@@ -167,10 +164,7 @@ public class BossEnemy : EnemyBase
         GetNormalizedDirectionToTarget(out moveDirection);
 
         if (moveDirection.x == 0f & moveDirection.z == 0f)
-        {
-            SetAnimSpeed(0f);
             return;
-        }
 
         Vector3 horizontalMove = moveDirection * cachedMoveSpeed;
 
@@ -193,8 +187,6 @@ public class BossEnemy : EnemyBase
             Vector3 newPos = cachedTransform.position + horizontalMove * deltaTime;
             cachedTransform.position = newPos;
         }
-
-        SetAnimSpeed(cachedMoveSpeed);
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -276,47 +268,66 @@ public class BossEnemy : EnemyBase
         Vector3 offset = new Vector3(Mathf.Cos(angle) * distance, 0f, Mathf.Sin(angle) * distance);
         Vector3 spawnPos = cachedTransform.position + offset;
 
-        // Instantiate minion
+        // Instantiate minion - ensure it's active from the start
         GameObject minionObj = Instantiate(prefab, spawnPos, Quaternion.identity);
+        
+        // Make sure it's active (in case prefab was inactive)
+        if (!minionObj.activeSelf)
+            minionObj.SetActive(true);
+
         EnemyBase minion = minionObj.GetComponent<EnemyBase>();
 
-        if (minion != null)
+        if (minion == null)
         {
-            // Initialize with stats
-            EnemyStats statsToUse = null;
-            if (minionStats != null && randomIndex < minionStats.Length)
-            {
-                statsToUse = minionStats[randomIndex];
-            }
-            else if (minion.Stats != null)
-            {
-                statsToUse = minion.Stats;
-            }
-
-            if (statsToUse != null)
-            {
-                minion.Initialize(statsToUse, targetTransform);
-            }
-            else
-            {
-                minion.SetTarget(targetTransform);
-            }
-
-            // Track minion
-            activeMinions.Add(minion);
-
-            // Register with EnemyManager if available
-            if (EnemyManager.Instance != null)
-            {
-                EnemyManager.Instance.RegisterEnemy(minion);
-                minion.SetManagedByManager(true);
-            }
-
-            // Listen to minion death to remove from tracking
-            minion.OnDeath += OnMinionDeath;
-
-            minionObj.SetActive(true);
+            Debug.LogError($"[BossEnemy] Minion prefab {prefab.name} is missing EnemyBase component!");
+            Destroy(minionObj);
+            return;
         }
+
+        // Initialize with stats
+        EnemyStats statsToUse = null;
+        if (minionStats != null && randomIndex < minionStats.Length && minionStats[randomIndex] != null)
+        {
+            statsToUse = minionStats[randomIndex];
+        }
+        else if (minion.Stats != null)
+        {
+            statsToUse = minion.Stats;
+        }
+
+        if (statsToUse != null)
+        {
+            minion.Initialize(statsToUse, targetTransform);
+        }
+        else
+        {
+            Debug.LogWarning($"[BossEnemy] No stats found for minion {prefab.name}, using SetTarget only");
+            minion.SetTarget(targetTransform);
+        }
+
+        // Register with EnemyManager FIRST before tracking
+        if (EnemyManager.Instance != null)
+        {
+            EnemyManager.Instance.RegisterEnemy(minion);
+            minion.SetManagedByManager(true);
+        }
+        else
+        {
+            // If no manager, minion will use its own Update loop
+            minion.SetManagedByManager(false);
+        }
+
+        // TEMPORARY FIX: Force minions to use their own Update loop for testing
+        // Remove this line once you verify animations work
+        minion.SetManagedByManager(false);
+
+        // Listen to minion death to remove from tracking
+        minion.OnDeath += OnMinionDeath;
+
+        // Track minion
+        activeMinions.Add(minion);
+
+        Debug.Log($"[BossEnemy] Spawned minion {prefab.name} at {spawnPos}");
     }
 
     private void OnMinionDeath(EnemyBase minion)
@@ -336,15 +347,6 @@ public class BossEnemy : EnemyBase
             cachedTransform.rotation = Quaternion.LookRotation(dir);
     }
 
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private void SetAnimSpeed(float speed)
-    {
-        if ((componentFlags & FLAG_ANIMATOR) != 0)
-        {
-            animator.SetFloat(SpeedHash, Mathf.Abs(speed));
-        }
-    }
-
     // --- Death & Dissolve ---
     protected override void Die()
     {
@@ -357,9 +359,6 @@ public class BossEnemy : EnemyBase
             }
         }
         activeMinions.Clear();
-
-        if ((componentFlags & FLAG_ANIMATOR) != 0)
-            animator.SetTrigger(DieHash);
 
         if ((componentFlags & FLAG_AUDIO) != 0 && stats.deathSound != null)
             audioSource.PlayOneShot(stats.deathSound);
