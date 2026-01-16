@@ -1,4 +1,4 @@
-using System.Runtime.CompilerServices;
+﻿using System.Runtime.CompilerServices;
 using UnityEngine;
 
 /// <summary>
@@ -230,6 +230,8 @@ public class RangedEnemy : EnemyBase
 
     protected override void Die()
     {
+        FireDeathEventOnce(); // 🔥 REQUIRED (same as BasicEnemy)
+
         if ((componentFlags & FLAG_AUDIO) != 0 && stats.deathSound != null)
             audioSource.PlayOneShot(stats.deathSound);
 
@@ -238,7 +240,6 @@ public class RangedEnemy : EnemyBase
             GrantXPOnce();
             IsDissolving = true;
 
-            // Disable physics immediately to prevent corpse blocking
             if (GetComponent<Collider>()) GetComponent<Collider>().enabled = false;
 
             DisableMovement();
@@ -250,6 +251,7 @@ public class RangedEnemy : EnemyBase
             base.Die();
         }
     }
+
 
     private void OnDissolveComplete()
     {

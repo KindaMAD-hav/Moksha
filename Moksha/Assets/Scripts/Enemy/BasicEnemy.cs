@@ -344,6 +344,7 @@ public class BasicEnemy : EnemyBase
 
         if ((componentFlags & FLAG_DISSOLVE) != 0)
         {
+            FireDeathEventOnce(); // 🔥 ADD THIS
             GrantXPOnce();
             IsDissolving = true;
 

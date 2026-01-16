@@ -418,6 +418,7 @@ public class EnemySpawner : MonoBehaviour
 
     private void OnEnemyDeath(EnemyBase enemy)
     {
+        Debug.Log("[TEST] OnEnemyDeath fired");
         currentEnemyCount--;
 
         // 🔥 FLOOR DECAY HOOK

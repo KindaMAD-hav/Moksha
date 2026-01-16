@@ -33,6 +33,8 @@ public abstract class EnemyBase : MonoBehaviour, IDamageable
     protected int cachedXPReward;
     protected EnemyPurifyBridge purifyBridge;
 
+    private bool deathEventFired;
+
 
     // Cached target position (updated by manager)
     protected Vector3 cachedTargetPosition;
@@ -141,6 +143,13 @@ public abstract class EnemyBase : MonoBehaviour, IDamageable
         cachedTargetPosition = targetPos;
         UpdateBehavior(deltaTime);
     }
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    protected void FireDeathEventOnce()
+    {
+        if (deathEventFired) return;
+        deathEventFired = true;
+        OnDeath?.Invoke(this);
+    }
 
     /// <summary>
     /// Mark this enemy as managed by EnemyManager (disables Update)
@@ -212,7 +221,7 @@ public abstract class EnemyBase : MonoBehaviour, IDamageable
         IsDead = true;
         GrantXPOnce();
 
-        OnDeath?.Invoke(this);
+        FireDeathEventOnce();
         gameObject.SetActive(false);
     }
 

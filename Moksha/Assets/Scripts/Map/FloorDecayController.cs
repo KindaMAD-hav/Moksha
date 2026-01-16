@@ -27,6 +27,8 @@ public class FloorDecayController : MonoBehaviour
     /// </summary>
     public void ApplyDecayPulse(Vector3 worldPosition)
     {
+        Debug.Log("[TEST] ApplyDecayPulse called");
+
         if (collapseTriggered) return;
 
         float radiusSqr = decayRadius * decayRadius;

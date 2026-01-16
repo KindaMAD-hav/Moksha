@@ -113,6 +113,7 @@ public class FloorTileGenerator : MonoBehaviour
         }
 
         UpdateUnifiedFloorCollider(tileSize, right, forward, up);
+        EnemySpawner.Instance.SetCurrentFloorDecay(decayController);
     }
 
     // --------------------------------------------------
