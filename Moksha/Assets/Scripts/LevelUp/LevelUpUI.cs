@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
@@ -40,6 +41,11 @@ public class LevelUpUI : MonoBehaviour
     private LayoutGroup layoutGroup;
 
     public bool IsShowing => panel != null && panel.activeSelf;
+
+    /// <summary>
+    /// Event fired when a powerup is acquired. Parameters: (PowerUp powerUp, int newStackCount)
+    /// </summary>
+    public event Action<PowerUp, int> OnPowerUpAcquired;
 
     private void Awake()
     {
@@ -170,10 +176,20 @@ public class LevelUpUI : MonoBehaviour
         if (playerObject != null)
             selectedPowerUp.Apply(playerObject);
 
+        int newStackCount;
         if (acquiredPowerUps.TryGetValue(selectedPowerUp, out int count))
-            acquiredPowerUps[selectedPowerUp] = count + 1;
+        {
+            newStackCount = count + 1;
+            acquiredPowerUps[selectedPowerUp] = newStackCount;
+        }
         else
+        {
+            newStackCount = 1;
             acquiredPowerUps[selectedPowerUp] = 1;
+        }
+
+        // Fire event for ability panel and other listeners
+        OnPowerUpAcquired?.Invoke(selectedPowerUp, newStackCount);
 
         if (hasAudioSource && selectSound != null)
             audioSource.PlayOneShot(selectSound);
