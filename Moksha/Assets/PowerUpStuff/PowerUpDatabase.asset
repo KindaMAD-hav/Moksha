@@ -13,11 +13,11 @@ MonoBehaviour:
   m_Name: PowerUpDatabase
   m_EditorClassIdentifier: Assembly-CSharp::PowerUpDatabase
   allPowerUps:
-  - {fileID: 11400000, guid: 7ec5d9c840a55854db8cd76f30486736, type: 2}
-  - {fileID: 11400000, guid: 7ec5d9c840a55854db8cd76f30486736, type: 2}
-  - {fileID: 11400000, guid: 7ec5d9c840a55854db8cd76f30486736, type: 2}
-  - {fileID: 11400000, guid: 0dabdb15a4065d741b1cc2017de0cdb2, type: 2}
-  - {fileID: 11400000, guid: 7ec5d9c840a55854db8cd76f30486736, type: 2}
+  - {fileID: 11400000, guid: a6a1c5124a2922248815f883d7dd53ec, type: 2}
+  - {fileID: 11400000, guid: a6a1c5124a2922248815f883d7dd53ec, type: 2}
+  - {fileID: 11400000, guid: a6a1c5124a2922248815f883d7dd53ec, type: 2}
+  - {fileID: 11400000, guid: a6a1c5124a2922248815f883d7dd53ec, type: 2}
+  - {fileID: 11400000, guid: a6a1c5124a2922248815f883d7dd53ec, type: 2}
   - {fileID: 11400000, guid: 7ec5d9c840a55854db8cd76f30486736, type: 2}
   - {fileID: 11400000, guid: 0dabdb15a4065d741b1cc2017de0cdb2, type: 2}
   commonWeight: 60

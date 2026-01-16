@@ -1,10 +1,6 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-/// <summary>
-/// Manages orbiting fireballs around the player.
-/// Each stack adds one additional fireball that orbits and damages enemies on contact.
-/// </summary>
 public class FireballOrbitAbility : MonoBehaviour
 {
     [Header("Runtime Stats")]
@@ -12,31 +8,35 @@ public class FireballOrbitAbility : MonoBehaviour
     [SerializeField] private float orbitSpeed;
     [SerializeField] private int currentStacks;
 
-    // Reference to power-up data
     private FireballPowerUp powerUpData;
-
-    // Cached
-    private Transform cachedTransform;
     private List<OrbitingFireball> activeFireballs = new List<OrbitingFireball>();
-    
-    // Current orbit angle in degrees
+
+    // Rotation state
     private float currentAngle;
+    private float currentSelfRotation;
 
     public int CurrentStacks => currentStacks;
 
     public void Initialize(FireballPowerUp data)
     {
+        if (data == null)
+        {
+            Debug.LogError("[FireballOrbitAbility] PowerUp data is NULL!");
+            return;
+        }
+
         powerUpData = data;
         currentStacks = 1;
-        cachedTransform = transform;
         currentAngle = 0f;
+        currentSelfRotation = 0f;
 
         UpdateStats();
         SpawnFireballs();
     }
 
-    public void AddStack()
+    public void AddStack(FireballPowerUp data)
     {
+        powerUpData = data;
         currentStacks++;
         UpdateStats();
         SpawnFireballs();
@@ -49,7 +49,6 @@ public class FireballOrbitAbility : MonoBehaviour
         damage = powerUpData.GetDamage(currentStacks);
         orbitSpeed = powerUpData.GetOrbitSpeed(currentStacks);
 
-        // Update damage on existing fireballs
         for (int i = 0; i < activeFireballs.Count; i++)
         {
             if (activeFireballs[i] != null)
@@ -61,31 +60,29 @@ public class FireballOrbitAbility : MonoBehaviour
 
     private void SpawnFireballs()
     {
-        if (powerUpData == null || powerUpData.fireballPrefab == null)
-        {
-            Debug.LogWarning("[FireballOrbitAbility] No fireball prefab assigned!");
-            return;
-        }
+        if (powerUpData == null || powerUpData.fireballPrefab == null) return;
 
         int targetCount = powerUpData.GetFireballCount(currentStacks);
-        int currentCount = activeFireballs.Count;
 
-        // Spawn additional fireballs if needed
         while (activeFireballs.Count < targetCount)
         {
             SpawnSingleFireball();
         }
 
-        // Reposition all fireballs evenly around the orbit
         RepositionFireballs();
     }
 
     private void SpawnSingleFireball()
     {
-        GameObject fireballObj = Instantiate(powerUpData.fireballPrefab, cachedTransform.position, Quaternion.identity);
+        // Initial rotation: Model Rotation + Self Rotation (initially 0)
+        Quaternion initialRotation = Quaternion.Euler(powerUpData.modelRotation);
+
+        GameObject fireballObj = Instantiate(powerUpData.fireballPrefab, transform.position, initialRotation);
+
+        if (fireballObj == null) return;
+
         fireballObj.transform.localScale = Vector3.one * powerUpData.fireballScale;
 
-        // Get or add the OrbitingFireball component
         OrbitingFireball fireball = fireballObj.GetComponent<OrbitingFireball>();
         if (fireball == null)
         {
@@ -116,11 +113,14 @@ public class FireballOrbitAbility : MonoBehaviour
     {
         if (powerUpData == null) return;
 
-        // Update orbit angle
+        // Update Orbit Angle (Movement around player)
         currentAngle += orbitSpeed * Time.deltaTime;
         if (currentAngle >= 360f) currentAngle -= 360f;
 
-        // Update fireball positions
+        // Update Self Rotation Angle (Spinning on Z axis)
+        currentSelfRotation += powerUpData.selfRotationSpeed * Time.deltaTime;
+        if (currentSelfRotation >= 360f) currentSelfRotation -= 360f;
+
         UpdateFireballPositions();
     }
 
@@ -129,75 +129,84 @@ public class FireballOrbitAbility : MonoBehaviour
         int count = activeFireballs.Count;
         if (count == 0) return;
 
-        Vector3 center = cachedTransform.position + Vector3.up * powerUpData.heightOffset;
+        Vector3 center = transform.position + Vector3.up * powerUpData.heightOffset;
         float angleStep = 360f / count;
+
+        // Cache rotations
+        Quaternion baseModelRotation = Quaternion.Euler(powerUpData.modelRotation);
+        Quaternion spinRotation = Quaternion.Euler(0, 0, currentSelfRotation);
 
         for (int i = 0; i < count; i++)
         {
             OrbitingFireball fireball = activeFireballs[i];
             if (fireball == null)
             {
-                // Remove null entries (destroyed fireballs)
                 activeFireballs.RemoveAt(i);
                 i--;
                 count--;
                 continue;
             }
 
-            // Calculate position for this fireball
+            // 1. Position Logic
             float angle = (currentAngle + i * angleStep) * Mathf.Deg2Rad;
             Vector3 offset = new Vector3(
                 Mathf.Cos(angle) * powerUpData.orbitRadius,
                 0f,
                 Mathf.Sin(angle) * powerUpData.orbitRadius
             );
-
             fireball.transform.position = center + offset;
 
-            // Optional: Make fireballs face their movement direction
-            float nextAngle = (currentAngle + i * angleStep + 10f) * Mathf.Deg2Rad;
-            Vector3 nextOffset = new Vector3(
-                Mathf.Cos(nextAngle) * powerUpData.orbitRadius,
-                0f,
-                Mathf.Sin(nextAngle) * powerUpData.orbitRadius
-            );
-            Vector3 direction = (center + nextOffset) - fireball.transform.position;
-            if (direction.sqrMagnitude > 0.001f)
+            // 2. Rotation Logic
+            Quaternion targetRotation;
+
+            if (powerUpData.faceMovementDirection)
             {
-                fireball.transform.rotation = Quaternion.LookRotation(direction);
+                // Look ahead to find tangent/velocity direction
+                float nextAngle = (currentAngle + i * angleStep + 5f) * Mathf.Deg2Rad;
+                Vector3 nextPosOffset = new Vector3(
+                    Mathf.Cos(nextAngle) * powerUpData.orbitRadius,
+                    0f,
+                    Mathf.Sin(nextAngle) * powerUpData.orbitRadius
+                );
+
+                Vector3 direction = (center + nextPosOffset) - fireball.transform.position;
+
+                if (direction.sqrMagnitude > 0.001f)
+                {
+                    // Order: Look at Dir -> Apply Model correction -> Apply Self Spin (local Z)
+                    targetRotation = Quaternion.LookRotation(direction) * baseModelRotation * spinRotation;
+                }
+                else
+                {
+                    targetRotation = baseModelRotation * spinRotation;
+                }
             }
+            else
+            {
+                // Order: Fixed Base Rotation -> Apply Self Spin (local Z)
+                targetRotation = baseModelRotation * spinRotation;
+            }
+
+            fireball.transform.rotation = targetRotation;
         }
     }
 
     private void OnDestroy()
     {
-        // Clean up all fireballs when ability is removed
         for (int i = 0; i < activeFireballs.Count; i++)
         {
-            if (activeFireballs[i] != null)
-            {
-                Destroy(activeFireballs[i].gameObject);
-            }
+            if (activeFireballs[i] != null) Destroy(activeFireballs[i].gameObject);
         }
         activeFireballs.Clear();
     }
 
-    /// <summary>
-    /// Call this when entering a new level to respawn fireballs
-    /// </summary>
     public void ResetFireballs()
     {
-        // Destroy existing
         for (int i = 0; i < activeFireballs.Count; i++)
         {
-            if (activeFireballs[i] != null)
-            {
-                Destroy(activeFireballs[i].gameObject);
-            }
+            if (activeFireballs[i] != null) Destroy(activeFireballs[i].gameObject);
         }
         activeFireballs.Clear();
-
-        // Respawn
         SpawnFireballs();
     }
 }
