@@ -7,65 +7,56 @@ public class FloorDecayController : MonoBehaviour
     [SerializeField] private float decayRadius = 4f;
     [SerializeField] private float decayAmount = 1f;
 
-    private readonly List<FloorTileDecay> tiles = new();
-    private bool collapseTriggered;
-    public float FloorY => transform.position.y;
-
-    [SerializeField] private float collapseRadius;
+    [Header("Collapse Settings")]
     [SerializeField] private float collapseSpeed = 12f;
+
+    private readonly List<FloorTileDecay> tiles = new();
+
+    private bool collapseTriggered;
+    private bool isCollapsing;
+
+    private float collapseRadius;
+    private Vector3 collapseCenter;
+
+    private Vector3 lastDecaySourcePos;
+
+    private readonly List<FloorTileDecay> criticalThisPulse = new();
+
+    [SerializeField] private Collider[] tileColliders;
+
+    public float FloorY => transform.position.y;
     public float CollapseRadius => collapseRadius;
+    public Vector3 CollapseCenter => collapseCenter;
+    public bool IsCollapsing => isCollapsing;
+
+    /* -------------------- REGISTRATION -------------------- */
+
     public void RegisterTile(FloorTileDecay tile)
     {
         tiles.Add(tile);
-        tile.OnCriticalDecayReached += HandleCriticalTile;
+        tile.OnCriticalDecayReached += OnTileCritical;
     }
-    private void Update()
-    {
-        if (!isCollapsing)
-            return;
-
-        collapseRadius += collapseSpeed * Time.deltaTime;
-
-        // 🔥 THIS IS THE MISSING LINK
-        Shader.SetGlobalVector("_CollapseCenter", collapseCenter);
-        Shader.SetGlobalFloat("_CollapseRadius", collapseRadius);
-    }
-
-#if UNITY_EDITOR
-    private void OnDrawGizmos()
-    {
-        if (!isCollapsing) return;
-
-        Gizmos.color = Color.red;
-        Gizmos.DrawWireSphere(collapseCenter, collapseRadius);
-    }
-#endif
 
     public void UnregisterTile(FloorTileDecay tile)
     {
-        tile.OnCriticalDecayReached -= HandleCriticalTile;
+        tile.OnCriticalDecayReached -= OnTileCritical;
         tiles.Remove(tile);
     }
-    [SerializeField] private bool isCollapsing;
-    [SerializeField] private Vector3 collapseCenter;
-    [SerializeField] private Collider[] tileColliders;
-
-    public bool IsCollapsing => isCollapsing;
-    public Vector3 CollapseCenter => collapseCenter;
 
     private void CacheTileColliders()
     {
         tileColliders = GetComponentsInChildren<Collider>();
     }
 
-    /// <summary>
-    /// Called when an enemy dies on this floor
-    /// </summary>
+    /* -------------------- DECAY -------------------- */
+
     public void ApplyDecayPulse(Vector3 worldPosition)
     {
-        Debug.Log("[TEST] ApplyDecayPulse called");
+        if (collapseTriggered)
+            return;
 
-        if (collapseTriggered) return;
+        lastDecaySourcePos = worldPosition;
+        criticalThisPulse.Clear();
 
         float radiusSqr = decayRadius * decayRadius;
 
@@ -80,36 +71,72 @@ public class FloorDecayController : MonoBehaviour
                 tile.AddDecay(decayAmount);
             }
         }
+
+        // Resolve collapse origin AFTER all decay is applied
+        if (criticalThisPulse.Count > 0)
+        {
+            FloorTileDecay chosen = null;
+            float bestDist = float.MaxValue;
+
+            foreach (var tile in criticalThisPulse)
+            {
+                float d = (tile.transform.position - lastDecaySourcePos).sqrMagnitude;
+                if (d < bestDist)
+                {
+                    bestDist = d;
+                    chosen = tile;
+                }
+            }
+
+            if (chosen != null)
+            {
+                TriggerCollapseFromTile(chosen);
+            }
+        }
     }
 
-    private void HandleCriticalTile(FloorTileDecay tile)
-    {
-        if (isCollapsing) return;
+    /* -------------------- CRITICAL TRACKING -------------------- */
 
+    private void OnTileCritical(FloorTileDecay tile)
+    {
+        if (collapseTriggered)
+            return;
+
+        criticalThisPulse.Add(tile);
+    }
+
+    /* -------------------- COLLAPSE -------------------- */
+
+    private void TriggerCollapseFromTile(FloorTileDecay tile)
+    {
+        if (isCollapsing)
+            return;
+
+        collapseTriggered = true;
         isCollapsing = true;
+
         collapseCenter = tile.transform.position;
+        collapseRadius = 0f; // 🔥 always start from zero
 
         BeginCollapse();
     }
+
     private void BeginCollapse()
     {
         DisableTileColliders();
 
-        // Stop further decay pulses on this floor
-        collapseTriggered = true;
-
         Debug.Log($"[FloorDecayController] Collapse started at {collapseCenter}");
 
-        // Notify a higher-level system (FloorManager / MapManager)
-        // We keep this loose so the controller does not own generation logic
         if (FloorManager.Instance != null)
         {
             FloorManager.Instance.OnFloorCollapseStarted(this);
         }
     }
+
     private void DisableTileColliders()
     {
-        if (tileColliders == null) return;
+        if (tileColliders == null)
+            return;
 
         foreach (var col in tileColliders)
         {
@@ -118,4 +145,32 @@ public class FloorDecayController : MonoBehaviour
         }
     }
 
+    /* -------------------- UPDATE / SHADER -------------------- */
+
+    private void Update()
+    {
+        if (!isCollapsing)
+            return;
+
+        collapseRadius += collapseSpeed * Time.deltaTime;
+
+        Shader.SetGlobalVector("_CollapseCenter", collapseCenter);
+        Shader.SetGlobalFloat("_CollapseRadius", collapseRadius);
+    }
+
+    private void OnDisable()
+    {
+        Shader.SetGlobalFloat("_CollapseRadius", -9999f);
+        Shader.SetGlobalVector("_CollapseCenter", Vector3.zero);
+    }
+
+#if UNITY_EDITOR
+    private void OnDrawGizmos()
+    {
+        if (!isCollapsing) return;
+
+        Gizmos.color = Color.red;
+        Gizmos.DrawWireSphere(collapseCenter, collapseRadius);
+    }
+#endif
 }
