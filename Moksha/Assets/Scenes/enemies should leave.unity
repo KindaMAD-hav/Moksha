@@ -25511,7 +25511,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: c41e7aeaead2d144598d42cc5f16f454, type: 3}
       propertyPath: m_LocalPosition.y
-      value: -1.12
+      value: 0.9
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: c41e7aeaead2d144598d42cc5f16f454, type: 3}
       propertyPath: m_LocalPosition.z
@@ -25556,8 +25556,107 @@ PrefabInstance:
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
-    m_AddedComponents: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: c41e7aeaead2d144598d42cc5f16f454, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 699646057}
+    - targetCorrespondingSourceObject: {fileID: 999155508371055580, guid: c41e7aeaead2d144598d42cc5f16f454, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 699646060}
+    - targetCorrespondingSourceObject: {fileID: 999155508371055580, guid: c41e7aeaead2d144598d42cc5f16f454, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 699646059}
   m_SourcePrefab: {fileID: 100100000, guid: c41e7aeaead2d144598d42cc5f16f454, type: 3}
+--- !u!1 &699646056 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 919132149155446097, guid: c41e7aeaead2d144598d42cc5f16f454, type: 3}
+  m_PrefabInstance: {fileID: 699646055}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &699646057
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 699646056}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 94e04d17b73065940893e218bcbcd44f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::BossEnemy
+  stats: {fileID: 0}
+  currentHealth: 0
+  targetTransform: {fileID: 0}
+  bossScale: 2
+  meleeAttackRange: 3
+  minionPrefabs: []
+  minionStats: []
+  spawnCooldown: 10
+  minionsPerSpawn: 3
+  spawnRadius: 4.18
+  maxActiveMinions: 10
+  animator: {fileID: 0}
+  audioSource: {fileID: 0}
+  flashRenderers: []
+  damageFlashColor: {r: 1, g: 0.2, b: 0.2, a: 1}
+  spawnEffect: {fileID: 0}
+  spawnSound: {fileID: 0}
+  dissolveEffect: {fileID: 0}
+--- !u!1 &699646058 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 999155508371055580, guid: c41e7aeaead2d144598d42cc5f16f454, type: 3}
+  m_PrefabInstance: {fileID: 699646055}
+  m_PrefabAsset: {fileID: 0}
+--- !u!54 &699646059
+Rigidbody:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 699646058}
+  serializedVersion: 5
+  m_Mass: 1
+  m_LinearDamping: 0
+  m_AngularDamping: 0.05
+  m_CenterOfMass: {x: 0, y: 0, z: 0}
+  m_InertiaTensor: {x: 1, y: 1, z: 1}
+  m_InertiaRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ImplicitCom: 1
+  m_ImplicitTensor: 1
+  m_UseGravity: 1
+  m_IsKinematic: 0
+  m_Interpolate: 0
+  m_Constraints: 0
+  m_CollisionDetection: 0
+--- !u!136 &699646060
+CapsuleCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 699646058}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 0
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 2
+  m_Radius: 0.01085034
+  m_Height: 0.018006956
+  m_Direction: 1
+  m_Center: {x: 0.0005068016, y: -0.0014942014, z: 0.00798449}
 --- !u!1 &707875344
 GameObject:
   m_ObjectHideFlags: 0
@@ -31153,6 +31252,10 @@ MonoBehaviour:
     stats: {fileID: 11400000, guid: b4d66de6ffce7f9489c8a2a71f9713a5, type: 2}
     poolSize: 10
     unlockAtLevel: 6
+  bossEntry:
+    bossPrefab: {fileID: 0}
+    stats: {fileID: 0}
+  bossSpawnTime: 120
   currentEnemyCount: 0
   gameTime: 0
   enableStallRecovery: 1
