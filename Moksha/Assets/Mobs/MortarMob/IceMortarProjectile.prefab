@@ -262,7 +262,7 @@ MonoBehaviour:
   groundLayerMask:
     serializedVersion: 2
     m_Bits: 0
-  impactEffectPrefab: {fileID: 0}
+  impactEffectPrefab: {fileID: 9009018693799760511, guid: 8b1ec8e503585cb44ac8fc8f63b99c22, type: 3}
   trailRenderer: {fileID: 0}
   launchSound: {fileID: 0}
   impactSound: {fileID: 0}
