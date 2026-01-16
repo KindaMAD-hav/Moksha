@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Runtime.CompilerServices;
 using UnityEngine;
 
@@ -64,6 +64,17 @@ public abstract class EnemyBase : MonoBehaviour, IDamageable
 
     public bool IsDead { get; protected set; }
     public bool IsDissolving { get; protected set; }
+
+    /// <summary>
+    /// Direct access to cached move speed for effects like slow (avoids reflection)
+    /// </summary>
+    public float MoveSpeed
+    {
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        get => cachedMoveSpeed;
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        set => cachedMoveSpeed = value;
+    }
 
     public Transform Target
     {
