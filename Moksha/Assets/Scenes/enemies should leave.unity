@@ -12745,7 +12745,7 @@ MonoBehaviour:
     m_Bits: 1
   m_VolumeTrigger: {fileID: 0}
   m_VolumeFrameworkUpdateModeOption: 2
-  m_RenderPostProcessing: 0
+  m_RenderPostProcessing: 1
   m_Antialiasing: 0
   m_AntialiasingQuality: 2
   m_StopNaN: 0
@@ -12811,7 +12811,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!4 &335342753
 Transform:
   m_ObjectHideFlags: 0
@@ -12834,13 +12834,13 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 335342752}
-  m_Enabled: 1
+  m_Enabled: 0
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: d0b7ae927e2f2824ca75a1bd4e62be75, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::ProjectileManager
   defaultProjectileVisual: {fileID: 9059609539505162581, guid: 8d08ef81d9e7f6844bbd7d191544b82a, type: 3}
-  initialPoolSize: 200
+  initialPoolSize: 10
   collisionLayers:
     serializedVersion: 2
     m_Bits: 64
@@ -30933,7 +30933,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 757b2233f416c4d478a10bf59f9a5fb9, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::EnemyManager
-  playerTransform: {fileID: 0}
+  playerTransform: {fileID: 913657311}
   activeEnemyCount: 0
 --- !u!114 &872873698
 MonoBehaviour:
@@ -30959,14 +30959,10 @@ MonoBehaviour:
   baseEnemiesPerSpawn: 2
   enemiesPerSpawnIncreaseRate: 1
   enemyTypes:
-  - prefab: {fileID: 2124684102959905579, guid: 8eddd32fb78734f4b91d33cafae0e870, type: 3}
-    stats: {fileID: 11400000, guid: 9649fe68c029244428e13481cdaf11e5, type: 2}
-    poolSize: 20
-    unlockAtLevel: 1
   - prefab: {fileID: 2475981611131618683, guid: ff7a59e9084803344af17b5c260a4a87, type: 3}
     stats: {fileID: 11400000, guid: cdf44a39385d9e54cb867510b740d334, type: 2}
     poolSize: 20
-    unlockAtLevel: 4
+    unlockAtLevel: 1
   - prefab: {fileID: 8658893934564567433, guid: 71e68d70d955b0e48a48f179e2875448, type: 3}
     stats: {fileID: 11400000, guid: b4d66de6ffce7f9489c8a2a71f9713a5, type: 2}
     poolSize: 20
@@ -67713,6 +67709,51 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1977681713}
   m_CullTransparentMesh: 1
+--- !u!1 &1982336865
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1982336866}
+  - component: {fileID: 1982336867}
+  m_Layer: 0
+  m_Name: FPSlimiter
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1982336866
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1982336865}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 29.45835, y: 0.1, z: 53.41225}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1982336867
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1982336865}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 24340e86c76a49b43bd0b303ea9ca2ce, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: '::'
+  targetFPS: 60
 --- !u!1 &1985989740
 GameObject:
   m_ObjectHideFlags: 0
@@ -82183,3 +82224,4 @@ SceneRoots:
   - {fileID: 1297378600}
   - {fileID: 1872107090}
   - {fileID: 335342753}
+  - {fileID: 1982336866}

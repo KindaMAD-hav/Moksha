@@ -123,9 +123,14 @@ public class EnemyProjectilePool : MonoBehaviour
     }
 
 #if UNITY_EDITOR
+    // DISABLED: OnGUI is extremely expensive and causes major editor slowdown
+    // Uncomment only for debugging pool issues
+    /*
+    [SerializeField] private bool showDebugGUI = false;
+    
     private void OnGUI()
     {
-        if (!Application.isPlaying) return;
+        if (!showDebugGUI || !Application.isPlaying) return;
 
         GUILayout.BeginArea(new Rect(10, 100, 250, 100));
         GUILayout.Label($"Projectile Pool Stats:");
@@ -134,5 +139,6 @@ public class EnemyProjectilePool : MonoBehaviour
         GUILayout.Label($"Total: {projectilePool.Count + activeProjectiles.Count}");
         GUILayout.EndArea();
     }
+    */
 #endif
 }
