@@ -30959,8 +30959,8 @@ MonoBehaviour:
   baseEnemiesPerSpawn: 2
   enemiesPerSpawnIncreaseRate: 1
   enemyTypes:
-  - prefab: {fileID: 2475981611131618683, guid: ff7a59e9084803344af17b5c260a4a87, type: 3}
-    stats: {fileID: 11400000, guid: cdf44a39385d9e54cb867510b740d334, type: 2}
+  - prefab: {fileID: 1036842401912313784, guid: c63c78dceac93844dbe6e90efb22083b, type: 3}
+    stats: {fileID: 11400000, guid: 9649fe68c029244428e13481cdaf11e5, type: 2}
     poolSize: 20
     unlockAtLevel: 1
   - prefab: {fileID: 8658893934564567433, guid: 71e68d70d955b0e48a48f179e2875448, type: 3}
