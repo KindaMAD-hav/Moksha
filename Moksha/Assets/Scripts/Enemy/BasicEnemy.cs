@@ -21,6 +21,11 @@ public class BasicEnemy : EnemyBase
     [SerializeField] private Color damageFlashColor = new Color(1f, 0.2f, 0.2f, 1f);
     [SerializeField] private float flashDuration = 0.12f;
 
+    [Header("Death SFX")]
+    [SerializeField] private AudioClip deathSFX;
+    [SerializeField] private float deathPitchMin = 0.7f;
+    [SerializeField] private float deathPitchMax = 1.3f;
+
 
     // Animator parameter hashes (static for all instances)
     private static readonly int SpeedHash = Animator.StringToHash("Speed");
@@ -47,6 +52,7 @@ public class BasicEnemy : EnemyBase
     private const byte FLAG_RIGIDBODY = 4;
     private const byte FLAG_AUDIO = 8;
     private const byte FLAG_DISSOLVE = 16;
+    //private float hitSFXTimer;
 
     // State
     private float attackTimer;
@@ -123,6 +129,8 @@ public class BasicEnemy : EnemyBase
 
     protected override void UpdateBehavior(float deltaTime)
     {
+        //if (hitSFXTimer > 0f)
+        //    hitSFXTimer -= deltaTime;
         FaceTargetInstant(); // 🔥 always face player
         float sqrDistance = GetSqrDistanceToTarget();
 
@@ -290,8 +298,9 @@ public class BasicEnemy : EnemyBase
 
     protected override void Die()
     {
-        if ((componentFlags & FLAG_AUDIO) != 0 && stats.deathSound != null)
-            audioSource.PlayOneShot(stats.deathSound);
+        //if ((componentFlags & FLAG_AUDIO) != 0 && stats.deathSound != null)
+        //    audioSource.PlayOneShot(stats.deathSound);
+        TryPlayDeathSFX();
 
         if ((componentFlags & FLAG_DISSOLVE) != 0)
         {
@@ -352,6 +361,15 @@ public class BasicEnemy : EnemyBase
         if ((componentFlags & FLAG_RIGIDBODY) != 0)
             rb.isKinematic = false;
     }
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private void TryPlayDeathSFX()
+    {
+        if (deathSFX == null) return;
+        if (SFXManager.Instance == null) return;
+
+        float pitch = Random.Range(deathPitchMin, deathPitchMax);
+        SFXManager.Instance.PlayOneShot(deathSFX, pitch);
+    }
 
     public override void ResetEnemy()
     {
@@ -397,9 +415,29 @@ public class BasicEnemy : EnemyBase
     {
         base.TakeDamage(damage);
 
-        if (!IsDead && enableDamageFlash)
+        if (IsDead) return;
+
+        if (enableDamageFlash)
             StartFlash();
     }
+
+
+    //[MethodImpl(MethodImplOptions.AggressiveInlining)]
+    //private void TryPlayHitSFX()
+    //{
+    //    if (hitSFX == null) return;
+    //    if (hitSFXTimer > 0f) return;
+
+    //    if (SFXManager.Instance != null)
+    //    {
+    //        float pitch = Random.Range(hitPitchMin, hitPitchMax);
+    //        SFXManager.Instance.PlayOneShot(hitSFX, pitch);
+    //        hitSFXTimer = hitSFXCooldown;
+    //    }
+    //}
+
+
+
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private void StartFlash()

@@ -270,16 +270,13 @@ public class PlayerHealth : MonoBehaviour, IDamageable
     {
         isDead = true;
         isInvincible = false;
-        RestoreOriginalColors();
-
-        if ((componentFlags & FLAG_AUDIO) != 0 && deathSound != null)
-            audioSource.PlayOneShot(deathSound);
 
         OnHealthChanged?.Invoke(0f, maxHearts);
         OnDeath?.Invoke();
 
         Debug.Log("Player died!");
     }
+
 
 #if UNITY_EDITOR
     private void OnValidate()

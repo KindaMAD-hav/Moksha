@@ -1,18 +1,18 @@
 using UnityEngine;
-using UnityEngine.SceneManagement;
 
 public class MainMenuUI : MonoBehaviour
 {
+    [SerializeField] private StorySequence storySequence;
+
     public void Play()
     {
-        int currentIndex = SceneManager.GetActiveScene().buildIndex;
-        SceneManager.LoadScene(currentIndex + 1);
+        storySequence.StartStory();
+        gameObject.SetActive(false); // hide menu
     }
 
     public void Quit()
     {
 #if UNITY_EDITOR
-        // So you see feedback in editor
         Debug.Log("Quit Game");
 #else
         Application.Quit();

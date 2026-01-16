@@ -16,7 +16,8 @@ public class WeaponRuntime
     public float spreadMult = 1f;
     public int bonusProjectiles = 0;
     public int bonusPierce = 0;
-   
+
+    [SerializeField] private AttackLayerController attackLayerController;
 
     float cooldown;
     bool dropLeftExtremeNext = false;
@@ -35,12 +36,24 @@ public class WeaponRuntime
         cooldown -= dt;
         if (cooldown > 0f) return;
 
+        // Calculate fire rate BEFORE firing so we can scale animation too
+        float fireRate = Mathf.Max(0.01f, def.baseFireRate * fireRateMult);
+
+        // Optional: scale animator speed with fire rate multiplier
+        float animSpeed = (def.baseFireRate > 0.0001f) ? (fireRate / def.baseFireRate) : 1f;
+
+        // Tell the owner "a shot happened" so it can play attack animation
+        owner.NotifyWeaponFired(animSpeed);
+
         Fire(owner);
 
-        float fireRate = Mathf.Max(0.01f, def.baseFireRate * fireRateMult);
         cooldown = 1f / fireRate;
     }
-
+    //public void NotifyWeaponFired(float animSpeed)
+    //{
+    //    if (attackLayerController != null)
+    //        attackLayerController.PlayRandomAttack(animSpeed);
+    //}
     void Fire(PlayerWeaponSystem owner)
     {
         Transform fp = owner.firePoint != null ? owner.firePoint : owner.transform;

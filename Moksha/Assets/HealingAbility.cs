@@ -1,4 +1,4 @@
-using System.Runtime.CompilerServices;
+﻿using System.Runtime.CompilerServices;
 using UnityEngine;
 
 /// <summary>
@@ -114,17 +114,26 @@ public class HealingAbility : MonoBehaviour
 
         cooldownTimer = 0f;
 
-        // Always show aura pulse
-        if (healingVFX != null)
-            healingVFX.PlayEffect();
-
-        // Only heal if missing hearts
+        // If already full, do nothing (no SFX)
         if (playerHealth.CurrentHearts >= playerHealth.MaxHearts)
             return;
 
+        int healedCount = 0;
+
         for (int i = 0; i < heartsPerTick; i++)
+        {
+            int before = playerHealth.CurrentHearts;
             playerHealth.HealOneHeart();
+
+            if (playerHealth.CurrentHearts > before)
+                healedCount++;
+        }
+
+        // 🔊 Only play VFX + SFX if healing actually happened
+        if (healedCount > 0 && healingVFX != null)
+            healingVFX.PlayEffect();
     }
+
 
 
 

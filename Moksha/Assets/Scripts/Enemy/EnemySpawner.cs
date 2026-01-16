@@ -35,6 +35,15 @@ public class EnemySpawner : MonoBehaviour
     [SerializeField] private int currentEnemyCount;
     [SerializeField] private float gameTime;
 
+    [Header("Stall Recovery (Safety Net)")]
+    [SerializeField] private bool enableStallRecovery = true;
+    [SerializeField] private float stallSeconds = 3f;
+    [SerializeField] private int recoveryBurst = 6;
+    [SerializeField] private bool logRecoveryInEditor = true;
+
+    private float lastSuccessfulSpawnUnscaledTime;
+
+
     // Object pools - array-based for cache efficiency
     private Queue<EnemyBase>[] enemyPools;
     private int[] prefabInstanceIds;
@@ -88,6 +97,7 @@ public class EnemySpawner : MonoBehaviour
 
     private void Start()
     {
+        
         if (playerTransform == null)
         {
             var player = GameObject.FindGameObjectWithTag("Player");
@@ -102,6 +112,7 @@ public class EnemySpawner : MonoBehaviour
             cachedPlayerLevel = ExperienceManager.Instance.CurrentLevel;
             ExperienceManager.Instance.OnLevelUp += OnPlayerLevelUp;
         }
+        lastSuccessfulSpawnUnscaledTime = Time.unscaledTime;
     }
 
     private void Update()
@@ -124,6 +135,31 @@ public class EnemySpawner : MonoBehaviour
             spawnTimer = 0f;
             SpawnWave();
         }
+        // --- Stall Recovery Watchdog ---
+        if (enableStallRecovery && Time.timeScale > 0f && playerTransform != null)
+        {
+            // If we have room to spawn but haven't successfully spawned in a while, recover.
+            if (currentEnemyCount < maxEnemies &&
+                (Time.unscaledTime - lastSuccessfulSpawnUnscaledTime) > stallSeconds)
+            {
+                // In case something turned spawning off and forgot to turn it back on
+                isSpawning = true;
+
+                // Force a few spawns to "kick" the system back to life (uses current scaling)
+                int burst = Mathf.Min(recoveryBurst, maxEnemies - currentEnemyCount);
+                for (int i = 0; i < burst; i++)
+                    SpawnEnemy(); // uses currentEnemiesPerSpawn/currentSpawnInterval logic
+
+#if UNITY_EDITOR
+                if (logRecoveryInEditor)
+                    Debug.Log($"[EnemySpawner] Stall recovery triggered. Burst={burst}, Level={cachedPlayerLevel}, Count={currentEnemyCount}");
+#endif
+
+                // Reset timer so we don't spam recovery every frame
+                lastSuccessfulSpawnUnscaledTime = Time.unscaledTime;
+            }
+        }
+
     }
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private bool IsInsideBounds(Vector3 pos)
@@ -177,7 +213,7 @@ public class EnemySpawner : MonoBehaviour
         
         enemy.Initialize(entry.stats, playerTransform);
         enemy.gameObject.SetActive(true);
-        
+        lastSuccessfulSpawnUnscaledTime = Time.unscaledTime;
         // Register with manager
         if (EnemyManager.Instance != null)
         {
@@ -272,9 +308,23 @@ public class EnemySpawner : MonoBehaviour
                 return true;
         }
 
-        // ❌ No fallback clamp — just fail
-        return false;
+        // ✅ FALLBACK (CLAMP TO WORLD BOUNDS)
+        spawnPosition.x = Mathf.Clamp(
+            playerPos.x + Random.Range(-maxSpawnDistance, maxSpawnDistance),
+            worldMin.x,
+            worldMax.x
+        );
+
+        spawnPosition.z = Mathf.Clamp(
+            playerPos.z + Random.Range(-maxSpawnDistance, maxSpawnDistance),
+            worldMin.y,
+            worldMax.y
+        );
+
+        spawnPosition.y = playerPos.y;
+        return true; // 🔥 NEVER FAIL
     }
+
 
 
 
