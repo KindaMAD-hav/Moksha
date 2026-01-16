@@ -19,7 +19,7 @@ MonoBehaviour:
   canStack: 1
   maxStacks: 6
   fireballPrefab: {fileID: 2002670945602713477, guid: be17cb9809bbc694bb06dbc305c43736, type: 3}
-  orbitRadius: 2
+  orbitRadius: 2.5
   orbitSpeed: 180
   orbitSpeedPerStack: 15
   baseDamage: 1
@@ -28,4 +28,5 @@ MonoBehaviour:
   fireballScale: 40
   heightOffset: 1
   modelRotation: {x: 90, y: 0, z: 0}
+  selfRotationSpeed: 360
   faceMovementDirection: 0

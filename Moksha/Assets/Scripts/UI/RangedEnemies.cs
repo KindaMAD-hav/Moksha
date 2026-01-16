@@ -2,14 +2,26 @@ using System.Runtime.CompilerServices;
 using UnityEngine;
 
 /// <summary>
-/// Optimized Ranged Enemy.
-/// Uses ProjectileManager for bullets and EnemyStats for configuration.
+/// Optimized Ranged Enemy with Levitation and Attack Animation.
+/// Supports both Pooled (Global) and Instantiated (Unique) projectiles.
 /// </summary>
 public class RangedEnemy : EnemyBase
 {
     [Header("Ranged Setup")]
+    [Tooltip("Leave empty to use the global ProjectileManager pool. Assign to override.")]
+    [SerializeField] private GameObject projectilePrefab; // <--- ADDED BACK
     [SerializeField] private Transform projectileOrigin;
     [SerializeField] private float fleeDistance = 4f;
+
+    [Header("Levitation Settings")]
+    [Tooltip("How high off the ground the enemy floats")]
+    [SerializeField] private float hoverHeight = 1.5f;
+    [Tooltip("Speed of the up/down bobbing")]
+    [SerializeField] private float bobFrequency = 2f;
+    [Tooltip("Distance of the up/down bobbing")]
+    [SerializeField] private float bobAmplitude = 0.2f;
+    [Tooltip("Layers to consider as ground for levitation")]
+    [SerializeField] private LayerMask groundLayer;
 
     [Header("Visuals/Audio")]
     [SerializeField] private Animator animator;
@@ -44,7 +56,7 @@ public class RangedEnemy : EnemyBase
     private Vector3 moveDirection;
     private Vector3 movement;
 
-    // Cached Stats (Pre-calculated to avoid SO access in Update)
+    // Cached Stats
     private float cachedFleeDistSqr;
     private float cachedProjSpeed;
     private float cachedProjLifetime;
@@ -60,13 +72,16 @@ public class RangedEnemy : EnemyBase
         rb = GetComponent<Rigidbody>();
         dissolveEffect = GetComponent<EnemyDissolve>();
 
-        // 2. Set Flags (Bitwise operations are faster than null checks in Update)
+        // 2. Set Flags
         componentFlags = 0;
         if (animator != null) componentFlags |= FLAG_ANIMATOR;
         if (characterController != null) componentFlags |= FLAG_CHAR_CONTROLLER;
         if (rb != null) componentFlags |= FLAG_RIGIDBODY;
         if (audioSource != null) componentFlags |= FLAG_AUDIO;
         if (dissolveEffect != null) componentFlags |= FLAG_DISSOLVE;
+
+        // Default ground layer if not set
+        if (groundLayer == 0) groundLayer = LayerMask.GetMask("Default", "Ground", "Terrain");
 
         // 3. Setup Flash Renderers
         if (flashRenderers == null || flashRenderers.Length == 0)
@@ -88,16 +103,11 @@ public class RangedEnemy : EnemyBase
         if (projectileOrigin == null) projectileOrigin = transform;
     }
 
-    /// <summary>
-    /// Override to cache specific Ranged stats from the SO
-    /// </summary>
     protected override void CacheStats()
     {
-        base.CacheStats(); // Cache generic stats (Health, MoveSpeed, etc.)
-
+        base.CacheStats();
         cachedFleeDistSqr = fleeDistance * fleeDistance;
 
-        // Cache Projectile Settings from the new EnemyStats fields
         if (stats != null)
         {
             cachedProjSpeed = stats.projectileSpeed;
@@ -105,7 +115,6 @@ public class RangedEnemy : EnemyBase
         }
         else
         {
-            // Fallbacks if stats are missing
             cachedProjSpeed = 10f;
             cachedProjLifetime = 5f;
         }
@@ -132,6 +141,7 @@ public class RangedEnemy : EnemyBase
         else if (sqrDistance <= cachedAttackRangeSqr)
         {
             SetAnimSpeed(0f);
+            ApplyLevitation(deltaTime, Vector3.zero);
             TryAttack();
         }
         // 3. Chase if too far
@@ -147,29 +157,49 @@ public class RangedEnemy : EnemyBase
         GetNormalizedDirectionToTarget(out moveDirection);
         moveDirection *= dirMult;
 
-        // Simple manual gravity
-        float gravity = -9.81f;
+        // Calculate Horizontal Movement
+        Vector3 horizontalMove = moveDirection * cachedMoveSpeed;
+
+        // Apply Levitation & Horizontal Movement combined
+        ApplyLevitation(deltaTime, horizontalMove);
+
+        // Optional: Update animation speed if you add a Run/Fly animation later
+        SetAnimSpeed(cachedMoveSpeed * (dirMult > 0 ? 1 : -1));
+    }
+
+    private void ApplyLevitation(float deltaTime, Vector3 desiredHorizontalVelocity)
+    {
+        float targetY = cachedTransform.position.y;
+
+        if (Physics.Raycast(cachedTransform.position + Vector3.up, Vector3.down, out RaycastHit hit, 10f, groundLayer))
+        {
+            targetY = hit.point.y + hoverHeight + (Mathf.Sin(Time.time * bobFrequency) * bobAmplitude);
+        }
 
         if ((componentFlags & FLAG_CHAR_CONTROLLER) != 0)
         {
-            movement.x = moveDirection.x * cachedMoveSpeed * deltaTime;
-            movement.z = moveDirection.z * cachedMoveSpeed * deltaTime;
-            movement.y = gravity * deltaTime;
+            float verticalDiff = (targetY - cachedTransform.position.y) * 5f;
+            movement.x = desiredHorizontalVelocity.x * deltaTime;
+            movement.z = desiredHorizontalVelocity.z * deltaTime;
+            movement.y = verticalDiff * deltaTime;
             characterController.Move(movement);
         }
         else if ((componentFlags & FLAG_RIGIDBODY) != 0)
         {
+            float verticalDiff = (targetY - cachedTransform.position.y) * 5f;
             Vector3 vel = rb.linearVelocity;
-            vel.x = moveDirection.x * cachedMoveSpeed;
-            vel.z = moveDirection.z * cachedMoveSpeed;
+            vel.x = desiredHorizontalVelocity.x;
+            vel.z = desiredHorizontalVelocity.z;
+            vel.y = verticalDiff;
             rb.linearVelocity = vel;
         }
         else
         {
-            cachedTransform.position += moveDirection * (cachedMoveSpeed * deltaTime);
+            Vector3 newPos = cachedTransform.position;
+            newPos += desiredHorizontalVelocity * deltaTime;
+            newPos.y = Mathf.Lerp(newPos.y, targetY, deltaTime * 5f);
+            cachedTransform.position = newPos;
         }
-
-        SetAnimSpeed(cachedMoveSpeed * (dirMult > 0 ? 1 : -1));
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -187,28 +217,51 @@ public class RangedEnemy : EnemyBase
         ShootProjectile();
     }
 
+    // --- UPDATED SHOOT LOGIC ---
     private void ShootProjectile()
     {
-        if (ProjectileManager.Instance == null) return;
-
-        // Calculate direction to target
+        // 1. Calculate direction to target
         Vector3 fireDir = (cachedTargetPosition - projectileOrigin.position).normalized;
         fireDir.y = 0; // Keep flat for top-down logic
 
-        // Fire using the Manager
-        ProjectileManager.Instance.FireProjectile(
-            projectileOrigin.position,
-            fireDir,
-            cachedProjSpeed,       // Cached from Stats
-            cachedDamage,          // Cached from Stats
-            cachedProjLifetime,    // Cached from Stats
-            stats.hitEffect,       // Effect from Stats
-            stats.hitSound         // Sound from Stats
-        );
+        // 2. CHECK: Do we have a specific prefab assigned?
+        if (projectilePrefab != null)
+        {
+            // --- MANUAL INSTANTIATION (Unique Projectile) ---
+            GameObject projObj = Instantiate(projectilePrefab, projectileOrigin.position, Quaternion.LookRotation(fireDir));
+
+            // Try to initialize it if it has the component
+            EnemyProjectile projScript = projObj.GetComponent<EnemyProjectile>();
+            if (projScript != null)
+            {
+                projScript.Initialize(cachedDamage, cachedProjSpeed, fireDir);
+
+                // CRITICAL FIX: Since this isn't in the pool, the pool won't destroy it.
+                // We must ensure it destroys itself if it tries to return to a pool that doesn't own it.
+                // NOTE: This relies on you updating EnemyProjectilePool OR simply relying on Destroy fallback.
+                // If EnemyProjectile.cs purely relies on ReturnToPool, this object might persist.
+                // Safest quick fix for non-pooled objects:
+                Destroy(projObj, cachedProjLifetime); // Hard backup destruction
+            }
+        }
+        else
+        {
+            // --- POOLED INSTANTIATION (Optimization) ---
+            if (ProjectileManager.Instance == null) return;
+
+            ProjectileManager.Instance.FireProjectile(
+                projectileOrigin.position,
+                fireDir,
+                cachedProjSpeed,
+                cachedDamage,
+                cachedProjLifetime,
+                stats.hitEffect,
+                stats.hitSound
+            );
+        }
     }
 
     // --- Helpers ---
-
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private void FaceTargetInstant()
     {
@@ -223,11 +276,12 @@ public class RangedEnemy : EnemyBase
     private void SetAnimSpeed(float speed)
     {
         if ((componentFlags & FLAG_ANIMATOR) != 0)
+        {
             animator.SetFloat(SpeedHash, Mathf.Abs(speed));
+        }
     }
 
     // --- Death & Dissolve ---
-
     protected override void Die()
     {
         if ((componentFlags & FLAG_AUDIO) != 0 && stats.deathSound != null)
@@ -237,10 +291,7 @@ public class RangedEnemy : EnemyBase
         {
             GrantXPOnce();
             IsDissolving = true;
-
-            // Disable physics immediately to prevent corpse blocking
             if (GetComponent<Collider>()) GetComponent<Collider>().enabled = false;
-
             DisableMovement();
             dissolveEffect.StartDissolve(OnDissolveComplete);
         }
@@ -274,11 +325,9 @@ public class RangedEnemy : EnemyBase
     public override void ResetEnemy()
     {
         base.ResetEnemy();
-
         attackTimer = 0f;
         isFlashing = false;
 
-        // Restore movement components
         if ((componentFlags & FLAG_CHAR_CONTROLLER) != 0)
             characterController.enabled = true;
 
@@ -293,7 +342,6 @@ public class RangedEnemy : EnemyBase
     }
 
     // --- Flash Logic ---
-
     public override void TakeDamage(float damage)
     {
         base.TakeDamage(damage);
