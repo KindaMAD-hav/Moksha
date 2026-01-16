@@ -637,13 +637,13 @@ MonoBehaviour:
   bossScale: 2
   meleeAttackRange: 3
   minionPrefabs:
-  - {fileID: 2124684102959905579, guid: cc725e9155f2ee44eb3e3fd99151b30c, type: 3}
+  - {fileID: 1036842401912313784, guid: c63c78dceac93844dbe6e90efb22083b, type: 3}
   minionStats:
-  - {fileID: 11400000, guid: de28dcd17d9dd1c4aaba761d3dcdde5c, type: 2}
+  - {fileID: 11400000, guid: 9649fe68c029244428e13481cdaf11e5, type: 2}
   spawnCooldown: 10
-  minionsPerSpawn: 5
+  minionsPerSpawn: 10
   spawnRadius: 5
-  maxActiveMinions: 10
+  maxActiveMinions: 1000
   animator: {fileID: 0}
   audioSource: {fileID: 0}
   flashRenderers: []
