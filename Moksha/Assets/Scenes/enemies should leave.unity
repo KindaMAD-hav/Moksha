@@ -30961,11 +30961,11 @@ MonoBehaviour:
   enemyTypes:
   - prefab: {fileID: 8658893934564567433, guid: 1c7610aac519f4042a61e5c715b3994f, type: 3}
     stats: {fileID: 11400000, guid: 9649fe68c029244428e13481cdaf11e5, type: 2}
-    poolSize: 20
+    poolSize: 10
     unlockAtLevel: 1
   - prefab: {fileID: 8658893934564567433, guid: 71e68d70d955b0e48a48f179e2875448, type: 3}
     stats: {fileID: 11400000, guid: b4d66de6ffce7f9489c8a2a71f9713a5, type: 2}
-    poolSize: 20
+    poolSize: 10
     unlockAtLevel: 6
   currentEnemyCount: 0
   gameTime: 0
