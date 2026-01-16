@@ -29,6 +29,8 @@ public class IceMortarProjectile : MonoBehaviour
     [SerializeField] private Color aoeColor = new Color(1f, 0.2f, 0.2f, 0.5f);
     [Tooltip("Height offset for the indicator above ground")]
     [SerializeField] private float indicatorHeightOffset = 0.05f;
+    [Tooltip("Layers to consider as ground for indicator placement (should NOT include Enemy, Player, or Default)")]
+    [SerializeField] private LayerMask groundLayerMask;
 
     [Header("Visual Effects")]
     [Tooltip("Effect spawned on impact")]
@@ -105,12 +107,18 @@ public class IceMortarProjectile : MonoBehaviour
 
     private void SpawnAOEIndicator()
     {
+        // Get ground height FIRST before any indicator exists
+        float groundHeight = GetGroundHeight(targetPosition);
+
         if (aoeIndicatorPrefab != null)
         {
             // Use prefab
-            Vector3 indicatorPos = new Vector3(targetPosition.x, GetGroundHeight(targetPosition) + indicatorHeightOffset, targetPosition.z);
+            Vector3 indicatorPos = new Vector3(targetPosition.x, groundHeight + indicatorHeightOffset, targetPosition.z);
             aoeIndicatorInstance = Instantiate(aoeIndicatorPrefab, indicatorPos, Quaternion.Euler(90f, 0f, 0f));
             aoeIndicatorInstance.transform.localScale = new Vector3(impactRadius * 2f, impactRadius * 2f, 1f);
+
+            // Set to Ignore Raycast layer so it doesn't interfere with other ground checks
+            aoeIndicatorInstance.layer = LayerMask.NameToLayer("Ignore Raycast");
         }
         else
         {
@@ -118,12 +126,15 @@ public class IceMortarProjectile : MonoBehaviour
             aoeIndicatorInstance = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
             aoeIndicatorInstance.name = "AOE_Indicator";
 
+            // Set to Ignore Raycast layer IMMEDIATELY so it doesn't interfere with other ground checks
+            aoeIndicatorInstance.layer = LayerMask.NameToLayer("Ignore Raycast");
+
             // Remove collider (it's just visual)
             Collider col = aoeIndicatorInstance.GetComponent<Collider>();
-            if (col != null) Destroy(col);
+            if (col != null) DestroyImmediate(col);
 
-            // Position and scale
-            Vector3 indicatorPos = new Vector3(targetPosition.x, GetGroundHeight(targetPosition) + indicatorHeightOffset, targetPosition.z);
+            // Position and scale - use pre-calculated ground height
+            Vector3 indicatorPos = new Vector3(targetPosition.x, groundHeight + indicatorHeightOffset, targetPosition.z);
             aoeIndicatorInstance.transform.position = indicatorPos;
             aoeIndicatorInstance.transform.localScale = new Vector3(impactRadius * 2f, 0.01f, impactRadius * 2f);
 
@@ -150,13 +161,44 @@ public class IceMortarProjectile : MonoBehaviour
         }
     }
 
+    // Cached layer mask for ground detection (excludes enemies, players, projectiles)
+    private int resolvedGroundMask = -1;
+
     private float GetGroundHeight(Vector3 position)
     {
-        // Raycast down to find ground
-        if (Physics.Raycast(position + Vector3.up * 50f, Vector3.down, out RaycastHit hit, 100f, LayerMask.GetMask("Ground", "Default", "Terrain")))
+        // Use inspector-assigned layer mask if set, otherwise auto-detect
+        if (resolvedGroundMask < 0)
         {
-            return hit.point.y;
+            if (groundLayerMask.value != 0)
+            {
+                // Use the inspector-assigned mask
+                resolvedGroundMask = groundLayerMask.value;
+            }
+            else
+            {
+                // Auto-detect: only raycast against Ground and Terrain layers
+                // Explicitly EXCLUDE: Default (has enemies), Player, Enemy, Ignore Raycast
+                resolvedGroundMask = LayerMask.GetMask("Ground", "Terrain");
+                
+                // If no Ground/Terrain layers exist, just use 0 and rely on fallback
+                if (resolvedGroundMask == 0)
+                {
+                    resolvedGroundMask = 0; // Will trigger fallback
+                }
+            }
         }
+
+        // Raycast down to find ground - using filtered layer mask
+        if (resolvedGroundMask != 0 && Physics.Raycast(position + Vector3.up * 50f, Vector3.down, out RaycastHit hit, 100f, resolvedGroundMask))
+        {
+            // Extra safety: skip if we hit something tagged as Enemy or Player
+            if (!hit.collider.CompareTag("Enemy") && !hit.collider.CompareTag("Player"))
+            {
+                return hit.point.y;
+            }
+        }
+
+        // Fallback: return 0 (ground level)
         return 0f;
     }
 
