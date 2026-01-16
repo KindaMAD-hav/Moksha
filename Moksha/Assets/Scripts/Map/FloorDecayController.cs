@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using UnityEngine;
 
 public class FloorDecayController : MonoBehaviour
@@ -25,7 +25,12 @@ public class FloorDecayController : MonoBehaviour
             return;
 
         collapseRadius += collapseSpeed * Time.deltaTime;
+
+        // 🔥 THIS IS THE MISSING LINK
+        Shader.SetGlobalVector("_CollapseCenter", collapseCenter);
+        Shader.SetGlobalFloat("_CollapseRadius", collapseRadius);
     }
+
 #if UNITY_EDITOR
     private void OnDrawGizmos()
     {

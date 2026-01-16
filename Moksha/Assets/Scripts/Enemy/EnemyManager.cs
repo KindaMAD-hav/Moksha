@@ -66,10 +66,10 @@ public class EnemyManager : MonoBehaviour
 
         // Process all enemies - dense array means no null checks needed
         int count = enemyCount;
-        for (int i = 0; i < count; i++)
-        {
-            enemies[i].Tick(deltaTime, playerPosition);
-        }
+        //for (int i = 0; i < count; i++)
+        //{
+        //    enemies[i].Tick(deltaTime, playerPosition);
+        //}
 
         activeEnemyCount = count;
     }
