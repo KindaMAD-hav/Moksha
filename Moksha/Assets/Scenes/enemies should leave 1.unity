@@ -70332,14 +70332,14 @@ MonoBehaviour:
   m_Padding:
     m_Left: 10
     m_Right: 10
-    m_Top: -3
-    m_Bottom: 16
+    m_Top: 10
+    m_Bottom: 10
   m_ChildAlignment: 4
-  m_Spacing: -145.08
+  m_Spacing: -145
   m_ChildForceExpandWidth: 0
   m_ChildForceExpandHeight: 0
   m_ChildControlWidth: 0
-  m_ChildControlHeight: 0
+  m_ChildControlHeight: 1
   m_ChildScaleWidth: 0
   m_ChildScaleHeight: 0
   m_ReverseArrangement: 0
@@ -70363,9 +70363,9 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: 21300000, guid: 9364fe66fe1177b49928ed227465834e, type: 3}
-  m_Type: 0
-  m_PreserveAspect: 1
+  m_Sprite: {fileID: 10907, guid: 0000000000000000f000000000000000, type: 0}
+  m_Type: 1
+  m_PreserveAspect: 0
   m_FillCenter: 1
   m_FillMethod: 4
   m_FillAmount: 1
@@ -70390,15 +70390,15 @@ RectTransform:
   m_GameObject: {fileID: 2043751295}
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1.05, y: 1.05, z: 1.05}
+  m_LocalScale: {x: 1.7, y: 1.7, z: 1.7}
   m_ConstrainProportionsScale: 1
   m_Children: []
   m_Father: {fileID: 1872107090}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0}
   m_AnchorMax: {x: 0.5, y: 0}
-  m_AnchoredPosition: {x: 0, y: 179.71}
-  m_SizeDelta: {x: 1200, y: 300}
+  m_AnchoredPosition: {x: 0, y: 96.59}
+  m_SizeDelta: {x: 1200, y: 100}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &2043751302
 MonoBehaviour:
@@ -70437,7 +70437,7 @@ MonoBehaviour:
   - powerUp: {fileID: 11400000, guid: 7ec5d9c840a55854db8cd76f30486736, type: 2}
     grayscaleSprite: {fileID: 21300000, guid: f91eacd84f295834496ee2b63e615d02, type: 3}
     coloredSprite: {fileID: 21300000, guid: a1a74a21b15131144aa8c896220787c6, type: 3}
-  slotPrefab: {fileID: 7362498855770185181, guid: 400b55dd83a85a04ca31a722e4d3e44e, type: 3}
+  slotPrefab: {fileID: 2013391428397615828, guid: 3bdc195b4b02e5846a6a3a930ce486d6, type: 3}
   slotContainer: {fileID: 2043751301}
 --- !u!1 &2053054005
 GameObject:
