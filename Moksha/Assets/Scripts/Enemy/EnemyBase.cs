@@ -1,6 +1,7 @@
 using System;
 using System.Runtime.CompilerServices;
 using UnityEngine;
+using static UnityEngine.GraphicsBuffer;
 
 /// <summary>
 /// Base class for all enemies. Optimized for high enemy counts.
@@ -34,6 +35,8 @@ public abstract class EnemyBase : MonoBehaviour, IDamageable
     protected int cachedXPReward;
     protected EnemyPurifyBridge purifyBridge;
 
+    private bool deathEventFired;
+
 
     // Cached target position (updated by manager)
     protected Vector3 cachedTargetPosition;
@@ -43,6 +46,17 @@ public abstract class EnemyBase : MonoBehaviour, IDamageable
     // XP guard (prevents multi-awards during dissolve / repeated hits)
     protected bool hasGrantedXP;
 
+    [Header("Falling State")]
+    [SerializeField] protected bool IsFalling;
+    [SerializeField] protected float fallVelocity;
+    [SerializeField] protected float gravity = -30f;
+    private float targetY;
+
+    protected void ApplyGravity()
+    {
+        fallVelocity += gravity * Time.deltaTime;
+        cachedTransform.position += Vector3.up * fallVelocity * Time.deltaTime;
+    }
 
     // Properties
     public EnemyStats Stats
@@ -113,6 +127,25 @@ public abstract class EnemyBase : MonoBehaviour, IDamageable
     /// </summary>
     protected virtual void Update()
     {
+        if (IsFalling)
+        {
+            ApplyGravity();
+
+            if (cachedTransform.position.y <= targetY)
+            {
+                Vector3 pos = cachedTransform.position;
+                pos.y = targetY;
+                cachedTransform.position = pos;
+
+                IsFalling = false;
+                fallVelocity = 0f;
+
+                OnLanded();
+            }
+
+            return;
+        }
+
         // Skip if managed by EnemyManager (it calls Tick instead)
         if (isManagedByManager | targetTransform == null) return;
 
@@ -121,6 +154,10 @@ public abstract class EnemyBase : MonoBehaviour, IDamageable
 
         cachedTargetPosition = targetTransform.position;
         UpdateBehavior(Time.deltaTime);
+    }
+    protected virtual void OnLanded()
+    {
+        // Re-enable AI, movement, etc.
     }
 
     /// <summary>
@@ -153,6 +190,13 @@ public abstract class EnemyBase : MonoBehaviour, IDamageable
 
         cachedTargetPosition = targetPos;
         UpdateBehavior(deltaTime);
+    }
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    protected void FireDeathEventOnce()
+    {
+        if (deathEventFired) return;
+        deathEventFired = true;
+        OnDeath?.Invoke(this);
     }
 
     /// <summary>
@@ -225,9 +269,16 @@ public abstract class EnemyBase : MonoBehaviour, IDamageable
         IsDead = true;
         GrantXPOnce();
 
-        OnDeath?.Invoke(this);
+        FireDeathEventOnce();
         gameObject.SetActive(false);
     }
+    public void ForceFall(float targetFloorY)
+    {
+        IsFalling = true;
+        fallVelocity = 0f;
+        targetY = targetFloorY;
+    }
+
 
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -259,6 +310,9 @@ public abstract class EnemyBase : MonoBehaviour, IDamageable
         IsDead = false;
         IsDissolving = false;
         hasGrantedXP = false;
+        IsFalling = false;
+        fallVelocity = 0f;
+
 
         // Restore collider using cached reference
         if (cachedCollider != null)

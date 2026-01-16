@@ -1,7 +1,7 @@
 ﻿using UnityEngine;
 using System.Collections.Generic;
 
-[RequireComponent(typeof(BoxCollider))]
+//[RequireComponent(typeof(BoxCollider))]
 public class FloorTileGenerator : MonoBehaviour
 {
     [Header("Floor Prefabs")]
@@ -39,10 +39,22 @@ public class FloorTileGenerator : MonoBehaviour
     public float colliderPaddingPercent = 0.05f;
 
     private BoxCollider floorCollider;
+    private void Start()
+    {
+        Generate();
+    }
+
 
     [ContextMenu("Generate Floor")]
     public void Generate()
     {
+        FloorDecayController decayController = GetComponent<FloorDecayController>();
+        if (decayController == null)
+        {
+            Debug.LogError("FloorDecayController missing on floor root.");
+            return;
+        }
+
         if (floorTiles == null || floorTiles.Length == 0)
         {
             Debug.LogError("No floor tiles assigned.");
@@ -70,6 +82,8 @@ public class FloorTileGenerator : MonoBehaviour
 
                 GameObject tile = Instantiate(floorTiles[prefabIndex], transform);
 
+
+
                 Vector3 pos = startLocalPosition;
                 pos += right * tileSize.x * x;
                 pos += forward * tileSize.z * z;
@@ -92,10 +106,36 @@ public class FloorTileGenerator : MonoBehaviour
                 history.Add(prefabIndex);
                 if (history.Count > historySize)
                     history.RemoveAt(0);
+
+                FloorTileDecay decay = tile.GetComponent<FloorTileDecay>();
+                if (decay != null)
+                {
+                    decayController.RegisterTile(decay);
+                }
+                if (FloorManager.Instance != null)
+                {
+                    FloorManager.Instance.RegisterCurrentFloor(this);
+                }
+
+                decayController.SendMessage("CacheTileColliders");
+
             }
         }
 
         UpdateUnifiedFloorCollider(tileSize, right, forward, up);
+        EnemySpawner.Instance.SetCurrentFloorDecay(decayController);
+
+        var _decay = GetComponent<FloorDecayController>();
+
+        if (EnemySpawner.Instance != null)
+        {
+            EnemySpawner.Instance.SetCurrentFloorDecay(_decay);
+            Debug.Log("[FIX] FloorDecayController assigned to EnemySpawner");
+        }
+        else
+        {
+            Debug.LogError("[FIX] EnemySpawner.Instance is NULL");
+        }
     }
 
     // --------------------------------------------------

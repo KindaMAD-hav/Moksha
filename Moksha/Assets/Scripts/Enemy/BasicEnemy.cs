@@ -67,6 +67,11 @@ public class BasicEnemy : EnemyBase
     private IDamageable targetDamageable;
     private bool checkedDamageable;
 
+    // Add fields to BasicEnemy
+    private int[] flashColorPropId;      // per renderer: _BaseColor or _Color, or 0 if none
+    private Color[] flashOriginalColor;  // per renderer
+    private bool flashCached;
+
     protected override void Awake()
     {
         base.Awake();
@@ -85,6 +90,41 @@ public class BasicEnemy : EnemyBase
         else if (flashRenderers == null || flashRenderers.Length == 0)
         {
             flashRenderers = GetComponentsInChildren<Renderer>();
+        }
+
+        if (enableDamageFlash && flashRenderers != null && flashRenderers.Length > 0)
+        {
+            flashBlock = new MaterialPropertyBlock();
+
+            int n = flashRenderers.Length;
+            flashColorPropId = new int[n];
+            flashOriginalColor = new Color[n];
+
+            for (int i = 0; i < n; i++)
+            {
+                var r = flashRenderers[i];
+                if (r == null)
+                {
+                    flashColorPropId[i] = 0;
+                    flashOriginalColor[i] = Color.white;
+                    continue;
+                }
+
+                // IMPORTANT: sharedMaterial does NOT instance.
+                var mat = r.sharedMaterial;
+
+                int pid = 0;
+                if (mat != null)
+                {
+                    if (mat.HasProperty(ColorProperty)) pid = ColorProperty;          // _BaseColor
+                    else if (mat.HasProperty(ColorPropertyAlt)) pid = ColorPropertyAlt; // _Color
+                }
+
+                flashColorPropId[i] = pid;
+                flashOriginalColor[i] = (pid != 0 && mat != null) ? mat.GetColor(pid) : Color.white;
+            }
+
+            flashCached = true;
         }
 
 
@@ -304,6 +344,7 @@ public class BasicEnemy : EnemyBase
 
         if ((componentFlags & FLAG_DISSOLVE) != 0)
         {
+            FireDeathEventOnce(); // 🔥 ADD THIS
             GrantXPOnce();
             IsDissolving = true;
 
@@ -417,7 +458,7 @@ public class BasicEnemy : EnemyBase
 
         if (IsDead) return;
 
-        if (enableDamageFlash)
+        if (enableDamageFlash) 
             StartFlash();
     }
 
@@ -439,10 +480,11 @@ public class BasicEnemy : EnemyBase
 
 
 
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    // Replace StartFlash() with this:
     private void StartFlash()
     {
         if (!enableDamageFlash) return;
+        if (!flashCached) return;
         if (flashRenderers == null || flashRenderers.Length == 0) return;
 
         isFlashing = true;
@@ -450,36 +492,33 @@ public class BasicEnemy : EnemyBase
 
         for (int i = 0; i < flashRenderers.Length; i++)
         {
-            if (flashRenderers[i] == null) continue;
+            var r = flashRenderers[i];
+            int pid = flashColorPropId[i];
+            if (r == null || pid == 0) continue;
 
-            flashRenderers[i].GetPropertyBlock(flashBlock);
-
-            if (flashRenderers[i].material.HasProperty("_BaseColor"))
-                flashBlock.SetColor("_BaseColor", damageFlashColor);
-            if (flashRenderers[i].material.HasProperty("_Color"))
-                flashBlock.SetColor("_Color", damageFlashColor);
-
-            flashRenderers[i].SetPropertyBlock(flashBlock);
+            r.GetPropertyBlock(flashBlock);
+            flashBlock.SetColor(pid, damageFlashColor);
+            r.SetPropertyBlock(flashBlock);
         }
     }
 
+    // Replace EndFlash() with this:
     private void EndFlash()
     {
         if (!enableDamageFlash) return;
+        if (!flashCached) return;
+
         isFlashing = false;
 
         for (int i = 0; i < flashRenderers.Length; i++)
         {
-            if (flashRenderers[i] == null) continue;
+            var r = flashRenderers[i];
+            int pid = flashColorPropId[i];
+            if (r == null || pid == 0) continue;
 
-            flashRenderers[i].GetPropertyBlock(flashBlock);
-
-            if (flashRenderers[i].material.HasProperty("_BaseColor"))
-                flashBlock.SetColor("_BaseColor", originalColors[i]);
-            if (flashRenderers[i].material.HasProperty("_Color"))
-                flashBlock.SetColor("_Color", originalColors[i]);
-
-            flashRenderers[i].SetPropertyBlock(flashBlock);
+            r.GetPropertyBlock(flashBlock);
+            flashBlock.SetColor(pid, flashOriginalColor[i]);
+            r.SetPropertyBlock(flashBlock);
         }
     }
 

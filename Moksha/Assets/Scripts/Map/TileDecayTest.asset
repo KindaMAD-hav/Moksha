@@ -1,0 +1,27 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1044e8c0eabfec44fa98ebed38038297, type: 3}
+  m_Name: TileDecayTest
+  m_EditorClassIdentifier: Assembly-CSharp::TileDecayData
+  stages:
+  - material: {fileID: 0}
+    decayThreshold: 0
+  - material: {fileID: 2100000, guid: ff43f7ccc482d4249bc2b65a6ae0474b, type: 2}
+    decayThreshold: 100
+  - material: {fileID: 2100000, guid: 381acc4159a66b345b581f6a651af883, type: 2}
+    decayThreshold: 200
+  - material: {fileID: 2100000, guid: 8d1b1ab52c9bc53478b76085a6067f40, type: 2}
+    decayThreshold: 300
+  - material: {fileID: 2100000, guid: 77643607b53b4a446af681c338a66b93, type: 2}
+    decayThreshold: 400
+  - material: {fileID: 2100000, guid: b6a03c67d2bbf184ab65623bb9229107, type: 2}
+    decayThreshold: 500

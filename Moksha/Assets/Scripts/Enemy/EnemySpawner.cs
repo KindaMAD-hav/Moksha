@@ -50,6 +50,10 @@ public class EnemySpawner : MonoBehaviour
     [SerializeField] private int recoveryBurst = 6;
     [SerializeField] private bool logRecoveryInEditor = true;
 
+    [Header("Floor Decay")]
+    [SerializeField] private FloorDecayController currentFloorDecay;
+
+
     private float lastSuccessfulSpawnUnscaledTime;
 
     // OPTIMIZATION: Stack provides better cache locality (LIFO) than Queue
@@ -189,6 +193,11 @@ public class EnemySpawner : MonoBehaviour
         {
             SpawnEnemy();
         }
+    }
+
+    public void SetCurrentFloorDecay(FloorDecayController decayController)
+    {
+        currentFloorDecay = decayController;
     }
 
     private void SpawnEnemy()
@@ -434,9 +443,32 @@ public class EnemySpawner : MonoBehaviour
 
     private void OnEnemyDeath(EnemyBase enemy)
     {
+        //Debug.Log("[HARD] OnEnemyDeath reached");
+
+        //if (currentFloorDecay == null)
+        //{
+        //    Debug.LogError("[HARD] currentFloorDecay IS NULL");
+        //}
+        //else
+        //{
+        //    Debug.Log("[HARD] currentFloorDecay is SET");
+        //    currentFloorDecay.ApplyDecayPulse(enemy.transform.position);
+        //}
+        //Debug.Log("[TEST] OnEnemyDeath fired");
         currentEnemyCount--;
 
-        // Linear scan is fine for small type counts (usually < 20)
+        // 🔥 FLOOR DECAY HOOK
+        if (currentFloorDecay != null)
+        {
+            Vector3 deathPos = enemy.transform.position;
+
+            // Flatten Y to floor level (important for knockups)
+            deathPos.y = currentFloorDecay.transform.position.y;
+
+            currentFloorDecay.ApplyDecayPulse(deathPos);
+        }
+
+        // Existing pool return logic (unchanged)
         for (int i = 0; i < enemyTypes.Length; i++)
         {
             if (enemyTypes[i].stats == enemy.Stats)
@@ -446,6 +478,7 @@ public class EnemySpawner : MonoBehaviour
             }
         }
     }
+
 
     public void StartSpawning() => isSpawning = true;
     public void StopSpawning() => isSpawning = false;
