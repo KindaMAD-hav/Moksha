@@ -39,6 +39,11 @@ public class FloorTileGenerator : MonoBehaviour
     public float colliderPaddingPercent = 0.05f;
 
     private BoxCollider floorCollider;
+    private void Start()
+    {
+        Generate();
+    }
+
 
     [ContextMenu("Generate Floor")]
     public void Generate()
@@ -114,6 +119,18 @@ public class FloorTileGenerator : MonoBehaviour
 
         UpdateUnifiedFloorCollider(tileSize, right, forward, up);
         EnemySpawner.Instance.SetCurrentFloorDecay(decayController);
+
+        var _decay = GetComponent<FloorDecayController>();
+
+        if (EnemySpawner.Instance != null)
+        {
+            EnemySpawner.Instance.SetCurrentFloorDecay(_decay);
+            Debug.Log("[FIX] FloorDecayController assigned to EnemySpawner");
+        }
+        else
+        {
+            Debug.LogError("[FIX] EnemySpawner.Instance is NULL");
+        }
     }
 
     // --------------------------------------------------

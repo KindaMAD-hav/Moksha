@@ -418,7 +418,18 @@ public class EnemySpawner : MonoBehaviour
 
     private void OnEnemyDeath(EnemyBase enemy)
     {
-        Debug.Log("[TEST] OnEnemyDeath fired");
+        //Debug.Log("[HARD] OnEnemyDeath reached");
+
+        //if (currentFloorDecay == null)
+        //{
+        //    Debug.LogError("[HARD] currentFloorDecay IS NULL");
+        //}
+        //else
+        //{
+        //    Debug.Log("[HARD] currentFloorDecay is SET");
+        //    currentFloorDecay.ApplyDecayPulse(enemy.transform.position);
+        //}
+        //Debug.Log("[TEST] OnEnemyDeath fired");
         currentEnemyCount--;
 
         // 🔥 FLOOR DECAY HOOK
