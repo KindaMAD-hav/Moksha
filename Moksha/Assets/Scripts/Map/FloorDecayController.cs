@@ -47,6 +47,8 @@ public class FloorDecayController : MonoBehaviour
         tile.OnCriticalDecayReached -= OnTileCritical;
         tiles.Remove(tile);
     }
+    [Header("Post-Collapse Cleanup")]
+    [SerializeField] private float destroyFloorAfterSeconds = 6f;
 
     private void CacheTileColliders()
     {
@@ -125,6 +127,16 @@ public class FloorDecayController : MonoBehaviour
 
         BeginCollapse();
     }
+    private System.Collections.IEnumerator DestroyFloorAfterDelay()
+    {
+        yield return new WaitForSeconds(destroyFloorAfterSeconds);
+
+        // Safety: only destroy if this floor is still collapsing
+        if (this != null)
+        {
+            Destroy(gameObject);
+        }
+    }
 
     private void BeginCollapse()
     {
@@ -136,7 +148,11 @@ public class FloorDecayController : MonoBehaviour
         {
             FloorManager.Instance.OnFloorCollapseStarted(this);
         }
+
+        // 🔥 NEW: destroy this entire floor after delay
+        StartCoroutine(DestroyFloorAfterDelay());
     }
+
 
     private void DisableTileColliders()
     {
