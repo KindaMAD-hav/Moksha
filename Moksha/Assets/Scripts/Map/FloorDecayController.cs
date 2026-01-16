@@ -11,12 +11,30 @@ public class FloorDecayController : MonoBehaviour
     private bool collapseTriggered;
     public float FloorY => transform.position.y;
 
-
+    [SerializeField] private float collapseRadius;
+    [SerializeField] private float collapseSpeed = 12f;
+    public float CollapseRadius => collapseRadius;
     public void RegisterTile(FloorTileDecay tile)
     {
         tiles.Add(tile);
         tile.OnCriticalDecayReached += HandleCriticalTile;
     }
+    private void Update()
+    {
+        if (!isCollapsing)
+            return;
+
+        collapseRadius += collapseSpeed * Time.deltaTime;
+    }
+#if UNITY_EDITOR
+    private void OnDrawGizmos()
+    {
+        if (!isCollapsing) return;
+
+        Gizmos.color = Color.red;
+        Gizmos.DrawWireSphere(collapseCenter, collapseRadius);
+    }
+#endif
 
     public void UnregisterTile(FloorTileDecay tile)
     {
