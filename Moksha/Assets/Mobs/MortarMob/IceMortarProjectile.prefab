@@ -257,8 +257,11 @@ MonoBehaviour:
   slowPercentage: 0.5
   slowDuration: 2
   aoeIndicatorPrefab: {fileID: 0}
-  aoeColor: {r: 1, g: 0.2, b: 0.2, a: 0.050980393}
+  aoeColor: {r: 1, g: 0.2, b: 0.2, a: 0.02745098}
   indicatorHeightOffset: 0.01
+  groundLayerMask:
+    serializedVersion: 2
+    m_Bits: 0
   impactEffectPrefab: {fileID: 0}
   trailRenderer: {fileID: 0}
   launchSound: {fileID: 0}
