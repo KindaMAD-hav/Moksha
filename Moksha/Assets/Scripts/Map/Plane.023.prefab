@@ -107,5 +107,5 @@ MonoBehaviour:
   decayData: {fileID: 11400000, guid: b41ab72704574b148b89ce6f031df355, type: 2}
   decayValue: 0
   currentStageIndex: 0
-  testControls: 0
-  testDecayStep: 1
+  testControls: 1
+  testDecayStep: 99

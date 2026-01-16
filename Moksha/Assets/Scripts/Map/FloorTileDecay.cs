@@ -13,13 +13,17 @@ public class FloorTileDecay : MonoBehaviour
     public System.Action<FloorTileDecay> OnCriticalDecayReached;
     private bool collapseSignaled;
 
-    private MeshFilter meshFilter;
+    private Renderer tileRenderer;
+    private MaterialPropertyBlock propertyBlock;
+
 
     private void Awake()
     {
-        meshFilter = GetComponent<MeshFilter>();
+        tileRenderer = GetComponentInChildren<Renderer>();
+        propertyBlock = new MaterialPropertyBlock();
         ApplyDecayVisuals(force: true);
     }
+
 
     public void AddDecay(float amount)
     {
@@ -46,8 +50,15 @@ public class FloorTileDecay : MonoBehaviour
         currentStageIndex = newStage;
 
         var stage = decayData.stages[currentStageIndex];
-        if (stage.mesh != null)
-            meshFilter.sharedMesh = stage.mesh;
+        if (stage.material != null && tileRenderer != null)
+        {
+            tileRenderer.GetPropertyBlock(propertyBlock);
+            propertyBlock.SetFloat("_DecayStage", currentStageIndex);
+            tileRenderer.SetPropertyBlock(propertyBlock);
+
+            tileRenderer.sharedMaterial = stage.material;
+        }
+
 
         if (!collapseSignaled && decayData.IsCriticalStage(currentStageIndex))
         {
@@ -77,7 +88,10 @@ public class FloorTileDecay : MonoBehaviour
     {
         if (!Application.isPlaying)
         {
-            meshFilter = GetComponent<MeshFilter>();
+            tileRenderer = GetComponentInChildren<Renderer>();
+            if (propertyBlock == null)
+                propertyBlock = new MaterialPropertyBlock();
+
             ApplyDecayVisuals(force: true);
         }
     }

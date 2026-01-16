@@ -9,12 +9,13 @@ public class TileDecayData : ScriptableObject
     [System.Serializable]
     public class DecayStage
     {
-        [Tooltip("Mesh used for this decay stage")]
-        public Mesh mesh;
+        [Tooltip("Material used for this decay stage")]
+        public Material material;
 
         [Tooltip("Minimum decay value required to enter this stage")]
         public float decayThreshold;
     }
+
 
     [Tooltip("Decay stages must be ordered from lowest to highest threshold")]
     public DecayStage[] stages;

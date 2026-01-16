@@ -13,7 +13,15 @@ MonoBehaviour:
   m_Name: TileDecayTest
   m_EditorClassIdentifier: Assembly-CSharp::TileDecayData
   stages:
-  - mesh: {fileID: 6607839196387346367, guid: b2510ce44697bdc41a94e716b30febc0, type: 3}
+  - material: {fileID: 0}
     decayThreshold: 0
-  - mesh: {fileID: 5074941243508514199, guid: b2510ce44697bdc41a94e716b30febc0, type: 3}
-    decayThreshold: 9
+  - material: {fileID: 2100000, guid: ff43f7ccc482d4249bc2b65a6ae0474b, type: 2}
+    decayThreshold: 100
+  - material: {fileID: 2100000, guid: 381acc4159a66b345b581f6a651af883, type: 2}
+    decayThreshold: 200
+  - material: {fileID: 2100000, guid: 8d1b1ab52c9bc53478b76085a6067f40, type: 2}
+    decayThreshold: 300
+  - material: {fileID: 2100000, guid: 77643607b53b4a446af681c338a66b93, type: 2}
+    decayThreshold: 400
+  - material: {fileID: 2100000, guid: b6a03c67d2bbf184ab65623bb9229107, type: 2}
+    decayThreshold: 500
