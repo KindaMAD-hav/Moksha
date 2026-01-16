@@ -55,6 +55,7 @@ Shader "Moksha/FloorRadialDissolveURP"
             float3 _CollapseCenter;
             float _CollapseRadius;
             float _DissolveWidth;
+            float _FloorYTolerance;
 
             Varyings vert (Attributes v)
             {
@@ -70,7 +71,20 @@ Shader "Moksha/FloorRadialDissolveURP"
                 // Base color
                 half4 baseCol = tex2D(_BaseMap, i.uv);
 
-                // World-space radial distance (XZ only)
+                // If collapse radius is very negative, no collapse is happening - render normally
+                if (_CollapseRadius < -999.0)
+                {
+                    return baseCol;
+                }
+
+                // Check Y distance - if this fragment is on a different floor level, don't dissolve it
+                float yDist = abs(i.worldPos.y - _CollapseCenter.y);
+                if (yDist > _FloorYTolerance)
+                {
+                    return baseCol; // Not on this floor level, render normally
+                }
+
+                // World-space radial distance (XZ only - cylindrical expansion)
                 float2 worldXZ = i.worldPos.xz;
                 float2 centerXZ = _CollapseCenter.xz;
 
