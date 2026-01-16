@@ -1304,7 +1304,7 @@ MonoBehaviour:
   - {fileID: 21300000, guid: 4befcceabcb978d4fbcf45b47b24b315, type: 3}
   fadeDuration: 1
   holdDuration: 1.5
-  nextSceneName: ENEMIES INCOMING
+  nextSceneName: WE DO NOT CARE
   objectsToDisableOnStart:
   - {fileID: 1910322132}
   - {fileID: 1274783138}

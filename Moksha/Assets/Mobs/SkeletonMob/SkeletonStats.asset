@@ -21,7 +21,7 @@ MonoBehaviour:
   damage: 10
   attackCooldown: 1
   attackRange: 2
-  xpReward: 20
+  xpReward: 30
   hitEffect: {fileID: 0}
   deathEffect: {fileID: 0}
   hitSound: {fileID: 0}
