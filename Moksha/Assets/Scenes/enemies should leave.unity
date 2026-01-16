@@ -25,7 +25,7 @@ RenderSettings:
   m_AmbientGroundColor: {r: 0.047, g: 0.043, b: 0.035, a: 1}
   m_AmbientIntensity: 1
   m_AmbientMode: 0
-  m_SubtractiveShadowColor: {r: 0.42, g: 0.478, b: 0.627, a: 1}
+  m_SubtractiveShadowColor: {r: 0.39159122, g: 0.4826146, b: 0.7132075, a: 1}
   m_SkyboxMaterial: {fileID: 10304, guid: 0000000000000000f000000000000000, type: 0}
   m_HaloStrength: 0.5
   m_FlareStrength: 1
@@ -31071,11 +31071,7 @@ MonoBehaviour:
   spawnIntervalDecreaseRate: 0.01
   baseEnemiesPerSpawn: 2
   enemiesPerSpawnIncreaseRate: 1
-  enemyTypes:
-  - prefab: {fileID: 7099823018105256717, guid: 77359318e3c18c644abd2dbabd110e97, type: 3}
-    stats: {fileID: 11400000, guid: 9649fe68c029244428e13481cdaf11e5, type: 2}
-    poolSize: 0
-    unlockAtLevel: 0
+  enemyTypes: []
   bossEntry:
     bossPrefab: {fileID: 5169375071532846370, guid: 00b2591315906d1418319d33e806ca9f, type: 3}
     stats: {fileID: 11400000, guid: ed6f5fac4e08a9944804f5edf25f3d97, type: 2}

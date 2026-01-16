@@ -33,8 +33,12 @@ public class EnemySpawner : MonoBehaviour
     [Header("Boss Settings")]
     [Tooltip("Boss enemy configuration (only one boss can exist at a time)")]
     [SerializeField] private BossSpawnEntry bossEntry;
-    [Tooltip("Time in seconds before boss spawns (0 = never)")]
+    [Tooltip("Time in seconds before boss first spawns (0 = never)")]
     [SerializeField] private float bossSpawnTime = 120f;
+    [Tooltip("Time in seconds before boss respawns after death (0 = never respawns)")]
+    [SerializeField] private float bossRespawnTime = 60f;
+    [Tooltip("Should boss respawn after being defeated?")]
+    [SerializeField] private bool allowBossRespawn = true;
 
     [Header("Runtime Info")]
     [SerializeField] private int currentEnemyCount;
@@ -80,7 +84,7 @@ public class EnemySpawner : MonoBehaviour
     // Boss tracking
     private BossEnemy currentBoss;
     private bool bossSpawned;
-    private bool bossHasBeenDefeated;
+    private float nextBossSpawnTime;
 
     private void Awake()
     {
@@ -94,6 +98,9 @@ public class EnemySpawner : MonoBehaviour
         currentSpawnInterval = spawnInterval;
         currentEnemiesPerSpawn = baseEnemiesPerSpawn;
         spawnDistanceRange = maxSpawnDistance - minSpawnDistance;
+        
+        // Initialize boss spawn time
+        nextBossSpawnTime = bossSpawnTime;
 
         // Pre-allocate collections
         int typeCount = enemyTypes != null ? enemyTypes.Length : 0;
@@ -129,10 +136,9 @@ public class EnemySpawner : MonoBehaviour
         float dt = Time.deltaTime;
         gameTime += dt;
 
-        // Check for boss spawn
+        // Check for boss spawn (time-based respawn system)
         if (bossEntry != null && bossEntry.bossPrefab != null && 
-            !bossSpawned && !bossHasBeenDefeated && 
-            bossSpawnTime > 0f && gameTime >= bossSpawnTime)
+            !bossSpawned && gameTime >= nextBossSpawnTime && nextBossSpawnTime > 0f)
         {
             SpawnBoss();
         }
@@ -504,13 +510,23 @@ public class EnemySpawner : MonoBehaviour
     private void OnBossDeathInternal(EnemyBase boss)
     {
         boss.OnDeath -= OnBossDeathInternal;
-        bossHasBeenDefeated = true;
+        bossSpawned = false;
         currentBoss = null;
 
         if (EnemyManager.Instance != null)
             EnemyManager.Instance.UnregisterEnemy(boss);
 
-        Debug.Log("[EnemySpawner] Boss defeated!");
+        // Schedule next boss spawn if respawning is enabled
+        if (allowBossRespawn && bossRespawnTime > 0f)
+        {
+            nextBossSpawnTime = gameTime + bossRespawnTime;
+            Debug.Log($"[EnemySpawner] Boss defeated! Will respawn in {bossRespawnTime}s at game time {nextBossSpawnTime:F1}s");
+        }
+        else
+        {
+            nextBossSpawnTime = float.MaxValue; // Never spawn again
+            Debug.Log("[EnemySpawner] Boss defeated and will not respawn!");
+        }
     }
 
     /// <summary>
@@ -519,12 +535,21 @@ public class EnemySpawner : MonoBehaviour
     public void OnBossDeath()
     {
         bossSpawned = false;
-        bossHasBeenDefeated = true;
         currentBoss = null;
+        
+        // Schedule next boss spawn if respawning is enabled
+        if (allowBossRespawn && bossRespawnTime > 0f)
+        {
+            nextBossSpawnTime = gameTime + bossRespawnTime;
+            Debug.Log($"[EnemySpawner] Boss defeated! Will respawn in {bossRespawnTime}s");
+        }
+        else
+        {
+            nextBossSpawnTime = float.MaxValue;
+        }
     }
 
     public bool IsBossActive => currentBoss != null && !currentBoss.IsDead;
-    public bool HasBossBeenDefeated => bossHasBeenDefeated;
 
     public void KillAllEnemies()
     {
@@ -551,7 +576,7 @@ public class EnemySpawner : MonoBehaviour
         
         // Reset boss state
         bossSpawned = false;
-        bossHasBeenDefeated = false;
+        nextBossSpawnTime = bossSpawnTime;
         currentBoss = null;
     }
 

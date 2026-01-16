@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::EnemyStats
   enemyName: Enemy
   icon: {fileID: 0}
-  maxHealth: 500
+  maxHealth: 25
   moveSpeed: 3
   rotationSpeed: 360
   stoppingDistance: 1
@@ -23,7 +23,7 @@ MonoBehaviour:
   attackRange: 2
   projectileSpeed: 15
   projectileLifetime: 5
-  xpReward: 100000
+  xpReward: 17
   hitEffect: {fileID: 0}
   deathEffect: {fileID: 0}
   hitSound: {fileID: 0}
