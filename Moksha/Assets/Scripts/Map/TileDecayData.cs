@@ -33,4 +33,9 @@ public class TileDecayData : ScriptableObject
 
         return result;
     }
+    public bool IsCriticalStage(int stageIndex)
+    {
+        return stageIndex == stages.Length - 1;
+    }
+
 }

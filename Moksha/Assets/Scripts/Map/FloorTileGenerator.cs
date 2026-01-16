@@ -43,6 +43,13 @@ public class FloorTileGenerator : MonoBehaviour
     [ContextMenu("Generate Floor")]
     public void Generate()
     {
+        FloorDecayController decayController = GetComponent<FloorDecayController>();
+        if (decayController == null)
+        {
+            Debug.LogError("FloorDecayController missing on floor root.");
+            return;
+        }
+
         if (floorTiles == null || floorTiles.Length == 0)
         {
             Debug.LogError("No floor tiles assigned.");
@@ -70,6 +77,8 @@ public class FloorTileGenerator : MonoBehaviour
 
                 GameObject tile = Instantiate(floorTiles[prefabIndex], transform);
 
+
+
                 Vector3 pos = startLocalPosition;
                 pos += right * tileSize.x * x;
                 pos += forward * tileSize.z * z;
@@ -92,6 +101,14 @@ public class FloorTileGenerator : MonoBehaviour
                 history.Add(prefabIndex);
                 if (history.Count > historySize)
                     history.RemoveAt(0);
+
+                FloorTileDecay decay = tile.GetComponent<FloorTileDecay>();
+                if (decay != null)
+                {
+                    decayController.RegisterTile(decay);
+                }
+
+
             }
         }
 

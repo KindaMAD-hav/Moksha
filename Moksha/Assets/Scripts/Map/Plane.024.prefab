@@ -11,6 +11,7 @@ GameObject:
   - component: {fileID: 685764895075210720}
   - component: {fileID: 7760654925652967326}
   - component: {fileID: 2908529801991878543}
+  - component: {fileID: -6886289515669863274}
   m_Layer: 0
   m_Name: Plane.024
   m_TagString: Untagged
@@ -90,3 +91,20 @@ MeshRenderer:
   m_SortingOrder: 0
   m_MaskInteraction: 0
   m_AdditionalVertexStreams: {fileID: 0}
+--- !u!114 &-6886289515669863274
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1329253042765026580}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 22702f8aaa171dc4487aec42bd3cbf03, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::FloorTileDecay
+  decayData: {fileID: 0}
+  decayValue: 0
+  currentStageIndex: 0
+  testControls: 0
+  testDecayStep: 1
