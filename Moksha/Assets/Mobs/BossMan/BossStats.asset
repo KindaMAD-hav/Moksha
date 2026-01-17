@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: df216b44e432a664f9f59aa94c2bc0b2, type: 3}
   m_Name: BossStats
   m_EditorClassIdentifier: Assembly-CSharp::EnemyStats
-  enemyName: Enemy
+  enemyName: Boss
   icon: {fileID: 0}
   maxHealth: 25
   moveSpeed: 3

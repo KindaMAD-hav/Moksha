@@ -634,6 +634,9 @@ MonoBehaviour:
   stats: {fileID: 11400000, guid: ed6f5fac4e08a9944804f5edf25f3d97, type: 2}
   currentHealth: 0
   targetTransform: {fileID: 0}
+  IsFalling: 0
+  fallVelocity: 0
+  gravity: -30
   bossScale: 2
   meleeAttackRange: 3
   minionPrefabs:
@@ -1026,7 +1029,7 @@ SkinnedMeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 4874126678125670354, guid: 6a90530602267bd41bab41beacd860a7, type: 3}
+  - {fileID: 2100000, guid: 686d56c518cf9194a829c303e97c69be, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0

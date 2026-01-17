@@ -31071,11 +31071,7 @@ MonoBehaviour:
   spawnIntervalDecreaseRate: 0.01
   baseEnemiesPerSpawn: 2
   enemiesPerSpawnIncreaseRate: 1
-  enemyTypes:
-  - prefab: {fileID: 2124684102959905579, guid: cc725e9155f2ee44eb3e3fd99151b30c, type: 3}
-    stats: {fileID: 11400000, guid: de28dcd17d9dd1c4aaba761d3dcdde5c, type: 2}
-    poolSize: 20
-    unlockAtLevel: 0
+  enemyTypes: []
   bossEntry:
     bossPrefab: {fileID: 5169375071532846370, guid: 00b2591315906d1418319d33e806ca9f, type: 3}
     stats: {fileID: 11400000, guid: ed6f5fac4e08a9944804f5edf25f3d97, type: 2}
@@ -36853,6 +36849,110 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1051070535}
   m_Mesh: {fileID: 5074941243508514199, guid: b2510ce44697bdc41a94e716b30febc0, type: 3}
+--- !u!1 &1058489141
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1058489142}
+  - component: {fileID: 1058489144}
+  - component: {fileID: 1058489143}
+  m_Layer: 0
+  m_Name: EnemySpawner (1)
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 0
+--- !u!4 &1058489142
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1058489141}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: -11.210002, y: 37.6, z: -11.78}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 1443429140}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1058489143
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1058489141}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 757b2233f416c4d478a10bf59f9a5fb9, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::EnemyManager
+  playerTransform: {fileID: 913657311}
+  activeEnemyCount: 0
+--- !u!114 &1058489144
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1058489141}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 79be31117e77c8c408dbf808d4a2ae54, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::EnemySpawner
+  playerTransform: {fileID: 0}
+  minSpawnDistance: 20
+  maxSpawnDistance: 30
+  spawnInterval: 2
+  maxEnemies: 2000
+  worldMin: {x: -2.7, y: 0.52}
+  worldMax: {x: 84.1, y: 87.5}
+  minSpawnInterval: 0.3
+  spawnIntervalDecreaseRate: 0.01
+  baseEnemiesPerSpawn: 2
+  enemiesPerSpawnIncreaseRate: 1
+  enemyTypes:
+  - prefab: {fileID: 2124684102959905579, guid: cc725e9155f2ee44eb3e3fd99151b30c, type: 3}
+    stats: {fileID: 11400000, guid: de28dcd17d9dd1c4aaba761d3dcdde5c, type: 2}
+    poolSize: 20
+    unlockAtLevel: 0
+  - prefab: {fileID: 2475981611131618683, guid: ff7a59e9084803344af17b5c260a4a87, type: 3}
+    stats: {fileID: 11400000, guid: cdf44a39385d9e54cb867510b740d334, type: 2}
+    poolSize: 20
+    unlockAtLevel: 2
+  - prefab: {fileID: 1036842401912313784, guid: c63c78dceac93844dbe6e90efb22083b, type: 3}
+    stats: {fileID: 11400000, guid: 9649fe68c029244428e13481cdaf11e5, type: 2}
+    poolSize: 20
+    unlockAtLevel: 7
+  - prefab: {fileID: 7099823018105256717, guid: 77359318e3c18c644abd2dbabd110e97, type: 3}
+    stats: {fileID: 11400000, guid: 9649fe68c029244428e13481cdaf11e5, type: 2}
+    poolSize: 20
+    unlockAtLevel: 9
+  - prefab: {fileID: 2124684102959905579, guid: cc725e9155f2ee44eb3e3fd99151b30c, type: 3}
+    stats: {fileID: 11400000, guid: de28dcd17d9dd1c4aaba761d3dcdde5c, type: 2}
+    poolSize: 20
+    unlockAtLevel: 0
+  bossEntry:
+    bossPrefab: {fileID: 5169375071532846370, guid: 00b2591315906d1418319d33e806ca9f, type: 3}
+    stats: {fileID: 11400000, guid: ed6f5fac4e08a9944804f5edf25f3d97, type: 2}
+  bossSpawnTime: 1
+  bossRespawnTime: 60
+  allowBossRespawn: 1
+  currentEnemyCount: 0
+  gameTime: 0
+  enableStallRecovery: 1
+  stallSeconds: 3
+  recoveryBurst: 6
+  logRecoveryInEditor: 1
+  currentFloorDecay: {fileID: 0}
 --- !u!1 &1065552265
 GameObject:
   m_ObjectHideFlags: 0
@@ -50443,6 +50543,7 @@ Transform:
   m_Children:
   - {fileID: 588442048}
   - {fileID: 872873696}
+  - {fileID: 1058489142}
   - {fileID: 1661809494}
   - {fileID: 1926008446}
   - {fileID: 856982259}
@@ -56799,6 +56900,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 94af2520a4d647a48a40b3bd4110406f, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::FloorTileGenerator
+  autoGenerateOnStart: 1
   floorTiles:
   - {fileID: 9037046104859525682, guid: b24038194e6a82a4588f77536f37c239, type: 3}
   - {fileID: 2419628992134988941, guid: 79da4d971ab633647b6bf629e64fdb1a, type: 3}
@@ -56816,6 +56918,7 @@ MonoBehaviour:
   repeatPenalty: 0.7
   floorColliderHeight: 0.1
   colliderPaddingPercent: 0.05
+  defaultMaxTilesPerFrame: 25
 --- !u!65 &1631789565
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -56852,7 +56955,11 @@ MonoBehaviour:
   decayRadius: 4
   decayAmount: 1
   collapseSpeed: 12
+  collapseCylinderHeight: 3
   tileColliders: []
+  destroyFloorAfterSeconds: 6
+  globalCollapseCooldown: 3
+  decayCooldown: 0.25
 --- !u!1 &1632678079
 GameObject:
   m_ObjectHideFlags: 0
