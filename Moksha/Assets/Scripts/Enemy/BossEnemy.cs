@@ -399,10 +399,14 @@ public class BossEnemy : EnemyBase
     protected override void Die()
     {
         // Kill all spawned minions when boss dies
-        foreach (var minion in activeMinions)
+        // Use reverse for loop to avoid collection modification issues
+        for (int i = activeMinions.Count - 1; i >= 0; i--)
         {
+            var minion = activeMinions[i];
             if (minion != null && !minion.IsDead)
             {
+                // Unsubscribe first to prevent OnMinionDeath from modifying list during iteration
+                minion.OnDeath -= OnMinionDeath;
                 minion.TakeDamage(float.MaxValue);
             }
         }

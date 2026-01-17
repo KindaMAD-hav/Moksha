@@ -23,7 +23,7 @@ MonoBehaviour:
   attackRange: 10
   projectileSpeed: 15
   projectileLifetime: 2
-  xpReward: 10
+  xpReward: 70
   hitEffect: {fileID: 0}
   deathEffect: {fileID: 0}
   hitSound: {fileID: 0}

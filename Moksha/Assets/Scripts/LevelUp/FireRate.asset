@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::WeaponModifierPowerUp
   powerUpName: FireRate Boost
   description: Increases Current Fire rate by 20%
-  icon: {fileID: 21300000, guid: cf75abf697d06cd499743fe123f0e3b9, type: 3}
+  icon: {fileID: 21300000, guid: efaea16cdd71dee41b7c9dab8e059206, type: 3}
   rarity: 1
   canStack: 1
   maxStacks: 0
