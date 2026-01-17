@@ -208,6 +208,14 @@ public class FloorDecayController : MonoBehaviour
     {
         DisableTileColliders();
 
+        // 🔽🔽🔽 VANISH WALLS IMMEDIATELY 🔽🔽🔽
+        var wallLines = GetComponentsInChildren<WallLineGenerator>(includeInactive: true);
+        for (int i = 0; i < wallLines.Length; i++)
+        {
+            wallLines[i].Vanish();
+        }
+        // 🔼🔼🔼 END 🔼🔼🔼
+
         Debug.Log($"[FloorDecayController] Collapse started at {collapseCenter}");
 
         if (FloorManager.Instance != null)
@@ -215,9 +223,10 @@ public class FloorDecayController : MonoBehaviour
             FloorManager.Instance.OnFloorCollapseStarted(this);
         }
 
-        // 🔥 NEW: destroy this entire floor after delay
         StartCoroutine(DestroyFloorAfterDelay());
     }
+
+
 
 
     private void DisableTileColliders()
