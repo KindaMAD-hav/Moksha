@@ -7811,18 +7811,18 @@ MonoBehaviour:
   baseEnemiesPerSpawn: 2
   enemiesPerSpawnIncreaseRate: 1
   enemyTypes:
-  - prefab: {fileID: 2124684102959905579, guid: 8eddd32fb78734f4b91d33cafae0e870, type: 3}
+  - prefab: {fileID: 2124684102959905579, guid: cc725e9155f2ee44eb3e3fd99151b30c, type: 3}
     stats: {fileID: 11400000, guid: 9649fe68c029244428e13481cdaf11e5, type: 2}
     poolSize: 20
     unlockAtLevel: 1
   - prefab: {fileID: 2475981611131618683, guid: ff7a59e9084803344af17b5c260a4a87, type: 3}
     stats: {fileID: 11400000, guid: cdf44a39385d9e54cb867510b740d334, type: 2}
     poolSize: 20
-    unlockAtLevel: 4
+    unlockAtLevel: 1
   - prefab: {fileID: 8658893934564567433, guid: 71e68d70d955b0e48a48f179e2875448, type: 3}
     stats: {fileID: 11400000, guid: b4d66de6ffce7f9489c8a2a71f9713a5, type: 2}
     poolSize: 20
-    unlockAtLevel: 6
+    unlockAtLevel: 1
   currentEnemyCount: 0
   gameTime: 0
   enableStallRecovery: 1
@@ -28763,6 +28763,14 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 0}
     m_Modifications:
+    - target: {fileID: 1620106869782585174, guid: 63f7072b6d884504eb6614674e19fb77, type: 3}
+      propertyPath: decayAmount
+      value: 50
+      objectReference: {fileID: 0}
+    - target: {fileID: 1620106869782585174, guid: 63f7072b6d884504eb6614674e19fb77, type: 3}
+      propertyPath: decayCooldown
+      value: 0.5
+      objectReference: {fileID: 0}
     - target: {fileID: 3284816068593953003, guid: 63f7072b6d884504eb6614674e19fb77, type: 3}
       propertyPath: m_Name
       value: WallLineGenerator
