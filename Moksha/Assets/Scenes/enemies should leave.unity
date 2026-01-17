@@ -70330,12 +70330,12 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.HorizontalLayoutGroup
   m_Padding:
-    m_Left: 10
-    m_Right: 10
-    m_Top: 10
+    m_Left: -191
+    m_Right: -195
+    m_Top: 80
     m_Bottom: 10
   m_ChildAlignment: 4
-  m_Spacing: -145
+  m_Spacing: -26.5
   m_ChildForceExpandWidth: 0
   m_ChildForceExpandHeight: 0
   m_ChildControlWidth: 0
@@ -70356,7 +70356,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Image
   m_Material: {fileID: 0}
-  m_Color: {r: 1, g: 1, b: 1, a: 0.16470589}
+  m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_RaycastTarget: 1
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
   m_Maskable: 1
@@ -70415,29 +70415,29 @@ MonoBehaviour:
   powerUpDisplays:
   - powerUp: {fileID: 11400000, guid: 282774aa78243134dadffd05faf6f7f4, type: 2}
     grayscaleSprite: {fileID: 21300000, guid: 8cf1be5c7cb8e1c49b684f73eacd8bfc, type: 3}
-    coloredSprite: {fileID: 21300000, guid: 188654406c6d3ca41a90a9e9b8e4d611, type: 3}
+    coloredSprite: {fileID: 21300000, guid: 3a566cfb21b79824eb56bfdf12f71b3a, type: 3}
   - powerUp: {fileID: 11400000, guid: b86094450d4a9de458959fb4fbd96399, type: 2}
     grayscaleSprite: {fileID: 21300000, guid: 29b968340df962240a32f5e760b2c4d9, type: 3}
-    coloredSprite: {fileID: 21300000, guid: 5a302d5017f40b34a918bd29a5cea29b, type: 3}
+    coloredSprite: {fileID: 21300000, guid: b6bfc0f1416d5fc4890b1b5c1bbe00da, type: 3}
   - powerUp: {fileID: 11400000, guid: 4294039a1ef790349a77c720fffff24d, type: 2}
     grayscaleSprite: {fileID: 21300000, guid: ab39423bc4457d24a9eb4f99d1ea4eb1, type: 3}
-    coloredSprite: {fileID: 21300000, guid: cf75abf697d06cd499743fe123f0e3b9, type: 3}
+    coloredSprite: {fileID: 21300000, guid: efaea16cdd71dee41b7c9dab8e059206, type: 3}
   - powerUp: {fileID: 11400000, guid: e0ab72af0d447cc4b80dc450d3af023f, type: 2}
     grayscaleSprite: {fileID: 21300000, guid: 0a15dea3f9e10e44198db68434bd38ae, type: 3}
-    coloredSprite: {fileID: 21300000, guid: adbb00a261669db4d8925faa8ea7e0b8, type: 3}
+    coloredSprite: {fileID: 21300000, guid: 25f7cbae8f33ff54bb622526454310df, type: 3}
   - powerUp: {fileID: 11400000, guid: a6a1c5124a2922248815f883d7dd53ec, type: 2}
     grayscaleSprite: {fileID: 21300000, guid: a9932291ea4913042825902818ce8287, type: 3}
-    coloredSprite: {fileID: 21300000, guid: 8bba84cc9af6bdd4584defab76a19544, type: 3}
+    coloredSprite: {fileID: 21300000, guid: 7c89bfa05b7718143902e1431cb2ebaa, type: 3}
   - powerUp: {fileID: 11400000, guid: 3f4c921385837f940b16a3055250dfef, type: 2}
     grayscaleSprite: {fileID: 21300000, guid: 8df8d49d8c5d5f145a433dc5683d245e, type: 3}
-    coloredSprite: {fileID: 21300000, guid: 43ab1bc6c99d9e243856cfcff87eb3ac, type: 3}
+    coloredSprite: {fileID: 21300000, guid: 65a239c7e6d2ec84e959cc0823d2bb7a, type: 3}
   - powerUp: {fileID: 11400000, guid: 0dabdb15a4065d741b1cc2017de0cdb2, type: 2}
     grayscaleSprite: {fileID: 21300000, guid: ded22e95031b5084c9a4d4888e39cafe, type: 3}
-    coloredSprite: {fileID: 21300000, guid: def35772fd7beb440a4204ff233ea29c, type: 3}
+    coloredSprite: {fileID: 21300000, guid: c8ad6ea922c47804c88050f3b600ae61, type: 3}
   - powerUp: {fileID: 11400000, guid: 7ec5d9c840a55854db8cd76f30486736, type: 2}
     grayscaleSprite: {fileID: 21300000, guid: f91eacd84f295834496ee2b63e615d02, type: 3}
-    coloredSprite: {fileID: 21300000, guid: a1a74a21b15131144aa8c896220787c6, type: 3}
-  slotPrefab: {fileID: 2013391428397615828, guid: 3bdc195b4b02e5846a6a3a930ce486d6, type: 3}
+    coloredSprite: {fileID: 21300000, guid: e18cc912cfbd6154296f3439ca598e00, type: 3}
+  slotPrefab: {fileID: 4904095775496185731, guid: 24f59e4a64a440f4f89c4e5ff34f5bc8, type: 3}
   slotContainer: {fileID: 2043751301}
 --- !u!1 &2053054005
 GameObject:
