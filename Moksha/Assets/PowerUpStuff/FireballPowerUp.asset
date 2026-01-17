@@ -12,8 +12,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 157bcaebdcc2c89438718bed9673646a, type: 3}
   m_Name: FireballPowerUp
   m_EditorClassIdentifier: Assembly-CSharp::FireballPowerUp
-  powerUpName: SudarshanChakra
-  description: ChakraSpins
+  powerUpName: Chakra
+  description: A Boon From Shree Krishna
   icon: {fileID: 21300000, guid: 7c89bfa05b7718143902e1431cb2ebaa, type: 3}
   rarity: 0
   canStack: 1
@@ -22,8 +22,8 @@ MonoBehaviour:
   orbitRadius: 2.5
   orbitSpeed: 180
   orbitSpeedPerStack: 15
-  baseDamage: 1
-  damagePerStack: 1
+  baseDamage: 2
+  damagePerStack: 2
   hitCooldown: 0.5
   fireballScale: 40
   heightOffset: 1
