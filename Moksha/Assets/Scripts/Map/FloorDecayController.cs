@@ -34,6 +34,12 @@ public class FloorDecayController : MonoBehaviour
     public bool IsCollapsing => isCollapsing;
     public float CollapseCylinderHeight => collapseCylinderHeight;
 
+    /// <summary>
+    /// The per-floor configured cooldown used by the global collapse gate.
+    /// FloorManager uses this to time-slice generation of the NEXT floor.
+    /// </summary>
+    public float GlobalCollapseCooldown => globalCollapseCooldown;
+
     /* -------------------- REGISTRATION -------------------- */
 
     public void RegisterTile(FloorTileDecay tile)
@@ -50,9 +56,44 @@ public class FloorDecayController : MonoBehaviour
     [Header("Post-Collapse Cleanup")]
     [SerializeField] private float destroyFloorAfterSeconds = 6f;
 
-    private void CacheTileColliders()
+    /// <summary>
+    /// Rebuilds the collider cache so we can quickly disable all colliders on collapse.
+    /// Call this AFTER tiles are generated.
+    /// </summary>
+    public void CacheTileColliders()
     {
         tileColliders = GetComponentsInChildren<Collider>();
+    }
+
+    /// <summary>
+    /// Clears tile registrations/state. Useful when re-generating tiles on the same floor root.
+    /// NOTE: Does NOT touch shader globals, because those are shared across floors.
+    /// </summary>
+    public void ResetForNewGeneration()
+    {
+        if (isCollapsing)
+        {
+            Debug.LogWarning("[FloorDecayController] ResetForNewGeneration called while collapsing. Ignored.");
+            return;
+        }
+
+        // Unhook events and clear.
+        for (int i = 0; i < tiles.Count; i++)
+        {
+            var t = tiles[i];
+            if (t != null)
+                t.OnCriticalDecayReached -= OnTileCritical;
+        }
+
+        tiles.Clear();
+        criticalThisPulse.Clear();
+
+        // Reset collapse state for this floor instance.
+        collapseTriggered = false;
+        isCollapsing = false;
+        collapseRadius = 0f;
+        collapseCenter = Vector3.zero;
+        tileColliders = null;
     }
 
     [Header("Global Collapse Cooldown")]
