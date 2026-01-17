@@ -16,7 +16,7 @@ MonoBehaviour:
   description: 'Increases Player Move Speed by 10%
 
 '
-  icon: {fileID: 21300000, guid: bd65d6814da6310409bf4429ff880902, type: 3}
+  icon: {fileID: 21300000, guid: 25f7cbae8f33ff54bb622526454310df, type: 3}
   rarity: 0
   canStack: 1
   maxStacks: 0

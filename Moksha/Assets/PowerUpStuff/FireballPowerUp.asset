@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::FireballPowerUp
   powerUpName: SudarshanChakra
   description: ChakraSpins
-  icon: {fileID: 21300000, guid: 8bba84cc9af6bdd4584defab76a19544, type: 3}
+  icon: {fileID: 21300000, guid: 7c89bfa05b7718143902e1431cb2ebaa, type: 3}
   rarity: 0
   canStack: 1
   maxStacks: 6
