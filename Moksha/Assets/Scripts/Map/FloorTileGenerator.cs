@@ -219,12 +219,21 @@ public class FloorTileGenerator : MonoBehaviour
     {
         decayController.CacheTileColliders();
 
+        // 🔽🔽🔽 ADD THIS BLOCK 🔽🔽🔽
+        var wallLines = GetComponentsInChildren<WallLineGenerator>(includeInactive: true);
+        for (int i = 0; i < wallLines.Length; i++)
+        {
+            wallLines[i].Generate();
+        }
+        // 🔼🔼🔼 END ADD 🔼🔼🔼
+
         isGenerating = false;
         isGenerated = true;
         generationRoutine = null;
 
         OnGenerationComplete?.Invoke(this);
     }
+
 
     private void StopCurrentGeneration()
     {
@@ -444,10 +453,16 @@ public class FloorTileGenerator : MonoBehaviour
         for (int i = transform.childCount - 1; i >= 0; i--)
         {
             Transform child = transform.GetChild(i);
+
+            // 🔒 DO NOT DELETE WALL LINE GENERATORS
+            if (child.GetComponent<WallLineGenerator>() != null)
+                continue;
+
             if (Application.isPlaying)
                 Destroy(child.gameObject);
             else
                 DestroyImmediate(child.gameObject);
         }
     }
+
 }
