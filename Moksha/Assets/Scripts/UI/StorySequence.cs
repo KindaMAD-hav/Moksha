@@ -25,8 +25,8 @@ public class StorySequence : MonoBehaviour
     private Coroutine storyRoutine;
     private bool skipping;
 
-    [Header("Disable When Story Starts")]
-    [SerializeField] private GameObject[] objectsToDisableOnStart;
+    //[Header("Disable When Story Starts")]
+    //[SerializeField] private GameObject[] objectsToDisableOnStart;
 
 
     private void Awake()
@@ -46,20 +46,24 @@ public class StorySequence : MonoBehaviour
             SkipStory();
         }
     }
+    private void Start()
+    {
+        StartStory();
+    }
 
     public void StartStory()
     {
         skipping = false;
 
-        // Disable assigned objects
-        if (objectsToDisableOnStart != null)
-        {
-            foreach (var go in objectsToDisableOnStart)
-            {
-                if (go != null)
-                    go.SetActive(false);
-            }
-        }
+        //// Disable assigned objects
+        //if (objectsToDisableOnStart != null)
+        //{
+        //    foreach (var go in objectsToDisableOnStart)
+        //    {
+        //        if (go != null)
+        //            go.SetActive(false);
+        //    }
+        //}
 
         canvasGroup.alpha = 1f;
         canvasGroup.blocksRaycasts = true;

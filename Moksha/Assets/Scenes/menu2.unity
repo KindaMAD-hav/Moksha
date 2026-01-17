@@ -938,7 +938,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!224 &326964277
 RectTransform:
   m_ObjectHideFlags: 0
@@ -998,9 +998,6 @@ MonoBehaviour:
   fadeDuration: 1
   holdDuration: 1.5
   nextSceneName: infinite
-  objectsToDisableOnStart:
-  - {fileID: 1157331431}
-  - {fileID: 1220017353}
 --- !u!222 &326964280
 CanvasRenderer:
   m_ObjectHideFlags: 0
@@ -3799,7 +3796,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 59cd88190abf784429a8567bb9decadd, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::MainMenu
-  storySequence: {fileID: 326964279}
+  storySceneName: StoryScene
 --- !u!114 &1697736611
 MonoBehaviour:
   m_ObjectHideFlags: 0

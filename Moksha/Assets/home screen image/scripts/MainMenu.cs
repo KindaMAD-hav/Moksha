@@ -3,19 +3,11 @@ using UnityEngine.SceneManagement;
 
 public class MainMenu : MonoBehaviour
 {
-    [SerializeField] private StorySequence storySequence;
+    [SerializeField] private string storySceneName = "StoryScene";
 
     public void Play()
     {
-        if (storySequence != null)
-        {
-            storySequence.StartStory();
-            gameObject.SetActive(false); // hide menu
-        }
-        else
-        {
-            SceneManager.LoadScene("Game");
-        }
+        SceneManager.LoadScene(storySceneName);
     }
 
     public void Quit()
