@@ -13,7 +13,9 @@ MonoBehaviour:
   m_Name: WaterVeil
   m_EditorClassIdentifier: Assembly-CSharp::WaterVeilPowerUp
   powerUpName: WaterVeil
-  description: '"Lets Turn the Tide"'
+  description: '"Lets Turn the Tide"
+
+    Slows Down Enemies'
   icon: {fileID: 21300000, guid: c8ad6ea922c47804c88050f3b600ae61, type: 3}
   rarity: 2
   canStack: 1
