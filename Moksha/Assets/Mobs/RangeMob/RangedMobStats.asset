@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::EnemyStats
   enemyName: RangedMob
   icon: {fileID: 0}
-  maxHealth: 3
+  maxHealth: 50
   moveSpeed: 3
   rotationSpeed: 360
   stoppingDistance: 1.5
