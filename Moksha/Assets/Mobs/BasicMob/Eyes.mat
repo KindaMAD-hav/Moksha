@@ -49,7 +49,7 @@ Material:
     - _DissolveScale: 0
     - _DstBlend: 0
     - _DstBlendAlpha: 0
-    - _EmissionStrength: 5
+    - _EmissionStrength: 42.09
     - _QueueControl: 0
     - _QueueOffset: 0
     - _ReceiveShadows: 1
@@ -62,7 +62,7 @@ Material:
     - _ZWriteControl: 0
     m_Colors:
     - _Color: {r: 1, g: 0.20392159, b: 0.21960786, a: 1}
-    - _EmissionColor: {r: 0.6698113, g: 0.31278923, b: 0.31278923, a: 1}
+    - _EmissionColor: {r: 1, g: 0, b: 0, a: 1}
   m_BuildTextureStacks: []
   m_AllowLocking: 1
 --- !u!114 &3316642801379943772

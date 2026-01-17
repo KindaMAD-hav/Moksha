@@ -15,7 +15,7 @@ MonoBehaviour:
   powerUpName: Damage Boost
   description: Increases the Damage by 20%
   icon: {fileID: 21300000, guid: 5a302d5017f40b34a918bd29a5cea29b, type: 3}
-  rarity: 0
+  rarity: 1
   canStack: 1
   maxStacks: 0
   targetMode: 0

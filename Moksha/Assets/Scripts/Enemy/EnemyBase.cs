@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Runtime.CompilerServices;
 using UnityEngine;
 using static UnityEngine.GraphicsBuffer;
@@ -24,6 +24,7 @@ public abstract class EnemyBase : MonoBehaviour, IDamageable
 
     // Cached values for performance
     protected Transform cachedTransform;
+    protected Collider cachedCollider;
     protected float cachedMaxHealth;
     protected float cachedMoveSpeed;
     protected float cachedRotationSpeed;
@@ -79,6 +80,17 @@ public abstract class EnemyBase : MonoBehaviour, IDamageable
     public bool IsDead { get; protected set; }
     public bool IsDissolving { get; protected set; }
 
+    /// <summary>
+    /// Direct access to cached move speed for effects like slow (avoids reflection)
+    /// </summary>
+    public float MoveSpeed
+    {
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        get => cachedMoveSpeed;
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        set => cachedMoveSpeed = value;
+    }
+
     public Transform Target
     {
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -90,6 +102,7 @@ public abstract class EnemyBase : MonoBehaviour, IDamageable
     protected virtual void Awake()
     {
         cachedTransform = transform;
+        cachedCollider = GetComponent<Collider>();
         purifyBridge = GetComponent<EnemyPurifyBridge>();
         CacheStats();
         InitializeHealth();
@@ -301,10 +314,9 @@ public abstract class EnemyBase : MonoBehaviour, IDamageable
         fallVelocity = 0f;
 
 
-        // Restore collider
-        Collider col = GetComponent<Collider>();
-        if (col != null)
-            col.enabled = true;
+        // Restore collider using cached reference
+        if (cachedCollider != null)
+            cachedCollider.enabled = true;
 
         InitializeHealth();
     }

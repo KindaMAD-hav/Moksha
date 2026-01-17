@@ -15,7 +15,7 @@ MonoBehaviour:
   powerUpName: SpreadMultiplier
   description: 'Increases Bullet Spread '
   icon: {fileID: 0}
-  rarity: 0
+  rarity: 1
   canStack: 1
   maxStacks: 0
   targetMode: 0

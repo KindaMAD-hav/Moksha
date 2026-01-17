@@ -19,7 +19,7 @@ MonoBehaviour:
   rotationSpeed: 360
   stoppingDistance: 1.5
   damage: 15
-  attackCooldown: 1
+  attackCooldown: 3
   attackRange: 10
   projectileSpeed: 15
   projectileLifetime: 2

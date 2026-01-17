@@ -1,5 +1,11 @@
 using UnityEngine;
+using System.Runtime.CompilerServices;
 
+/// <summary>
+/// Player projectile with optimized collision handling.
+/// OPTIMIZED: Removed Debug.Log calls, single GetComponentInParent call, cached transform.
+/// NOTE: For full optimization, integrate with object pooling in WeaponRuntime.
+/// </summary>
 public class SimpleProjectile : MonoBehaviour
 {
     Vector3 dir;
@@ -10,10 +16,17 @@ public class SimpleProjectile : MonoBehaviour
     LayerMask hitMask;
 
     float aliveTime;
+    Transform cachedTransform;
+
+    void Awake()
+    {
+        cachedTransform = transform;
+    }
 
     /// <summary>
     /// Called immediately after spawn by WeaponRuntime
     /// </summary>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public void Init(
         Vector3 direction,
         float damage,
@@ -35,7 +48,7 @@ public class SimpleProjectile : MonoBehaviour
 
     void Update()
     {
-        transform.position += dir * speed * Time.deltaTime;
+        cachedTransform.position += dir * speed * Time.deltaTime;
 
         aliveTime += Time.deltaTime;
         if (aliveTime >= lifetime)
@@ -46,18 +59,11 @@ public class SimpleProjectile : MonoBehaviour
 
     void OnTriggerEnter(Collider other)
     {
-        Debug.Log("Projectile trigger hit: " + other.name);
-        Debug.Log("Collider layer: " + LayerMask.LayerToName(other.gameObject.layer));
-        Debug.Log("HitMask allows it: " + ((hitMask.value & (1 << other.gameObject.layer)) != 0));
-
-        var target1 = other.GetComponentInParent<Purifiable>();
-        Debug.Log("Found Purifiable: " + (target1 != null));
-
-        // Layer filtering
+        // Layer filtering first (fast rejection)
         if ((hitMask.value & (1 << other.gameObject.layer)) == 0)
             return;
 
-        // IMPORTANT: allow colliders on child objects
+        // Single GetComponentInParent call (removed duplicate)
         Purifiable target = other.GetComponentInParent<Purifiable>();
         if (target == null)
             return;
@@ -73,6 +79,4 @@ public class SimpleProjectile : MonoBehaviour
             Destroy(gameObject);
         }
     }
-
-
 }

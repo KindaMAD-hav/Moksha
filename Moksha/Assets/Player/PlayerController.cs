@@ -1,3 +1,4 @@
+using System.Collections;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
@@ -17,13 +18,13 @@ public class PlayerController : MonoBehaviour
     [Header("References")]
     public Transform aimPivot;
 
-    [Header("Debug")]
-    public bool debugAiming = true;
-    public bool debugMovement = false;
-
     CharacterController cc;
     Camera cam;
     Vector3 verticalVel;
+
+    // NEW: For Speed Management
+    private float baseSpeed;
+    private Coroutine slowCoroutine;
 
     public bool HasManualAimInput { get; private set; }
 
@@ -34,14 +35,8 @@ public class PlayerController : MonoBehaviour
 
         if (!aimPivot) aimPivot = transform;
 
-        if (cam == null)
-        {
-            Debug.LogError("[PlayerController] ❌ Camera.main is NULL!");
-        }
-        else
-        {
-            Debug.Log("[PlayerController] ✅ Camera found: " + cam.name);
-        }
+        // Store the original speed
+        baseSpeed = moveSpeed;
     }
 
     void OnEnable()
@@ -49,8 +44,6 @@ public class PlayerController : MonoBehaviour
         move?.action.Enable();
         aimStick?.action.Enable();
         pointerPosition?.action.Enable();
-
-        Debug.Log("[PlayerController] Inputs enabled");
     }
 
     void OnDisable()
@@ -58,8 +51,6 @@ public class PlayerController : MonoBehaviour
         move?.action.Disable();
         aimStick?.action.Disable();
         pointerPosition?.action.Disable();
-
-        Debug.Log("[PlayerController] Inputs disabled");
     }
 
     void Update()
@@ -67,31 +58,19 @@ public class PlayerController : MonoBehaviour
         HandleMovement();
         HandleAiming();
     }
+
     public void RotateTowardsAutoAim(Vector3 worldDir)
     {
         worldDir.y = 0f;
         if (worldDir.sqrMagnitude < 0.001f) return;
 
         Quaternion targetRot = Quaternion.LookRotation(worldDir, Vector3.up);
-
-        // Strong smoothing (locks in ~2–3 frames)
-        aimPivot.rotation = Quaternion.Slerp(
-            aimPivot.rotation,
-            targetRot,
-            20f * Time.deltaTime
-        );
+        aimPivot.rotation = Quaternion.Slerp(aimPivot.rotation, targetRot, 20f * Time.deltaTime);
     }
-
-
 
     void HandleMovement()
     {
         Vector2 moveInput = move?.action.ReadValue<Vector2>() ?? Vector2.zero;
-
-        if (debugMovement && moveInput != Vector2.zero)
-        {
-            Debug.Log($"[Movement] Input: {moveInput}");
-        }
 
         Vector3 camF = cam.transform.forward; camF.y = 0; camF.Normalize();
         Vector3 camR = cam.transform.right; camR.y = 0; camR.Normalize();
@@ -108,35 +87,19 @@ public class PlayerController : MonoBehaviour
 
     void HandleAiming()
     {
-        HasManualAimInput = false;
-
         Vector2 stick = aimStick?.action.ReadValue<Vector2>() ?? Vector2.zero;
         Vector3 aimDir = Vector3.zero;
 
-        // ───────────────────────── STICK AIM ─────────────────────────
         if (stick.sqrMagnitude > 0.05f)
         {
             HasManualAimInput = true;
             Vector3 camF = cam.transform.forward; camF.y = 0; camF.Normalize();
             Vector3 camR = cam.transform.right; camR.y = 0; camR.Normalize();
-
             aimDir = (camF * stick.y + camR * stick.x).normalized;
-
-            if (debugAiming)
-            {
-                Debug.Log($"[AIM] 🎮 Stick used | Stick: {stick} | AimDir: {aimDir}");
-            }
         }
-        // ───────────────────────── MOUSE AIM ─────────────────────────
         else
         {
             Vector2 screenPos = pointerPosition?.action.ReadValue<Vector2>() ?? Vector2.zero;
-
-            if (debugAiming)
-            {
-                Debug.Log($"[AIM] 🖱 Mouse ScreenPos: {screenPos}");
-            }
-
             Ray ray = cam.ScreenPointToRay(screenPos);
             Plane plane = new Plane(Vector3.up, Vector3.zero);
 
@@ -145,52 +108,45 @@ public class PlayerController : MonoBehaviour
                 Vector3 hit = ray.GetPoint(dist);
                 Vector3 flat = hit - transform.position;
                 flat.y = 0;
-
-                if (debugAiming)
-                {
-                    Debug.Log($"[AIM] 🧭 Ray hit at: {hit}");
-                    Debug.Log($"[AIM] Flat dir before normalize: {flat}");
-                }
-
                 if (flat.sqrMagnitude > 0.001f)
                 {
-                    HasManualAimInput = true;
                     aimDir = flat.normalized;
-
-                    if (debugAiming)
-                    {
-                        Debug.Log($"[AIM] ✅ Mouse AimDir: {aimDir}");
-                    }
                 }
-                else if (debugAiming)
-                {
-                    Debug.LogWarning("[AIM] ⚠ Flat direction too small");
-                }
-            }
-            else if (debugAiming)
-            {
-                Debug.LogWarning("[AIM] ❌ Ray did NOT hit ground plane");
             }
         }
-        HasManualAimInput = stick.sqrMagnitude > 0.05f;
-        // ───────────────────────── ROTATION ─────────────────────────
+
+        HasManualAimInput = stick.sqrMagnitude > 0.05f || aimDir != Vector3.zero;
+
         if (aimDir != Vector3.zero)
         {
             Quaternion targetRot = Quaternion.LookRotation(aimDir, Vector3.up);
-            aimPivot.rotation = Quaternion.RotateTowards(
-                aimPivot.rotation,
-                targetRot,
-                rotationSpeed * Time.deltaTime
-            );
+            aimPivot.rotation = Quaternion.RotateTowards(aimPivot.rotation, targetRot, rotationSpeed * Time.deltaTime);
+        }
+    }
 
-            if (debugAiming)
-            {
-                Debug.Log($"[AIM] 🔄 Rotating toward: {targetRot.eulerAngles}");
-            }
-        }
-        else if (debugAiming)
-        {
-            Debug.LogWarning("[AIM] ❌ aimDir is ZERO — no rotation applied");
-        }
+    // --- NEW: SLOW SYSTEM ---
+
+    /// <summary>
+    /// Slows the player by a percentage (0.0 to 1.0) for a duration.
+    /// </summary>
+    public void ApplySlow(float slowPercentage, float duration)
+    {
+        if (slowCoroutine != null) StopCoroutine(slowCoroutine);
+        slowCoroutine = StartCoroutine(SlowRoutine(slowPercentage, duration));
+    }
+
+    private IEnumerator SlowRoutine(float slowPercentage, float duration)
+    {
+        // Clamp to ensure we don't go negative or increase speed
+        slowPercentage = Mathf.Clamp01(slowPercentage);
+
+        // Calculate new speed (e.g., 6 * (1 - 0.3) = 4.2)
+        moveSpeed = baseSpeed * (1f - slowPercentage);
+
+        yield return new WaitForSeconds(duration);
+
+        // Reset
+        moveSpeed = baseSpeed;
+        slowCoroutine = null;
     }
 }

@@ -1,26 +1,44 @@
 using UnityEngine;
+using System.Runtime.CompilerServices;
 
 /// <summary>
-/// Simple projectile logic. 
-/// NOTE: For a roguelike with many enemies, integrate this with an ObjectPool system.
+/// Enemy projectile with object pooling support.
+/// OPTIMIZED: Uses EnemyProjectilePool instead of Destroy(), cached transform & layer lookups.
 /// </summary>
 public class EnemyProjectile : MonoBehaviour
 {
     private float damage;
     private float speed;
     private float lifeTime = 5f;
+    private float aliveTime;
     private Vector3 direction;
-    private bool isInitialized = false;
+    private bool isInitialized;
+    
+    // Cached references
+    private Transform cachedTransform;
+    private static int groundLayer = -1;
+    private static int obstacleLayer = -1;
 
+    private void Awake()
+    {
+        cachedTransform = transform;
+        
+        // Cache layer lookups once (static, shared across all projectiles)
+        if (groundLayer < 0)
+        {
+            groundLayer = LayerMask.NameToLayer("Ground");
+            obstacleLayer = LayerMask.NameToLayer("Obstacle");
+        }
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public void Initialize(float damageAmount, float projSpeed, Vector3 moveDir)
     {
         damage = damageAmount;
         speed = projSpeed;
         direction = moveDir.normalized;
+        aliveTime = 0f;
         isInitialized = true;
-
-        // Auto-destroy if it hits nothing
-        Destroy(gameObject, lifeTime);
     }
 
     private void Update()
@@ -28,7 +46,14 @@ public class EnemyProjectile : MonoBehaviour
         if (!isInitialized) return;
 
         // Move forward relative to world space based on direction
-        transform.position += direction * (speed * Time.deltaTime);
+        cachedTransform.position += direction * (speed * Time.deltaTime);
+
+        // Check lifetime and return to pool
+        aliveTime += Time.deltaTime;
+        if (aliveTime >= lifeTime)
+        {
+            ReturnToPool();
+        }
     }
 
     private void OnTriggerEnter(Collider other)
@@ -36,17 +61,44 @@ public class EnemyProjectile : MonoBehaviour
         // Don't hit the enemy that shot this
         if (other.CompareTag("Enemy")) return;
 
+        int layer = other.gameObject.layer;
+
         // Check for player/damageable
         IDamageable target = other.GetComponent<IDamageable>();
         if (target != null)
         {
             target.TakeDamage(damage);
-            Destroy(gameObject); // Return to pool here if using pooling
+            ReturnToPool();
         }
-        else if (other.gameObject.layer == LayerMask.NameToLayer("Ground") || other.gameObject.layer == LayerMask.NameToLayer("Obstacle"))
+        else if (layer == groundLayer || layer == obstacleLayer)
         {
-            // Destroy on wall hit
-            Destroy(gameObject);
+            // Return to pool on wall hit
+            ReturnToPool();
         }
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private void ReturnToPool()
+    {
+        isInitialized = false;
+        
+        if (EnemyProjectilePool.Instance != null)
+        {
+            EnemyProjectilePool.Instance.ReturnProjectile(this);
+        }
+        else
+        {
+            // Fallback if pool doesn't exist
+            gameObject.SetActive(false);
+        }
+    }
+
+    /// <summary>
+    /// Called when retrieved from pool to reset state
+    /// </summary>
+    public void ResetProjectile()
+    {
+        aliveTime = 0f;
+        isInitialized = false;
     }
 }

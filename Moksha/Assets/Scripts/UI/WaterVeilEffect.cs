@@ -4,6 +4,7 @@ using System.Collections.Generic;
 /// <summary>
 /// Manages the water veil visual effect and enemy slow interactions.
 /// Attach this to a child GameObject of the player with a ParticleSystem.
+/// OPTIMIZED: Removed reflection, uses direct property access on EnemyBase.MoveSpeed
 /// </summary>
 [RequireComponent(typeof(ParticleSystem))]
 public class WaterVeilEffect : MonoBehaviour
@@ -17,6 +18,9 @@ public class WaterVeilEffect : MonoBehaviour
 
     private Dictionary<BasicEnemy, SlowData> affectedEnemies = new Dictionary<BasicEnemy, SlowData>();
     private float damageTickRate = 0.5f;
+
+    // Reusable list to avoid GC allocations in Update
+    private readonly List<BasicEnemy> enemiesToDamageCache = new List<BasicEnemy>(32);
 
     public bool IsActive { get; private set; }
 
@@ -105,19 +109,22 @@ public class WaterVeilEffect : MonoBehaviour
         if (damagePerSecond > 0)
         {
             float currentTime = Time.time;
-            List<BasicEnemy> enemiesToDamage = new List<BasicEnemy>();
+            
+            // Reuse cached list instead of allocating new one each frame
+            enemiesToDamageCache.Clear();
 
             foreach (var kvp in affectedEnemies)
             {
                 if (kvp.Key != null && kvp.Value.nextDamageTime <= currentTime)
                 {
-                    enemiesToDamage.Add(kvp.Key);
+                    enemiesToDamageCache.Add(kvp.Key);
                     kvp.Value.nextDamageTime = currentTime + damageTickRate;
                 }
             }
 
-            foreach (var enemy in enemiesToDamage)
+            for (int i = 0; i < enemiesToDamageCache.Count; i++)
             {
+                var enemy = enemiesToDamageCache[i];
                 if (enemy != null && !enemy.IsDead)
                 {
                     DealDamage(enemy);
@@ -138,32 +145,22 @@ public class WaterVeilEffect : MonoBehaviour
             modifier = enemy.gameObject.AddComponent<EnemySlowModifier>();
         }
 
-        // Get the cachedMoveSpeed field
-        var speedField = typeof(EnemyBase).GetField("cachedMoveSpeed",
-            System.Reflection.BindingFlags.NonPublic |
-            System.Reflection.BindingFlags.Public |
-            System.Reflection.BindingFlags.Instance);
+        // Use direct property access instead of reflection
+        float originalSpeed = enemy.MoveSpeed;
 
-        if (speedField != null)
+        SlowData data = new SlowData
         {
-            float originalSpeed = (float)speedField.GetValue(enemy);
+            originalSpeed = originalSpeed,
+            nextDamageTime = Time.time + damageTickRate,
+            modifier = modifier
+        };
 
-            SlowData data = new SlowData
-            {
-                originalSpeed = originalSpeed,
-                nextDamageTime = Time.time + damageTickRate,
-                modifier = modifier
-            };
+        affectedEnemies.Add(enemy, data);
 
-            affectedEnemies.Add(enemy, data);
+        // Apply the slow through the modifier (no reflection)
+        modifier.ApplySlow(enemy, slowMultiplier, originalSpeed);
 
-            // Apply the slow through the modifier
-            modifier.ApplySlow(speedField, enemy, slowMultiplier);
-
-            Debug.Log($"Water Veil: Slowing {enemy.name} - Original: {originalSpeed}, New: {originalSpeed * slowMultiplier}");
-
-            StartCoroutine(RemoveSlowAfterDuration(enemy));
-        }
+        StartCoroutine(RemoveSlowAfterDuration(enemy));
     }
 
     private void RemoveSlowEffect(BasicEnemy enemy)
@@ -183,10 +180,16 @@ public class WaterVeilEffect : MonoBehaviour
 
     private void RestoreAllEnemies()
     {
-        List<BasicEnemy> enemies = new List<BasicEnemy>(affectedEnemies.Keys);
-        foreach (var enemy in enemies)
+        // Use cached list for iteration to avoid modifying dictionary during enumeration
+        enemiesToDamageCache.Clear();
+        foreach (var kvp in affectedEnemies)
         {
-            RemoveSlowEffect(enemy);
+            enemiesToDamageCache.Add(kvp.Key);
+        }
+        
+        for (int i = 0; i < enemiesToDamageCache.Count; i++)
+        {
+            RemoveSlowEffect(enemiesToDamageCache[i]);
         }
         affectedEnemies.Clear();
     }
@@ -219,32 +222,31 @@ public class WaterVeilEffect : MonoBehaviour
 /// <summary>
 /// Helper component that continuously applies speed reduction to enemies.
 /// Automatically added to enemies when they enter the water veil.
+/// OPTIMIZED: Uses direct property access instead of reflection.
 /// </summary>
 public class EnemySlowModifier : MonoBehaviour
 {
-    private System.Reflection.FieldInfo speedField;
     private EnemyBase enemy;
     private float originalSpeed;
     private float slowMultiplier;
     private bool isSlowed;
 
-    public void ApplySlow(System.Reflection.FieldInfo field, EnemyBase targetEnemy, float multiplier)
+    public void ApplySlow(EnemyBase targetEnemy, float multiplier, float origSpeed)
     {
-        speedField = field;
         enemy = targetEnemy;
-        originalSpeed = (float)field.GetValue(targetEnemy);
+        originalSpeed = origSpeed;
         slowMultiplier = multiplier;
         isSlowed = true;
 
-        // Apply initial slow
-        speedField.SetValue(enemy, originalSpeed * slowMultiplier);
+        // Apply initial slow using direct property access
+        enemy.MoveSpeed = originalSpeed * slowMultiplier;
     }
 
     public void RemoveSlow(float restoreSpeed)
     {
-        if (enemy != null && speedField != null)
+        if (enemy != null)
         {
-            speedField.SetValue(enemy, restoreSpeed);
+            enemy.MoveSpeed = restoreSpeed;
         }
         isSlowed = false;
         Destroy(this);
@@ -253,10 +255,9 @@ public class EnemySlowModifier : MonoBehaviour
     private void LateUpdate()
     {
         // Continuously reapply the slow in case it gets overwritten
-        if (isSlowed && enemy != null && speedField != null && !enemy.IsDead)
+        if (isSlowed && enemy != null && !enemy.IsDead)
         {
-            float targetSlowedSpeed = originalSpeed * slowMultiplier;
-            speedField.SetValue(enemy, targetSlowedSpeed);
+            enemy.MoveSpeed = originalSpeed * slowMultiplier;
         }
     }
 }

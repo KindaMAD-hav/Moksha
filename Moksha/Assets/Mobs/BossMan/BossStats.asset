@@ -1,0 +1,33 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: df216b44e432a664f9f59aa94c2bc0b2, type: 3}
+  m_Name: BossStats
+  m_EditorClassIdentifier: Assembly-CSharp::EnemyStats
+  enemyName: Enemy
+  icon: {fileID: 0}
+  maxHealth: 25
+  moveSpeed: 3
+  rotationSpeed: 360
+  stoppingDistance: 1
+  damage: 10
+  attackCooldown: 1
+  attackRange: 2
+  projectileSpeed: 15
+  projectileLifetime: 5
+  xpReward: 17
+  hitEffect: {fileID: 0}
+  deathEffect: {fileID: 0}
+  hitSound: {fileID: 0}
+  deathSound: {fileID: 0}
+  attackSound: {fileID: 0}
+  spawnWeight: 10
+  minSpawnTime: 0

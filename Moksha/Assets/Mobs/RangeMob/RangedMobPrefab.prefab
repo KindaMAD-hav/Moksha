@@ -342,17 +342,19 @@ MonoBehaviour:
   stats: {fileID: 11400000, guid: 9649fe68c029244428e13481cdaf11e5, type: 2}
   currentHealth: 0
   targetTransform: {fileID: 0}
-  projectilePrefab: {fileID: 2704941325962354996, guid: 8d08ef81d9e7f6844bbd7d191544b82a, type: 3}
   projectileOrigin: {fileID: 2648054168558630770}
-  projectileSpeed: 10
-  aimPrediction: 0
-  fleeIfTooClose: 0
   fleeDistance: 3
+  hoverHeight: 1.5
+  bobFrequency: 2
+  bobAmplitude: 0.2
+  groundLayer:
+    serializedVersion: 2
+    m_Bits: 1
   animator: {fileID: 0}
   audioSource: {fileID: 0}
-  dissolveEffect: {fileID: 0}
   flashRenderers: []
   damageFlashColor: {r: 1, g: 0.2, b: 0.2, a: 1}
+  dissolveEffect: {fileID: 0}
 --- !u!136 &5436024573714098600
 CapsuleCollider:
   m_ObjectHideFlags: 0

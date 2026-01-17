@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 using UnityEngine;
 
@@ -29,6 +29,16 @@ public class EnemySpawner : MonoBehaviour
 
     [Header("Enemy Types")]
     [SerializeField] private EnemySpawnEntry[] enemyTypes;
+
+    [Header("Boss Settings")]
+    [Tooltip("Boss enemy configuration (only one boss can exist at a time)")]
+    [SerializeField] private BossSpawnEntry bossEntry;
+    [Tooltip("Time in seconds before boss first spawns (0 = never)")]
+    [SerializeField] private float bossSpawnTime = 120f;
+    [Tooltip("Time in seconds before boss respawns after death (0 = never respawns)")]
+    [SerializeField] private float bossRespawnTime = 60f;
+    [Tooltip("Should boss respawn after being defeated?")]
+    [SerializeField] private bool allowBossRespawn = true;
 
     [Header("Runtime Info")]
     [SerializeField] private int currentEnemyCount;
@@ -75,6 +85,11 @@ public class EnemySpawner : MonoBehaviour
 
     private int cachedPlayerLevel = 1;
 
+    // Boss tracking
+    private BossEnemy currentBoss;
+    private bool bossSpawned;
+    private float nextBossSpawnTime;
+
     private void Awake()
     {
         if (Instance != null && Instance != this)
@@ -87,6 +102,9 @@ public class EnemySpawner : MonoBehaviour
         currentSpawnInterval = spawnInterval;
         currentEnemiesPerSpawn = baseEnemiesPerSpawn;
         spawnDistanceRange = maxSpawnDistance - minSpawnDistance;
+        
+        // Initialize boss spawn time
+        nextBossSpawnTime = bossSpawnTime;
 
         // Pre-allocate collections
         int typeCount = enemyTypes != null ? enemyTypes.Length : 0;
@@ -121,6 +139,13 @@ public class EnemySpawner : MonoBehaviour
 
         float dt = Time.deltaTime;
         gameTime += dt;
+
+        // Check for boss spawn (time-based respawn system)
+        if (bossEntry != null && bossEntry.bossPrefab != null && 
+            !bossSpawned && gameTime >= nextBossSpawnTime && nextBossSpawnTime > 0f)
+        {
+            SpawnBoss();
+        }
 
         spawnTimer += dt;
         if (spawnTimer >= currentSpawnInterval)
@@ -458,6 +483,107 @@ public class EnemySpawner : MonoBehaviour
     public void StartSpawning() => isSpawning = true;
     public void StopSpawning() => isSpawning = false;
 
+    // --- BOSS SPAWNING ---
+
+    private void SpawnBoss()
+    {
+        if (bossEntry == null || bossEntry.bossPrefab == null) return;
+        if (bossSpawned || currentBoss != null) return;
+
+        if (!CalculateSpawnPosition())
+            return;
+
+        // Instantiate boss
+        GameObject bossObj = Instantiate(bossEntry.bossPrefab, spawnPosition, Quaternion.identity);
+        BossEnemy boss = bossObj.GetComponent<BossEnemy>();
+
+        if (boss == null)
+        {
+            Debug.LogError("[EnemySpawner] Boss prefab missing BossEnemy component!");
+            Destroy(bossObj);
+            return;
+        }
+
+        currentBoss = boss;
+        bossSpawned = true;
+
+        // Face player
+        float lookX = playerPos.x - spawnPosition.x;
+        float lookZ = playerPos.z - spawnPosition.z;
+        if (lookX * lookX + lookZ * lookZ > 0.001f)
+        {
+            bossObj.transform.rotation = Quaternion.LookRotation(new Vector3(lookX, 0f, lookZ));
+        }
+
+        // Initialize boss
+        if (bossEntry.stats != null)
+        {
+            boss.Initialize(bossEntry.stats, playerTransform);
+        }
+        else
+        {
+            boss.SetTarget(playerTransform);
+        }
+
+        bossObj.SetActive(true);
+
+        // Register with EnemyManager
+        if (EnemyManager.Instance != null)
+        {
+            EnemyManager.Instance.RegisterEnemy(boss);
+            boss.SetManagedByManager(true);
+        }
+
+        // Listen to boss death
+        boss.OnDeath += OnBossDeathInternal;
+
+        Debug.Log($"[EnemySpawner] Boss spawned at {gameTime:F1}s!");
+    }
+
+    private void OnBossDeathInternal(EnemyBase boss)
+    {
+        boss.OnDeath -= OnBossDeathInternal;
+        bossSpawned = false;
+        currentBoss = null;
+
+        if (EnemyManager.Instance != null)
+            EnemyManager.Instance.UnregisterEnemy(boss);
+
+        // Schedule next boss spawn if respawning is enabled
+        if (allowBossRespawn && bossRespawnTime > 0f)
+        {
+            nextBossSpawnTime = gameTime + bossRespawnTime;
+            Debug.Log($"[EnemySpawner] Boss defeated! Will respawn in {bossRespawnTime}s at game time {nextBossSpawnTime:F1}s");
+        }
+        else
+        {
+            nextBossSpawnTime = float.MaxValue; // Never spawn again
+            Debug.Log("[EnemySpawner] Boss defeated and will not respawn!");
+        }
+    }
+
+    /// <summary>
+    /// Called by BossEnemy when it dies (alternative notification path)
+    /// </summary>
+    public void OnBossDeath()
+    {
+        bossSpawned = false;
+        currentBoss = null;
+        
+        // Schedule next boss spawn if respawning is enabled
+        if (allowBossRespawn && bossRespawnTime > 0f)
+        {
+            nextBossSpawnTime = gameTime + bossRespawnTime;
+            Debug.Log($"[EnemySpawner] Boss defeated! Will respawn in {bossRespawnTime}s");
+        }
+        else
+        {
+            nextBossSpawnTime = float.MaxValue;
+        }
+    }
+
+    public bool IsBossActive => currentBoss != null && !currentBoss.IsDead;
+
     public void KillAllEnemies()
     {
         if (EnemyManager.Instance != null)
@@ -480,6 +606,11 @@ public class EnemySpawner : MonoBehaviour
         currentSpawnInterval = spawnInterval;
         currentEnemiesPerSpawn = baseEnemiesPerSpawn;
         lastWeightCalculationFrame = -1; // Force weight recalc
+        
+        // Reset boss state
+        bossSpawned = false;
+        nextBossSpawnTime = bossSpawnTime;
+        currentBoss = null;
     }
 
     public List<string> GetUnlockedEnemyTypes()
@@ -569,4 +700,14 @@ public class EnemySpawnEntry
 
     [Tooltip("Player level required to unlock this enemy type")]
     public int unlockAtLevel = 1;
+}
+
+[System.Serializable]
+public class BossSpawnEntry
+{
+    [Tooltip("Boss enemy prefab (must have BossEnemy component)")]
+    public GameObject bossPrefab;
+
+    [Tooltip("Boss stats configuration")]
+    public EnemyStats stats;
 }
