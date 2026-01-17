@@ -60,12 +60,18 @@ public class ShatteredPauseMenu : MonoBehaviour
 
     void Update()
     {
+        // 🚫 Absolutely block pause input during game over
+        if (GameOverManager.IsGameOver)
+            return;
+
         if (Input.GetKeyDown(pauseKey) && !animating)
         {
             if (isPaused) Resume();
             else Pause();
         }
     }
+
+
 
     public void Pause()
     {
@@ -90,12 +96,16 @@ public class ShatteredPauseMenu : MonoBehaviour
 
     public void SilentResume()
     {
+        if (GameOverManager.IsGameOver)
+            return;
+
         if (!isPaused) return;
 
         isPaused = false;
         Time.timeScale = 1f;
         OnResumed?.Invoke();
     }
+
 
     IEnumerator PauseRoutine()
     {

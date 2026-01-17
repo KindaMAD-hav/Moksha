@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
@@ -49,6 +49,10 @@ public class GameOverManager : MonoBehaviour
     {
         IsGameOver = true;
 
+        // 🔒 Disable player completely
+        if (playerHealth != null)
+            playerHealth.gameObject.SetActive(false);
+
         if (gameOverPanel != null)
             gameOverPanel.SetActive(true);
 
@@ -57,6 +61,7 @@ public class GameOverManager : MonoBehaviour
             ShatteredPauseMenu.Instance.SilentPause();
         }
     }
+
 
     public void Retry()
     {

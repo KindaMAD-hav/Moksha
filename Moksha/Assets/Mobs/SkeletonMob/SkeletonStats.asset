@@ -14,14 +14,14 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::EnemyStats
   enemyName: BasicMob
   icon: {fileID: 0}
-  maxHealth: 1
-  moveSpeed: 8.12
+  maxHealth: 6
+  moveSpeed: 6.5
   rotationSpeed: 360
   stoppingDistance: 1.5
   damage: 10
   attackCooldown: 1
   attackRange: 2
-  xpReward: 10
+  xpReward: 30
   hitEffect: {fileID: 0}
   deathEffect: {fileID: 0}
   hitSound: {fileID: 0}

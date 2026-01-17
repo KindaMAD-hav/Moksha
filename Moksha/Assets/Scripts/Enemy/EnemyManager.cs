@@ -25,6 +25,12 @@ public class EnemyManager : MonoBehaviour
     private Vector3 playerPosition;
     private float deltaTime;
 
+
+    public EnemyBase[] GetActiveEnemiesUnsafe()
+    {
+        return enemies; // or whatever your internal array is
+    }
+
     private void Awake()
     {
         if (Instance != null && Instance != this)
@@ -60,10 +66,10 @@ public class EnemyManager : MonoBehaviour
 
         // Process all enemies - dense array means no null checks needed
         int count = enemyCount;
-        for (int i = 0; i < count; i++)
-        {
-            enemies[i].Tick(deltaTime, playerPosition);
-        }
+        //for (int i = 0; i < count; i++)
+        //{
+        //    enemies[i].Tick(deltaTime, playerPosition);
+        //}
 
         activeEnemyCount = count;
     }
