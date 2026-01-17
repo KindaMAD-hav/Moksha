@@ -9166,7 +9166,7 @@ MonoBehaviour:
           m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
           m_IntArgument: 0
           m_FloatArgument: 0
-          m_StringArgument: MainMenu
+          m_StringArgument: menu2
           m_BoolArgument: 0
         m_CallState: 2
 --- !u!114 &947878167
@@ -9628,7 +9628,7 @@ MonoBehaviour:
   minSpawnDistance: 20
   maxSpawnDistance: 30
   spawnInterval: 2
-  maxEnemies: 2000
+  maxEnemies: 200000
   worldMin: {x: -2.7, y: 0.52}
   worldMax: {x: 84.1, y: 87.5}
   minSpawnInterval: 0.3
@@ -9660,7 +9660,7 @@ MonoBehaviour:
     bossPrefab: {fileID: 5169375071532846370, guid: 00b2591315906d1418319d33e806ca9f, type: 3}
     stats: {fileID: 11400000, guid: ed6f5fac4e08a9944804f5edf25f3d97, type: 2}
   bossSpawnTime: 1
-  bossRespawnTime: 60
+  bossRespawnTime: 25
   allowBossRespawn: 1
   currentEnemyCount: 0
   gameTime: 0

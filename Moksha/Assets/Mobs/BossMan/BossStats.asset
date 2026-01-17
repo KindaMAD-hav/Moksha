@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::EnemyStats
   enemyName: Boss
   icon: {fileID: 0}
-  maxHealth: 25
+  maxHealth: 120
   moveSpeed: 3
   rotationSpeed: 360
   stoppingDistance: 1
