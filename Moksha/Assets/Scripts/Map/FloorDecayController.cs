@@ -10,6 +10,10 @@ public class FloorDecayController : MonoBehaviour
     [Header("Collapse Settings")]
     [SerializeField] private float collapseSpeed = 12f;
 
+    [Tooltip("Vertical height of the collapse effect cylinder (world units).\n" +
+             "Only fragments within this Y band around the collapse center will dissolve.")]
+    [SerializeField] private float collapseCylinderHeight = 3f;
+
     private readonly List<FloorTileDecay> tiles = new();
 
     private bool collapseTriggered;
@@ -28,6 +32,13 @@ public class FloorDecayController : MonoBehaviour
     public float CollapseRadius => collapseRadius;
     public Vector3 CollapseCenter => collapseCenter;
     public bool IsCollapsing => isCollapsing;
+    public float CollapseCylinderHeight => collapseCylinderHeight;
+
+    /// <summary>
+    /// The per-floor configured cooldown used by the global collapse gate.
+    /// FloorManager uses this to time-slice generation of the NEXT floor.
+    /// </summary>
+    public float GlobalCollapseCooldown => globalCollapseCooldown;
 
     /* -------------------- REGISTRATION -------------------- */
 
@@ -42,16 +53,70 @@ public class FloorDecayController : MonoBehaviour
         tile.OnCriticalDecayReached -= OnTileCritical;
         tiles.Remove(tile);
     }
+    [Header("Post-Collapse Cleanup")]
+    [SerializeField] private float destroyFloorAfterSeconds = 6f;
 
-    private void CacheTileColliders()
+    /// <summary>
+    /// Rebuilds the collider cache so we can quickly disable all colliders on collapse.
+    /// Call this AFTER tiles are generated.
+    /// </summary>
+    public void CacheTileColliders()
     {
         tileColliders = GetComponentsInChildren<Collider>();
     }
 
+    /// <summary>
+    /// Clears tile registrations/state. Useful when re-generating tiles on the same floor root.
+    /// NOTE: Does NOT touch shader globals, because those are shared across floors.
+    /// </summary>
+    public void ResetForNewGeneration()
+    {
+        if (isCollapsing)
+        {
+            Debug.LogWarning("[FloorDecayController] ResetForNewGeneration called while collapsing. Ignored.");
+            return;
+        }
+
+        // Unhook events and clear.
+        for (int i = 0; i < tiles.Count; i++)
+        {
+            var t = tiles[i];
+            if (t != null)
+                t.OnCriticalDecayReached -= OnTileCritical;
+        }
+
+        tiles.Clear();
+        criticalThisPulse.Clear();
+
+        // Reset collapse state for this floor instance.
+        collapseTriggered = false;
+        isCollapsing = false;
+        collapseRadius = 0f;
+        collapseCenter = Vector3.zero;
+        tileColliders = null;
+    }
+
+    [Header("Global Collapse Cooldown")]
+    [SerializeField] private float globalCollapseCooldown = 3f;
+
+    // Shared across ALL floors
+    private static float lastGlobalCollapseTime = -999f;
+
     /* -------------------- DECAY -------------------- */
+
+    [Header("Decay Cooldown")]
+    [SerializeField] private float decayCooldown = 0.25f;
+
+    private float lastDecayTime = -999f;
 
     public void ApplyDecayPulse(Vector3 worldPosition)
     {
+        // 🔒 GLOBAL COOLDOWN
+        if (Time.time - lastDecayTime < decayCooldown)
+            return;
+
+        lastDecayTime = Time.time;
+
         if (collapseTriggered)
             return;
 
@@ -95,6 +160,7 @@ public class FloorDecayController : MonoBehaviour
         }
     }
 
+
     /* -------------------- CRITICAL TRACKING -------------------- */
 
     private void OnTileCritical(FloorTileDecay tile)
@@ -112,18 +178,43 @@ public class FloorDecayController : MonoBehaviour
         if (isCollapsing)
             return;
 
+        // 🔒 GLOBAL COLLAPSE COOLDOWN
+        if (Time.time - lastGlobalCollapseTime < globalCollapseCooldown)
+            return;
+
+        lastGlobalCollapseTime = Time.time;
+
         collapseTriggered = true;
         isCollapsing = true;
 
         collapseCenter = tile.transform.position;
-        collapseRadius = 0f; // 🔥 always start from zero
+        collapseRadius = 0f; // always start from zero
 
         BeginCollapse();
+    }
+
+    private System.Collections.IEnumerator DestroyFloorAfterDelay()
+    {
+        yield return new WaitForSeconds(destroyFloorAfterSeconds);
+
+        // Safety: only destroy if this floor is still collapsing
+        if (this != null)
+        {
+            Destroy(gameObject);
+        }
     }
 
     private void BeginCollapse()
     {
         DisableTileColliders();
+
+        // 🔽🔽🔽 VANISH WALLS IMMEDIATELY 🔽🔽🔽
+        var wallLines = GetComponentsInChildren<WallLineGenerator>(includeInactive: true);
+        for (int i = 0; i < wallLines.Length; i++)
+        {
+            wallLines[i].Vanish();
+        }
+        // 🔼🔼🔼 END 🔼🔼🔼
 
         Debug.Log($"[FloorDecayController] Collapse started at {collapseCenter}");
 
@@ -131,7 +222,12 @@ public class FloorDecayController : MonoBehaviour
         {
             FloorManager.Instance.OnFloorCollapseStarted(this);
         }
+
+        StartCoroutine(DestroyFloorAfterDelay());
     }
+
+
+
 
     private void DisableTileColliders()
     {
@@ -156,12 +252,14 @@ public class FloorDecayController : MonoBehaviour
 
         Shader.SetGlobalVector("_CollapseCenter", collapseCenter);
         Shader.SetGlobalFloat("_CollapseRadius", collapseRadius);
+        Shader.SetGlobalFloat("_CollapseHeight", collapseCylinderHeight);
     }
 
     private void OnDisable()
     {
         Shader.SetGlobalFloat("_CollapseRadius", -9999f);
         Shader.SetGlobalVector("_CollapseCenter", Vector3.zero);
+        Shader.SetGlobalFloat("_CollapseHeight", 0f);
     }
 
 #if UNITY_EDITOR
@@ -170,7 +268,32 @@ public class FloorDecayController : MonoBehaviour
         if (!isCollapsing) return;
 
         Gizmos.color = Color.red;
-        Gizmos.DrawWireSphere(collapseCenter, collapseRadius);
+
+        // Draw a quick cylinder-ish gizmo (approx): two circles + vertical lines.
+        const int steps = 32;
+        float halfH = Mathf.Max(0.01f, collapseCylinderHeight * 0.5f);
+        Vector3 top = collapseCenter + Vector3.up * halfH;
+        Vector3 bottom = collapseCenter - Vector3.up * halfH;
+
+        Vector3 prevTop = top + new Vector3(collapseRadius, 0f, 0f);
+        Vector3 prevBottom = bottom + new Vector3(collapseRadius, 0f, 0f);
+
+        for (int s = 1; s <= steps; s++)
+        {
+            float a = (s / (float)steps) * Mathf.PI * 2f;
+            Vector3 off = new Vector3(Mathf.Cos(a) * collapseRadius, 0f, Mathf.Sin(a) * collapseRadius);
+            Vector3 curTop = top + off;
+            Vector3 curBottom = bottom + off;
+            Gizmos.DrawLine(prevTop, curTop);
+            Gizmos.DrawLine(prevBottom, curBottom);
+
+            // 4 vertical lines to hint height
+            if (s % (steps / 4) == 0)
+                Gizmos.DrawLine(curTop, curBottom);
+
+            prevTop = curTop;
+            prevBottom = curBottom;
+        }
     }
 #endif
 }

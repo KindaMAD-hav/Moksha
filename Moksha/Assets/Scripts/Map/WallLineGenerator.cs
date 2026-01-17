@@ -61,6 +61,22 @@ public class WallLineGenerator : MonoBehaviour
     // ------------------------------------------------------
     // Utils
     // ------------------------------------------------------
+    public void Vanish()
+    {
+        // Simple & safe: disable renderers
+        var renderers = GetComponentsInChildren<Renderer>(includeInactive: true);
+        for (int i = 0; i < renderers.Length; i++)
+        {
+            renderers[i].enabled = false;
+        }
+
+        // Optional: also disable colliders if walls have any
+        var colliders = GetComponentsInChildren<Collider>(includeInactive: true);
+        for (int i = 0; i < colliders.Length; i++)
+        {
+            colliders[i].enabled = false;
+        }
+    }
 
     private float GetWallLength(GameObject wall, Vector3 worldDir)
     {
