@@ -34,6 +34,7 @@ public class PlayerWeaponSystem : MonoBehaviour
     private PlayerController playerController;
 
     readonly List<WeaponRuntime> weapons = new();
+    private Transform currentAutoAimTarget;
 
     void Awake()
     {
@@ -107,53 +108,51 @@ public class PlayerWeaponSystem : MonoBehaviour
     /// </summary>
     public bool TryAcquireTarget(out Transform target)
     {
+        target = null;
+
         if (!autoAimEnabled)
-        {
-            target = null;
             return false;
-        }
-        Collider[] hits = Physics.OverlapSphere(transform.position, autoAimRange, enemyMask, QueryTriggerInteraction.Ignore);
+
+        Collider[] hits = Physics.OverlapSphere(
+            transform.position,
+            autoAimRange,
+            enemyMask,
+            QueryTriggerInteraction.Ignore
+        );
 
         if (hits == null || hits.Length == 0)
         {
-            target = null;
+            currentAutoAimTarget = null;
             return false;
         }
 
-        Vector3 aimDir = GetFlatAimDirection();
-        Vector3 firePos = firePoint != null ? firePoint.position : transform.position;
+        Transform closest = null;
+        float closestSqrDist = float.PositiveInfinity;
 
-        float bestScore = float.NegativeInfinity;
-        Transform best = null;
+        Vector3 origin = transform.position;
 
         for (int i = 0; i < hits.Length; i++)
         {
-            var col = hits[i];
+            Collider col = hits[i];
             if (col == null) continue;
 
             Vector3 p = col.bounds.center;
-            Vector3 to = p - firePos; to.y = 0f;
+            Vector3 diff = p - origin;
+            diff.y = 0f;
 
-            float dist = to.magnitude;
-            if (dist < 0.001f) continue;
-
-            Vector3 toN = to / dist;
-            float dot = Vector3.Dot(aimDir, toN);              // -1..1 (higher = more "in front")
-            float distBias = 1f - Mathf.Clamp01(dist / autoAimRange); // 0..1 (higher = closer)
-
-            // Weight aim direction more than distance, so it "feels" like you're steering.
-            float score = dot * 2f + distBias;
-
-            if (score > bestScore)
+            float sqrDist = diff.sqrMagnitude;
+            if (sqrDist < closestSqrDist)
             {
-                bestScore = score;
-                best = col.transform;
+                closestSqrDist = sqrDist;
+                closest = col.transform;
             }
         }
 
-        target = best;
-        return best != null;
+        currentAutoAimTarget = closest;
+        target = closest;
+        return closest != null;
     }
+
 
     // --------- Runtime hooks for blessings / progression ---------
 

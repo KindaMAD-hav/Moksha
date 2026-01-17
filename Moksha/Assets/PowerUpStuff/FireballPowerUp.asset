@@ -22,8 +22,8 @@ MonoBehaviour:
   orbitRadius: 2.5
   orbitSpeed: 180
   orbitSpeedPerStack: 15
-  baseDamage: 1
-  damagePerStack: 1
+  baseDamage: 2
+  damagePerStack: 2
   hitCooldown: 0.5
   fireballScale: 40
   heightOffset: 1
